@@ -2,7 +2,10 @@
  * Sentinel file helpers for kill-switches.
  * TS-3 §3.1 split rationale:
  *   DISABLED (uppercase) = manual kill-switch, NOT cleared by /coherence:recover
- *   disabled (lowercase) = auto crash-disable, cleared by /coherence:recover
+ *   auto-disabled         = auto crash-disable, cleared by /coherence:recover
+ *
+ * Note: on case-insensitive filesystems (Windows/macOS HFS+), using "disabled"
+ * vs "DISABLED" would collide. We use "auto-disabled" for the auto sentinel.
  */
 import { existsSync, writeFileSync, unlinkSync } from 'fs';
 import path from 'path';
@@ -14,15 +17,12 @@ export class Sentinels {
     return path.join(this.coherenceDir, 'DISABLED');
   }
 
-  private get autoPaths(): string[] {
-    return [
-      path.join(this.coherenceDir, 'disabled'),
-      path.join(this.coherenceDir, 'DISABLED'),
-    ];
+  private get autoPath(): string {
+    return path.join(this.coherenceDir, 'auto-disabled');
   }
 
   isDisabled(): boolean {
-    return this.autoPaths.some((p) => existsSync(p));
+    return existsSync(this.manualPath) || existsSync(this.autoPath);
   }
 
   isManuallyDisabled(): boolean {
@@ -30,15 +30,14 @@ export class Sentinels {
   }
 
   isAutoDisabled(): boolean {
-    return existsSync(path.join(this.coherenceDir, 'disabled'));
+    return existsSync(this.autoPath);
   }
 
   /** Write auto-disable sentinel with diagnostic body */
   setAutoDisabled(reason: string): void {
-    const p = path.join(this.coherenceDir, 'disabled');
     const body = `Coherence auto-disabled at ${new Date().toISOString()}\nReason: ${reason}\n`;
     try {
-      writeFileSync(p, body, 'utf8');
+      writeFileSync(this.autoPath, body, 'utf8');
     } catch {
       // best-effort
     }
@@ -47,7 +46,7 @@ export class Sentinels {
   /** Clear only the auto-disable sentinel (used by /coherence:recover) */
   clearAutoDisabled(): void {
     try {
-      unlinkSync(path.join(this.coherenceDir, 'disabled'));
+      unlinkSync(this.autoPath);
     } catch {
       // already gone
     }

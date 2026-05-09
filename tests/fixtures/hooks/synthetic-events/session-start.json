@@ -1,0 +1,6 @@
+{
+  "event": "SessionStart",
+  "session_id": "test-session-001",
+  "project_root": "/tmp/test-project",
+  "host_version": "stub-v2.0"
+}

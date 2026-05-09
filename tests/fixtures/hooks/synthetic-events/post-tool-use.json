@@ -1,0 +1,6 @@
+{
+  "event": "PostToolUse",
+  "tool": "Edit",
+  "path": "docs/README.md",
+  "session_id": "test-session-001"
+}
