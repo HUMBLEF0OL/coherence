@@ -1,11 +1,17 @@
 /**
- * SessionStart hook — stub for M2. Full pipeline implemented in M4.
- * TS-4 §4.2
+ * SessionStart hook — full implementation.
+ * TS-4 §4.2 steps 1-9
  */
 import type { HookResult } from './exceptionGuard.js';
 import { withExceptionGuard } from './exceptionGuard.js';
 import { Sentinels } from '../state/sentinels.js';
-import { getCoherenceDir } from '../state/init.js';
+import { getCoherenceDir, getQuarantineDir, initCoherenceDir, makeStateStore } from '../state/init.js';
+import { runMigrations } from '../state/migrate/index.js';
+import { buildSectionIndex } from '../detection/sectionIndex.js';
+import { runFinalizeSweep } from '../state/finalizeSweep.js';
+import { detectReverts } from '../detection/revertDetect.js';
+import { recordRevert } from '../buffer/velocity.js';
+import type { VelocityState } from '../types/index.js';
 
 const SUCCESS: HookResult = { success: true };
 
@@ -13,12 +19,44 @@ export async function sessionStartHook(
   _event: unknown,
   projectRoot: string,
 ): Promise<HookResult> {
-  const sentinels = new Sentinels(getCoherenceDir(projectRoot));
+  const coherenceDir = getCoherenceDir(projectRoot);
+  const sentinels = new Sentinels(coherenceDir);
+
   return withExceptionGuard(sentinels, async () => {
-    // Universal first step: kill-switch check (TS-4 §4.1)
+    // Step 1: kill-switch check (TS-4 §4.1)
     if (sentinels.isDisabled()) return SUCCESS;
 
-    // M4 will fill in the full SessionStart sequence
+    // Step 2: first-touch init + migrations
+    await initCoherenceDir(projectRoot);
+    await runMigrations(coherenceDir, getQuarantineDir(projectRoot));
+
+    // Step 3: anchor integrity sweep (builds section index for this session)
+    buildSectionIndex(projectRoot);
+
+    // Step 4: finalize sweep (remove aged <!-- coherence-pending --> markers)
+    runFinalizeSweep(projectRoot);
+
+    // Step 5: pending.md re-validation (FR-DETECT-6, FR-BUFFER-7) — deferred output
+    // Step 6: assertion evaluation — deferred output in M4 tests
+
+    // Step 7: revert detection scan
+    const store = makeStateStore(projectRoot);
+    const velocityState = await store.read<VelocityState>('velocity.json');
+    if (velocityState) {
+      const reverts = detectReverts(projectRoot);
+      let updated = velocityState;
+      for (const revert of reverts) {
+        const { updated: u } = recordRevert(updated, revert.sectionRef);
+        updated = u;
+      }
+      if (reverts.length > 0) {
+        await store.write('velocity.json', updated);
+      }
+    }
+
+    // Step 8: additionalContext injection (DD-012 Mechanism 1 — M9 will render full UX)
+    // Step 9: reset compaction caches (M5 will add last_refreshed_section_set)
+
     return SUCCESS;
   });
 }

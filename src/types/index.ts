@@ -74,7 +74,7 @@ export interface VelocityState {
   revert_count: number;
   revert_timestamps: string[];
   consecutive_defer_sessions: number;
-  last_defer_session_id?: string;
+  last_defer_session_id: string | undefined;
   auto_ignored: string[];
 }
 
