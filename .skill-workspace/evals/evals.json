@@ -1,0 +1,231 @@
+{
+  "skill_set": "coherence-v0.1",
+  "description": "Evals for Coherence v0.1 slash-command skills. Focuses on the 4 highest-priority skills: coherence-review (pipeline correctness), coherence-status (output completeness), coherence-graduate (mode switching UX), coherence-recover (full recovery flow).",
+  "evals": [
+    {
+      "id": 1,
+      "skill": "coherence-review",
+      "name": "single-section-group-skips-stage1",
+      "prompt": "I have a drift buffer with one entry pointing to a single section in ARCHITECTURE.md. Run /coherence:review and show me what happens.",
+      "expected_output": "Should invoke Stage 2 (coherence-patcher) directly without calling Stage 1 (coherence-planner). Should present the result as an atomic group bundle. Should show the diff hunk and prompt for accept/reject.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Stage 1 (coherence-planner) is NOT called for a single-section group",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Stage 2 (coherence-patcher) IS called for the section",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Output presents the patch as an atomic accept/reject bundle (not per-patch prompts)",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Buffer lock is acquired before reading drift-buffer.jsonl",
+          "passed": null,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "skill": "coherence-review",
+      "name": "multi-section-group-uses-stage1-then-parallel-stage2",
+      "prompt": "The drift buffer has 3 entries all touching the same concept across CLAUDE.md, ARCHITECTURE.md, and .claude/skills/coherence-review/SKILL.md. Run /coherence:review.",
+      "expected_output": "Should invoke Stage 1 (coherence-planner) once for the 3-section group, then invoke Stage 2 (coherence-patcher) in parallel for each section. Sections assigned no-change by Stage 1 should skip Stage 2. Should checkpoint to stop-progress.json after the group.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Stage 1 (coherence-planner) is called exactly once for the multi-section group",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Stage 2 is called per non-no-change section (in parallel)",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "stop-progress.json is written after the group completes",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "ESCALATE responses are written to pending.md, not silently dropped",
+          "passed": null,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "skill": "coherence-review",
+      "name": "graduated-mode-additive-auto-applies",
+      "prompt": "Mode is 'graduated'. The drift buffer has one entry. Stage 2 returns a purely additive diff (lines_removed == 0). Run /coherence:review.",
+      "expected_output": "In graduated mode with all-additive patches, the group should be auto-accepted without prompting the user. Output should say '✓ Group 1 auto-applied (graduated mode, all patches additive).' Modifying or destructive patches in the same group would prevent auto-apply.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "All-additive group in graduated mode is auto-accepted without user prompt",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Auto-apply confirmation line is printed",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Applied patch is logged to metrics.jsonl",
+          "passed": null,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "skill": "coherence-status",
+      "name": "full-status-output-with-all-blocks",
+      "prompt": "Run /coherence:status. The workspace has: config.yaml with 3 tracked docs, a drift buffer with 2 entries (1 deferred), a pending.md with 1 escalated item, metrics.jsonl with 60 entries for coherence-patcher, and host-capabilities.json with subagent_attribution='line-level'.",
+      "expected_output": "Should display the main status block with mode, plugin status, tracked doc counts, buffer depth (including deferred count), pending review count, last review, and host caps with subagent attribution. Should also display the subagent stats block (last 50 invocations) and any cost/velocity blocks if data is available.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Main status block includes 'Drift buffer: 2 entries pending  (1 deferred)'",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Main status block includes 'Pending review: 1 escalated items in pending.md'",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Host caps line includes 'subagent=line-level'",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Subagent stats block is shown with last-50-invocation window for coherence-patcher",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Reads host-capabilities.json (not host-caps.json)",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "No files are written (read-only command)",
+          "passed": null,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "skill": "coherence-graduate",
+      "name": "switch-observe-to-graduated",
+      "prompt": "Run /coherence:graduate. Current mode is 'observe'.",
+      "expected_output": "Should print the graduated-mode implications block explaining what auto-apply covers (additive only), ask for confirmation, then update config.yaml mode to 'graduated' atomically. If host-capabilities.json shows frontmatter_preserves_unknown_keys=false, should append a note about enable-sidecars.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Implications block is printed before any mode change",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "User confirmation is requested before applying",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "config.yaml mode field is updated to 'graduated' atomically (temp+rename)",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Confirmation summary shows previous and current mode",
+          "passed": null,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "skill": "coherence-graduate",
+      "name": "already-in-target-mode-no-op",
+      "prompt": "Run /coherence:graduate. Current mode is already 'graduated'.",
+      "expected_output": "Should print 'Already in graduated mode. No change made.' and exit without writing any files.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Prints 'Already in graduated mode. No change made.'",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "No files are written",
+          "passed": null,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "skill": "coherence-recover",
+      "name": "full-recovery-clears-sentinel-and-artefacts",
+      "prompt": "Run /coherence:recover. The workspace has: .claude/coherence/disabled sentinel file, a stale drift-buffer.jsonl.lock, files in .claude/coherence/quarantine/, and an orphaned stop-progress.json.",
+      "expected_output": "Should warn the user and ask for confirmation. After confirmation: delete the disabled sentinel file, clear quarantine contents, remove stale lock file, delete stop-progress.json, reset state.json (without plugin_disabled field), truncate drift-buffer.jsonl, re-run doctor probe saving to host-capabilities.json (not host-caps.json). Summary should show mode, tracked doc count, and hook status.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "User confirmation is requested before any state changes",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": ".claude/coherence/disabled sentinel file is deleted",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Quarantine directory contents are cleared",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Stale .lock files are removed",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "stop-progress.json is deleted",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "Doctor probe output is saved to host-capabilities.json (not host-caps.json)",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "cost-ledger.json and metrics.jsonl are preserved (not truncated)",
+          "passed": null,
+          "evidence": null
+        },
+        {
+          "text": "state.json does not contain a plugin_disabled field after reset",
+          "passed": null,
+          "evidence": null
+        }
+      ]
+    }
+  ]
+}
