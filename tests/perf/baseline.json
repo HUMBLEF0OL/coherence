@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-05-09T00:00:00Z",
+  "note": "Baseline latency budgets (p95 in ms). CI fails if any p95 regresses > 30%.",
+  "regression_threshold_pct": 30,
+  "cells": [
+    { "hookName": "postToolUse", "codebaseName": "small",  "latency_p95_ms": 50 },
+    { "hookName": "postToolUse", "codebaseName": "medium", "latency_p95_ms": 50 },
+    { "hookName": "sessionStart", "codebaseName": "small",  "latency_p95_ms": 200 },
+    { "hookName": "sessionStart", "codebaseName": "medium", "latency_p95_ms": 500 },
+    { "hookName": "stop",         "codebaseName": "small",  "latency_p95_ms": 5000 },
+    { "hookName": "stop",         "codebaseName": "medium", "latency_p95_ms": 15000 }
+  ],
+  "memory_limits": {
+    "stop_p95_rss_mb": 50,
+    "stop_p99_rss_mb": 80
+  }
+}
