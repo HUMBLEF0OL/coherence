@@ -1,0 +1,69 @@
+{
+  "name": "coherence",
+  "version": "0.1.0",
+  "description": "Claude Code plugin that detects documentation-vs-code drift and proposes surgical patches",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "plugin.json",
+    "prompts"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src tests --ext .ts",
+    "lint:fix": "eslint src tests --ext .ts --fix",
+    "typecheck": "tsc --noEmit",
+    "audit": "npm audit --audit-level=high",
+    "prepare": "husky install",
+    "pack:size": "npm pack --dry-run 2>&1 | tail -5"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "ajv": "^8.17.1",
+    "js-yaml": "^4.1.0",
+    "parse-diff": "^0.11.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.17.57",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "documentation",
+    "drift-detection",
+    "coherence"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}

@@ -1,0 +1,30 @@
+# Source
+src/
+tests/
+scripts/
+prompts/
+
+# Config
+.eslintrc.cjs
+prettier.config.js
+vitest.config.ts
+tsconfig*.json
+commitlint.config.cjs
+.editorconfig
+.husky/
+.github/
+.vscode/
+.claude/
+.skill-workspace/
+docs/
+
+# Dev artifacts
+*.tsbuildinfo
+coverage/
+release-artifacts/
+tests/cassettes/
+tests/perf/baseline.json
+
+# Environment
+.env
+.env.*

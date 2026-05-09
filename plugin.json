@@ -1,0 +1,72 @@
+{
+  "name": "coherence",
+  "version": "0.1.0",
+  "description": "Detects documentation-vs-code drift and proposes surgical patches",
+  "min_claude_code_version": "2.0.0",
+  "main": "./dist/index.js",
+  "hooks": {
+    "SessionStart": {
+      "handler": "hooks/sessionStart"
+    },
+    "PostToolUse": {
+      "handler": "hooks/postToolUse"
+    },
+    "UserPromptSubmit": {
+      "handler": "hooks/userPromptSubmit"
+    },
+    "SubagentStop": {
+      "handler": "hooks/subagentStop"
+    },
+    "Stop": {
+      "handler": "hooks/stop"
+    },
+    "SessionEnd": {
+      "handler": "hooks/sessionEnd"
+    },
+    "PreCompact": {
+      "handler": "hooks/preCompact"
+    }
+  },
+  "slashCommands": [
+    {
+      "name": "coherence:status",
+      "description": "Show current coherence state: buffer, recent activity, subagent stats, velocity, cost",
+      "handler": "commands/status"
+    },
+    {
+      "name": "coherence:review",
+      "description": "Run the coherence pipeline mid-session against the current buffer",
+      "handler": "commands/review"
+    },
+    {
+      "name": "coherence:repair",
+      "description": "Fix anchor collisions, schema drift, buffer corruption, pending.md mismatches",
+      "handler": "commands/repair"
+    },
+    {
+      "name": "coherence:recover",
+      "description": "Clear quarantine, reset locks, drop progress files, remove auto-disable sentinel",
+      "handler": "commands/recover"
+    },
+    {
+      "name": "coherence:doctor",
+      "description": "Probe host capabilities and write host-capabilities.json",
+      "handler": "commands/doctor"
+    },
+    {
+      "name": "coherence:graduate",
+      "description": "Toggle between Observe and Graduated mode",
+      "handler": "commands/graduate"
+    },
+    {
+      "name": "coherence:enable-sidecars",
+      "description": "Provision sidecar YAML files for skills/agents when host strips unknown frontmatter",
+      "handler": "commands/enableSidecars"
+    },
+    {
+      "name": "coherence:share-metrics",
+      "description": "Write anonymized metrics to a user-chosen file path",
+      "handler": "commands/shareMetrics"
+    }
+  ]
+}
