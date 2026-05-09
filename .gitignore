@@ -30,3 +30,4 @@ build/Release
 .vscode/
 .eslintcache
 .mcp.json
+graphify-out
