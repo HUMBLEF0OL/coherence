@@ -116,7 +116,7 @@ export interface SubagentStats {
 export interface SectionIndexEntry {
   path: NormalizedPath;
   sectionRef: SectionRef;
-  heading?: string;
+  heading: string | undefined;
   line_start: number;
   line_end: number;
   contentHash: ContentHash;
