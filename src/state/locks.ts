@@ -120,6 +120,12 @@ export class LockManager {
     }
   }
 
+  /** Reset degraded state and consecutive-timeout counter (used by /coherence:recover). */
+  reset(): void {
+    this.consecutiveTimeouts = 0;
+    this.degraded = false;
+  }
+
   private recordTimeout(): void {
     this.consecutiveTimeouts++;
     if (this.consecutiveTimeouts >= DEGRADED_THRESHOLD) {
