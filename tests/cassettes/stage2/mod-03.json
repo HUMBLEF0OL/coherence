@@ -1,0 +1,7 @@
+{
+  "content": "--- a/docs/config.md\n+++ b/docs/config.md\n@@ -1,3 +1,3 @@\n ## Timeout\n \n-Default: 5000ms\n+Default: 10000ms (DEFAULT_TIMEOUT constant)\n",
+  "input_tokens": 506,
+  "output_tokens": 41,
+  "cost_usd": 0.00229,
+  "timestamp": "2026-05-09T10:01:07.000Z"
+}

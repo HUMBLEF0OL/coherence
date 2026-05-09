@@ -1,0 +1,7 @@
+{
+  "content": "--- a/docs/api.md\n+++ b/docs/api.md\n@@ -1,5 +1,4 @@\n ## User Type\n \n - `id`: string\n - `name`: string\n-- `legacyId`: number (deprecated)\n",
+  "input_tokens": 519,
+  "output_tokens": 47,
+  "cost_usd": 0.00236,
+  "timestamp": "2026-05-09T10:01:13.000Z"
+}

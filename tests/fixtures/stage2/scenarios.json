@@ -1,0 +1,308 @@
+[
+  {
+    "id": "add-01",
+    "changeClass": "additive",
+    "description": "Add new endpoint documentation",
+    "input": {
+      "sectionRef": "docs/api.md#endpoints",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Endpoints",
+      "current_content": "## Endpoints\n\n- GET /users\n",
+      "canonical_content": null,
+      "changed_tokens": ["GET", "/users", "/items", "listItems"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "additive"
+  },
+  {
+    "id": "add-02",
+    "changeClass": "additive",
+    "description": "Add parameter documentation",
+    "input": {
+      "sectionRef": "docs/guide.md#parameters",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Parameters",
+      "current_content": "## Parameters\n\n- `limit`: Max results\n",
+      "canonical_content": null,
+      "changed_tokens": ["limit", "offset", "pagination"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "additive"
+  },
+  {
+    "id": "add-03",
+    "changeClass": "additive",
+    "description": "No change needed — section already up to date",
+    "input": {
+      "sectionRef": "docs/api.md#intro",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Introduction",
+      "current_content": "## Introduction\n\nThis API provides access to user data.\n",
+      "canonical_content": null,
+      "changed_tokens": [],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "no-patch",
+    "expected_class": null
+  },
+  {
+    "id": "add-04",
+    "changeClass": "additive",
+    "description": "Add return type documentation",
+    "input": {
+      "sectionRef": "docs/api.md#returns",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Returns",
+      "current_content": "## Returns\n\nReturns a JSON object.\n",
+      "canonical_content": null,
+      "changed_tokens": ["UserResponse", "id", "name", "email"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "additive"
+  },
+  {
+    "id": "add-05",
+    "changeClass": "additive",
+    "description": "Document new error code",
+    "input": {
+      "sectionRef": "docs/api.md#errors",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Errors",
+      "current_content": "## Errors\n\n- 400: Bad Request\n- 401: Unauthorized\n",
+      "canonical_content": null,
+      "changed_tokens": ["404", "NotFound", "getUserById"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "additive"
+  },
+  {
+    "id": "add-06",
+    "changeClass": "additive",
+    "description": "Add authentication method documentation",
+    "input": {
+      "sectionRef": "docs/api.md#auth",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Authentication",
+      "current_content": "## Authentication\n\nCurrently no auth required.\n",
+      "canonical_content": null,
+      "changed_tokens": ["Bearer", "Authorization", "token", "JWT"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "additive"
+  },
+  {
+    "id": "mod-01",
+    "changeClass": "modifying",
+    "description": "Update endpoint path from v1 to v2",
+    "input": {
+      "sectionRef": "docs/api.md#endpoint",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Endpoint",
+      "current_content": "## Endpoint\n\nPOST /api/v1/users\n",
+      "canonical_content": null,
+      "changed_tokens": ["/api/v2/users", "v2"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "modifying"
+  },
+  {
+    "id": "mod-02",
+    "changeClass": "modifying",
+    "description": "Update function signature documentation",
+    "input": {
+      "sectionRef": "docs/api.md#function",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Function",
+      "current_content": "## Function\n\n`getUser(id: string): User`\n",
+      "canonical_content": null,
+      "changed_tokens": ["getUser", "id", "string", "number", "User"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "modifying"
+  },
+  {
+    "id": "mod-03",
+    "changeClass": "modifying",
+    "description": "Update configuration option description",
+    "input": {
+      "sectionRef": "docs/config.md#timeout",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Timeout",
+      "current_content": "## Timeout\n\nDefault: 5000ms\n",
+      "canonical_content": null,
+      "changed_tokens": ["timeout", "10000", "DEFAULT_TIMEOUT"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "modifying"
+  },
+  {
+    "id": "mod-04",
+    "changeClass": "modifying",
+    "description": "Update deprecated flag note",
+    "input": {
+      "sectionRef": "docs/api.md#flags",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Flags",
+      "current_content": "## Flags\n\nUse `--verbose` for debug output.\n",
+      "canonical_content": null,
+      "changed_tokens": ["verbose", "debug", "logLevel", "--log-level"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "modifying"
+  },
+  {
+    "id": "mod-05",
+    "changeClass": "modifying",
+    "description": "Reference section mirrors canonical",
+    "input": {
+      "sectionRef": "docs/guide.md#auth",
+      "role": "reference",
+      "relation": "mirrors",
+      "heading": "Authentication",
+      "current_content": "## Authentication\n\nSee API docs for details.\n",
+      "canonical_content": "## Authentication\n\nUse Bearer tokens. Header: `Authorization: Bearer <token>`\n",
+      "changed_tokens": ["Bearer", "Authorization", "token"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "modifying"
+  },
+  {
+    "id": "dest-01",
+    "changeClass": "destructive",
+    "description": "Remove deprecated section",
+    "input": {
+      "sectionRef": "docs/api.md#deprecated",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Deprecated",
+      "current_content": "## Deprecated\n\nThe old `legacyAuth` method is deprecated.\nRemove before 2025.\n",
+      "canonical_content": null,
+      "changed_tokens": ["legacyAuth", "deprecated", "removed"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "destructive"
+  },
+  {
+    "id": "dest-02",
+    "changeClass": "destructive",
+    "description": "Remove stale parameter docs",
+    "input": {
+      "sectionRef": "docs/api.md#old-params",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Old Parameters",
+      "current_content": "## Old Parameters\n\n- `format`: Response format (removed)\n- `callback`: JSONP callback (removed)\n",
+      "canonical_content": null,
+      "changed_tokens": ["format", "callback", "removed"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "destructive"
+  },
+  {
+    "id": "dest-03",
+    "changeClass": "destructive",
+    "description": "Remove outdated warning block",
+    "input": {
+      "sectionRef": "docs/guide.md#warning",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Warning",
+      "current_content": "## Warning\n\n> This feature is experimental.\n> Do not use in production.\n",
+      "canonical_content": null,
+      "changed_tokens": ["stable", "production", "experimental"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "destructive"
+  },
+  {
+    "id": "dest-04",
+    "changeClass": "destructive",
+    "description": "Remove field from interface docs",
+    "input": {
+      "sectionRef": "docs/api.md#user-type",
+      "role": "canonical",
+      "relation": null,
+      "heading": "User Type",
+      "current_content": "## User Type\n\n- `id`: string\n- `name`: string\n- `legacyId`: number (deprecated)\n",
+      "canonical_content": null,
+      "changed_tokens": ["legacyId", "deprecated", "User"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "destructive"
+  },
+  {
+    "id": "dest-05",
+    "changeClass": "destructive",
+    "description": "Remove support note",
+    "input": {
+      "sectionRef": "docs/api.md#support",
+      "role": "canonical",
+      "relation": null,
+      "heading": "Support",
+      "current_content": "## Support\n\nContact support@old-domain.com for help.\nSlack: #old-channel\n",
+      "canonical_content": null,
+      "changed_tokens": ["support", "contact", "email"],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "diff",
+    "expected_class": "destructive"
+  },
+  {
+    "id": "front-01",
+    "changeClass": "frontmatter",
+    "description": "No change needed for frontmatter section",
+    "input": {
+      "sectionRef": "docs/api.md#meta",
+      "role": "canonical",
+      "relation": null,
+      "heading": null,
+      "current_content": "---\ntitle: API Reference\nversion: 2.0\n---\n",
+      "canonical_content": null,
+      "changed_tokens": [],
+      "layer": "referring-doc"
+    },
+    "expected_kind": "no-patch",
+    "expected_class": null
+  },
+  {
+    "id": "front-02",
+    "changeClass": "frontmatter",
+    "description": "No change needed for current section",
+    "input": {
+      "sectionRef": "CLAUDE.md#commands",
+      "role": "no-change",
+      "relation": null,
+      "heading": "Commands",
+      "current_content": "## Commands\n\nnpm test\nnpm run build\n",
+      "canonical_content": null,
+      "changed_tokens": [],
+      "layer": "config"
+    },
+    "expected_kind": "no-patch",
+    "expected_class": null
+  }
+]

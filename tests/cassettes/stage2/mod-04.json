@@ -1,0 +1,7 @@
+{
+  "content": "--- a/docs/api.md\n+++ b/docs/api.md\n@@ -1,3 +1,3 @@\n ## Flags\n \n-Use `--verbose` for debug output.\n+Use `--log-level debug` for debug output.\n",
+  "input_tokens": 507,
+  "output_tokens": 43,
+  "cost_usd": 0.00230,
+  "timestamp": "2026-05-09T10:01:08.000Z"
+}

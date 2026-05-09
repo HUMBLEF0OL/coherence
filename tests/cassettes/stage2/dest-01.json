@@ -1,0 +1,7 @@
+{
+  "content": "--- a/docs/api.md\n+++ b/docs/api.md\n@@ -1,4 +1,2 @@\n ## Deprecated\n \n-The old `legacyAuth` method is deprecated.\n-Remove before 2025.\n",
+  "input_tokens": 520,
+  "output_tokens": 44,
+  "cost_usd": 0.00234,
+  "timestamp": "2026-05-09T10:01:10.000Z"
+}

@@ -1,0 +1,7 @@
+{
+  "content": "--- a/docs/api.md\n+++ b/docs/api.md\n@@ -1,4 +1,2 @@\n ## Old Parameters\n \n-- `format`: Response format (removed)\n-- `callback`: JSONP callback (removed)\n",
+  "input_tokens": 518,
+  "output_tokens": 46,
+  "cost_usd": 0.00235,
+  "timestamp": "2026-05-09T10:01:11.000Z"
+}
