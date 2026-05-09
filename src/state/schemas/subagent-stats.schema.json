@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/subagent-stats",
+  "type": "object",
+  "required": ["window_size", "accepted", "edited", "discarded", "rejected"],
+  "additionalProperties": false,
+  "properties": {
+    "window_size": { "type": "integer", "minimum": 0 },
+    "accepted": { "type": "integer", "minimum": 0 },
+    "edited": { "type": "integer", "minimum": 0 },
+    "discarded": { "type": "integer", "minimum": 0 },
+    "rejected": { "type": "integer", "minimum": 0 },
+    "trend_last5_vs_prior10": { "type": "number" }
+  }
+}

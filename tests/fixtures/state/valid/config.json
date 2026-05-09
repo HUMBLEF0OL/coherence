@@ -1,0 +1,5 @@
+{
+  "mode": "observe",
+  "watches": ["docs/**/*.md", "CLAUDE.md"],
+  "ignore": [".env"]
+}

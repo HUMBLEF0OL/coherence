@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/version",
+  "type": "object",
+  "required": ["schema_version", "plugin_version", "installed_at", "prior_versions"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 0 },
+    "plugin_version": { "type": "string" },
+    "installed_at": { "type": "string", "format": "date-time" },
+    "upgraded_at": { "type": "string", "format": "date-time" },
+    "prior_versions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["version", "schema_version", "at"],
+        "additionalProperties": false,
+        "properties": {
+          "version": { "type": "string" },
+          "schema_version": { "type": "integer", "minimum": 0 },
+          "at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

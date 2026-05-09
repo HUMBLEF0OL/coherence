@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/drift-buffer",
+  "type": "object",
+  "required": ["state", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "state": { "type": "string", "enum": ["empty", "pending", "cleared", "deferred", "persisted"] },
+    "entries": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "required": ["path", "sectionRef", "contentHash", "triggeredAt", "source"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "sectionRef": { "type": "string", "pattern": "^.+#[a-z0-9_-]+$" },
+          "contentHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "triggeredAt": { "type": "string", "format": "date-time" },
+          "source": { "type": "string", "enum": ["posttooluse", "assertion", "revert", "manual"] }
+        }
+      }
+    },
+    "last_changed_at": { "type": "string", "format": "date-time" },
+    "stale_fence": { "type": "string", "format": "date-time" }
+  }
+}

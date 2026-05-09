@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/host-capabilities",
+  "type": "object",
+  "required": ["subagent_attribution", "frontmatter_preserves_unknown_keys", "hook_event_shapes", "token_count_in_posttooluse"],
+  "additionalProperties": false,
+  "properties": {
+    "subagent_attribution": { "type": "boolean" },
+    "frontmatter_preserves_unknown_keys": { "type": "boolean" },
+    "hook_event_shapes": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "token_count_in_posttooluse": { "type": "boolean" },
+    "host_version": { "type": "string" }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/stop-progress",
+  "type": "object",
+  "required": ["session_id", "started_at", "groups"],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": { "type": "string" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["group_id", "canonical", "sections"],
+        "additionalProperties": false,
+        "properties": {
+          "group_id": { "type": "string" },
+          "canonical": { "type": "string" },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["sectionRef", "status"],
+              "additionalProperties": false,
+              "properties": {
+                "sectionRef": { "type": "string" },
+                "status": { "type": "string", "enum": ["pending", "done", "skipped"] },
+                "patch": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
