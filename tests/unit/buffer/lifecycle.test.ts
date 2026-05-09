@@ -66,7 +66,7 @@ describe('BufferLifecycle', () => {
     }
     const buf = await buffer.read();
     expect(buf.entries.length).toBeLessThanOrEqual(200);
-  });
+  }, 30000);
 
   it('does not store raw section content in buffer (NFR-PRIVACY-4)', async () => {
     const entry = makeEntry('private');

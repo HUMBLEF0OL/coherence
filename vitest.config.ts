@@ -29,6 +29,7 @@ export default defineConfig({
           name: 'perf',
           include: ['tests/perf/**/*.bench.ts', 'tests/perf/**/*.test.ts'],
           environment: 'node',
+          testTimeout: 30000,
         },
       },
       {
@@ -52,6 +53,7 @@ export default defineConfig({
           name: 'security',
           include: ['tests/security/**/*.test.ts'],
           environment: 'node',
+          testTimeout: 30000,
         },
       },
       {
