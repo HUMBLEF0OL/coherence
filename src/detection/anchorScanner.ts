@@ -107,9 +107,16 @@ export function scanAnchors(source: string, filePath: string): AnchorScanResult 
     }
   }
 
-  // Report unclosed anchors
+  // Report unclosed anchors and treat EOF as implicit close (robust parsing)
   for (const frame of stack) {
     warnings.push(`Unclosed anchor id="${frame.id}" in ${filePath} (opened at line ${frame.lineStart})`);
+    sections.push({
+      id: frame.id,
+      heading: frame.heading,
+      lineStart: frame.lineStart,
+      lineEnd: lines.length,
+      content: frame.contentLines.join('\n'),
+    });
   }
 
   return { sections, warnings };
