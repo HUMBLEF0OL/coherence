@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"docs/api.md#intro\",\"sections\":[{\"sectionRef\":\"docs/api.md#intro\",\"role\":\"canonical\"},{\"sectionRef\":\"docs/guide.md#intro\",\"role\":\"reference\",\"relation\":\"mirrors\"},{\"sectionRef\":\"README.md#about\",\"role\":\"no-change\"}]}",
+  "input_tokens": 470,
+  "output_tokens": 100,
+  "cost_usd": 0.00291,
+  "timestamp": "2026-05-09T10:00:11.000Z"
+}

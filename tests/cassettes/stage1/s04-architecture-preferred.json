@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"docs/architecture/overview.md#design\",\"sections\":[{\"sectionRef\":\"docs/architecture/overview.md#design\",\"role\":\"canonical\"},{\"sectionRef\":\"docs/guide.md#setup\",\"role\":\"reference\",\"relation\":\"mirrors\"}]}",
+  "input_tokens": 430,
+  "output_tokens": 88,
+  "cost_usd": 0.00249,
+  "timestamp": "2026-05-09T10:00:03.000Z"
+}

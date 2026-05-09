@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"docs/spec.md#auth\",\"sections\":[{\"sectionRef\":\"docs/spec.md#auth\",\"role\":\"canonical\"},{\"sectionRef\":\"docs/api.md#auth\",\"role\":\"reference\",\"relation\":\"mirrors\"},{\"sectionRef\":\"docs/guide.md#auth\",\"role\":\"reference\",\"relation\":\"mirrors\"}]}",
+  "input_tokens": 460,
+  "output_tokens": 98,
+  "cost_usd": 0.00288,
+  "timestamp": "2026-05-09T10:00:10.000Z"
+}

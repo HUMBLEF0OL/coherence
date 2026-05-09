@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"docs/api/endpoint.md#usage\",\"sections\":[{\"sectionRef\":\"docs/api/endpoint.md#usage\",\"role\":\"canonical\"},{\"sectionRef\":\"README.md#install\",\"role\":\"reference\",\"relation\":\"mirrors\"}]}",
+  "input_tokens": 420,
+  "output_tokens": 86,
+  "cost_usd": 0.00247,
+  "timestamp": "2026-05-09T10:00:06.000Z"
+}

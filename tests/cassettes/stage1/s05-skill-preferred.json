@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"skills/deploy/SKILL.md#steps\",\"sections\":[{\"sectionRef\":\"skills/deploy/SKILL.md#steps\",\"role\":\"canonical\"},{\"sectionRef\":\"docs/guide.md#usage\",\"role\":\"reference\",\"relation\":\"mirrors\"}]}",
+  "input_tokens": 425,
+  "output_tokens": 87,
+  "cost_usd": 0.00248,
+  "timestamp": "2026-05-09T10:00:04.000Z"
+}

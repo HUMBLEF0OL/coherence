@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"CLAUDE.md#commands\",\"sections\":[{\"sectionRef\":\"CLAUDE.md#commands\",\"role\":\"canonical\"},{\"sectionRef\":\"docs/guide.md#setup\",\"role\":\"reference\",\"relation\":\"mirrors\"}]}",
+  "input_tokens": 415,
+  "output_tokens": 85,
+  "cost_usd": 0.00246,
+  "timestamp": "2026-05-09T10:00:05.000Z"
+}

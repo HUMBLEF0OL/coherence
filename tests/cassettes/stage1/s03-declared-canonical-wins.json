@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"docs/api.md#intro\",\"sections\":[{\"sectionRef\":\"docs/api.md#intro\",\"role\":\"canonical\"},{\"sectionRef\":\"docs/architecture/design.md#overview\",\"role\":\"reference\",\"relation\":\"mirrors\"}]}",
+  "input_tokens": 440,
+  "output_tokens": 90,
+  "cost_usd": 0.00252,
+  "timestamp": "2026-05-09T10:00:02.000Z"
+}

@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"docs/aaa.md#section\",\"sections\":[{\"sectionRef\":\"docs/aaa.md#section\",\"role\":\"canonical\"},{\"sectionRef\":\"docs/zzz.md#section\",\"role\":\"reference\",\"relation\":\"mirrors\"}]}",
+  "input_tokens": 405,
+  "output_tokens": 83,
+  "cost_usd": 0.00244,
+  "timestamp": "2026-05-09T10:00:09.000Z"
+}

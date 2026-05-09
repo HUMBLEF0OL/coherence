@@ -1,0 +1,7 @@
+{
+  "content": "{\"canonical\":\"docs/overview.md#main\",\"sections\":[{\"sectionRef\":\"docs/overview.md#main\",\"role\":\"canonical\"},{\"sectionRef\":\"docs/v2/deep/section.md#main\",\"role\":\"reference\",\"relation\":\"mirrors\"}]}",
+  "input_tokens": 418,
+  "output_tokens": 86,
+  "cost_usd": 0.00247,
+  "timestamp": "2026-05-09T10:00:07.000Z"
+}

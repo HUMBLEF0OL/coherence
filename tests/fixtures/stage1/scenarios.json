@@ -1,0 +1,148 @@
+[
+  {
+    "id": "s01-single-file",
+    "description": "Single file, one section — trivial plan, no Stage 1 needed",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/api.md#intro", "path": "docs/api.md", "heading": "Introduction", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["src/api.ts"]
+    },
+    "expected_canonical": "docs/api.md#intro"
+  },
+  {
+    "id": "s02-two-sections-same-file",
+    "description": "Two sections in same file — canonical is the one that's declared",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/api.md#intro", "path": "docs/api.md", "heading": "Introduction", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "docs/api.md#usage", "path": "docs/api.md", "heading": "Usage", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["docs/api.md"]
+    },
+    "expected_canonical": "docs/api.md#intro"
+  },
+  {
+    "id": "s03-declared-canonical-wins",
+    "description": "Declared canonical overrides tiebreakers",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/api.md#intro", "path": "docs/api.md", "heading": "Introduction", "declared_canonical": true, "layer": "referring-doc" },
+        { "sectionRef": "docs/architecture/design.md#overview", "path": "docs/architecture/design.md", "heading": "Overview", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["src/service.ts"]
+    },
+    "expected_canonical": "docs/api.md#intro"
+  },
+  {
+    "id": "s04-architecture-preferred",
+    "description": "Architecture doc wins over regular docs (Rule 3a)",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/guide.md#setup", "path": "docs/guide.md", "heading": "Setup", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "docs/architecture/overview.md#design", "path": "docs/architecture/overview.md", "heading": "Design", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["src/service.ts"]
+    },
+    "expected_canonical": "docs/architecture/overview.md#design"
+  },
+  {
+    "id": "s05-skill-preferred",
+    "description": "SKILL.md preferred over referring-doc (Rule 3b)",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/guide.md#usage", "path": "docs/guide.md", "heading": "Usage", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "skills/deploy/SKILL.md#steps", "path": "skills/deploy/SKILL.md", "heading": "Steps", "declared_canonical": false, "layer": "skill" }
+      ],
+      "triggering_files": ["src/deploy.ts"]
+    },
+    "expected_canonical": "skills/deploy/SKILL.md#steps"
+  },
+  {
+    "id": "s06-claude-md-preferred",
+    "description": "CLAUDE.md preferred when no arch or SKILL (Rule 3c)",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/guide.md#setup", "path": "docs/guide.md", "heading": "Setup", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "CLAUDE.md#commands", "path": "CLAUDE.md", "heading": "Commands", "declared_canonical": false, "layer": "config" }
+      ],
+      "triggering_files": ["src/service.ts"]
+    },
+    "expected_canonical": "CLAUDE.md#commands"
+  },
+  {
+    "id": "s07-nearest-wins",
+    "description": "DD-018: section in docs/api/ is nearest to triggering file also in docs/api/",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/api/endpoint.md#usage", "path": "docs/api/endpoint.md", "heading": "Usage", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "README.md#install", "path": "README.md", "heading": "Install", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["docs/api/handler.ts"]
+    },
+    "expected_canonical": "docs/api/endpoint.md#usage"
+  },
+  {
+    "id": "s08-depth-tiebreak",
+    "description": "DD-016: shallower path wins",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/v2/deep/section.md#main", "path": "docs/v2/deep/section.md", "heading": "Main", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "docs/overview.md#main", "path": "docs/overview.md", "heading": "Main", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["src/index.ts"]
+    },
+    "expected_canonical": "docs/overview.md#main"
+  },
+  {
+    "id": "s09-cross-layer-skill-over-doc",
+    "description": "Cross-layer: skill beats referring-doc",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/deploy.md#steps", "path": "docs/deploy.md", "heading": "Steps", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "agents/deployer/SKILL.md#workflow", "path": "agents/deployer/SKILL.md", "heading": "Workflow", "declared_canonical": false, "layer": "skill" },
+        { "sectionRef": "docs/reference.md#deploy", "path": "docs/reference.md", "heading": "Deploy", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["src/deployer.ts"]
+    },
+    "expected_canonical": "agents/deployer/SKILL.md#workflow"
+  },
+  {
+    "id": "s10-lex-tiebreak",
+    "description": "Lex-path tiebreak: aaa.md wins over zzz.md",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/zzz.md#section", "path": "docs/zzz.md", "heading": "Section", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "docs/aaa.md#section", "path": "docs/aaa.md", "heading": "Section", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": []
+    },
+    "expected_canonical": "docs/aaa.md#section"
+  },
+  {
+    "id": "s11-three-sections-one-canonical",
+    "description": "Three sections, declared canonical in the middle",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/api.md#auth", "path": "docs/api.md", "heading": "Auth", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "docs/spec.md#auth", "path": "docs/spec.md", "heading": "Auth", "declared_canonical": true, "layer": "referring-doc" },
+        { "sectionRef": "docs/guide.md#auth", "path": "docs/guide.md", "heading": "Auth", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["src/auth.ts"]
+    },
+    "expected_canonical": "docs/spec.md#auth"
+  },
+  {
+    "id": "s12-no-change-sections",
+    "description": "Mix of canonical and no-change sections",
+    "input": {
+      "sections": [
+        { "sectionRef": "docs/api.md#intro", "path": "docs/api.md", "heading": "Intro", "declared_canonical": true, "layer": "referring-doc" },
+        { "sectionRef": "docs/guide.md#intro", "path": "docs/guide.md", "heading": "Intro", "declared_canonical": false, "layer": "referring-doc" },
+        { "sectionRef": "README.md#about", "path": "README.md", "heading": "About", "declared_canonical": false, "layer": "referring-doc" }
+      ],
+      "triggering_files": ["src/api.ts"]
+    },
+    "expected_canonical": "docs/api.md#intro"
+  }
+]
