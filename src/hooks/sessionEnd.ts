@@ -30,7 +30,7 @@ import {
   DEFAULT_AGENT_CORRECTION_COUNT,
   type CorrectionSample,
 } from '../signal/agentCorrection.js';
-import type { CoherenceConfig } from '../types/index.js';
+import type { CoherenceConfig, BufferEntry, HostCapabilities } from '../types/index.js';
 import {
   runAuthorPipeline,
   mockAuthorTransport,
@@ -47,7 +47,7 @@ import {
   closeSync,
 } from 'fs';
 import path from 'path';
-import type { BufferEntry, HostCapabilities, NormalizedPath } from '../types/index.js';
+
 import { scanAnchors } from '../detection/anchorScanner.js';
 import { hashContent } from '../buffer/contentHash.js';
 import { normalizePath, makeSectionRef } from '../state/pathNormaliser.js';
@@ -511,7 +511,7 @@ async function appendTrickleEntries(
       const source = readFileSync(docPath, 'utf8');
       const { sections } = scanAnchors(source, docPath);
       if (sections.length === 0) continue;
-      const normalizedPath = normalizePath(docPath) as NormalizedPath;
+      const normalizedPath = normalizePath(docPath);
       for (const section of sections) {
         const entry: BufferEntry = {
           path: normalizedPath,

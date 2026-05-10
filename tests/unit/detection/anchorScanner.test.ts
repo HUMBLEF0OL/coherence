@@ -14,8 +14,8 @@ Hello world
 `;
     const { sections, warnings } = scanAnchors(source, 'test.md');
     expect(sections).toHaveLength(1);
-    expect(sections[0]!.id).toBe('intro');
-    expect(sections[0]!.content).toContain('Hello world');
+    expect(sections[0].id).toBe('intro');
+    expect(sections[0].content).toContain('Hello world');
     expect(warnings).toHaveLength(0);
   });
 
@@ -76,7 +76,7 @@ content
 <!-- /coherence:section -->
 `;
     const { sections } = scanAnchors(source, 'test.md');
-    expect(sections[0]!.id).toMatch(/^[a-z0-9_-]+$/);
+    expect(sections[0].id).toMatch(/^[a-z0-9_-]+$/);
   });
 
   it('captures heading attribute', () => {
@@ -86,6 +86,6 @@ content
 <!-- /coherence:section -->
 `;
     const { sections } = scanAnchors(source, 'test.md');
-    expect(sections[0]!.heading).toBe('Setup Guide');
+    expect(sections[0].heading).toBe('Setup Guide');
   });
 });

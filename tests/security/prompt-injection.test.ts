@@ -3,7 +3,7 @@
  * NFR-SECURITY-7, FR-LAYERS-2
  */
 import { describe, it, expect } from 'vitest';
-import { checkPromptInjection, isSkillOrAgentPath } from '../../src/validation/promptInjection.js';
+import { checkPromptInjection } from '../../src/validation/promptInjection.js';
 
 describe('SG-3: prompt injection rejection', () => {
   it('rejects HTML coherence comment introduced in SKILL.md body', () => {

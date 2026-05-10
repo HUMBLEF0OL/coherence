@@ -25,7 +25,7 @@ describe('UTF-8 round-trip (NFR-I18N-2)', () => {
     const source = `<!-- coherence:section id="intl" -->\n${COMPLEX_CONTENT}\n<!-- /coherence:section -->`;
     const { sections } = scanAnchors(source, 'intl.md');
     expect(sections).toHaveLength(1);
-    expect(sections[0]!.content).toBe(COMPLEX_CONTENT);
+    expect(sections[0].content).toBe(COMPLEX_CONTENT);
   });
 
   it('different Unicode normalization forms produce different hashes (byte-identical check)', () => {

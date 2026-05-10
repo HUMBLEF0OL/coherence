@@ -74,7 +74,7 @@ export async function runStage1(
 ): Promise<CoherencePlan | null> {
   // Single-section group: skip Stage 1, build trivial plan
   if (group.entries.length === 1) {
-    const entry = group.entries[0]!;
+    const entry = group.entries[0];
     return {
       canonical: entry.sectionRef,
       sections: [{ sectionRef: entry.sectionRef, role: 'canonical' }],

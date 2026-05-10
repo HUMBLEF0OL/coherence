@@ -86,6 +86,7 @@ export async function migrateV1ToV2(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- migration step is sync but matches async migrator signature
 async function migrateV1ToV2Locked(
   coherenceDir: string,
   quarantineDir: string,

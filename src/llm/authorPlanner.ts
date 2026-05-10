@@ -53,6 +53,7 @@ export function shouldRunPlanner(
  * Mock transport — deterministic for tests. Returns a consolidate output
  * if the input signals span ≥2 kinds, otherwise no_consolidation.
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- mock transport must match async PlannerTransport signature
 export const mockPlannerTransport: PlannerTransport = async (input) => {
   const distinctKinds = new Set(input.signals.map((s) => s.kind));
   if (distinctKinds.size < 2) return 'NO_CONSOLIDATION';

@@ -2,6 +2,7 @@
  * Schema round-trip validation: valid fixtures pass, corrupt fixtures fail.
  */
 import { describe, it, expect } from 'vitest';
+// eslint-disable-next-line import/no-named-as-default
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { readFileSync } from 'fs';

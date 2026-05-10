@@ -103,7 +103,7 @@ describe('Stage 2 QG gates (cassette replay)', () => {
         classCounts[s.expected_class] = (classCounts[s.expected_class] ?? 0) + 1;
       }
     }
-    for (const [cls, count] of Object.entries(classCounts)) {
+    for (const [, count] of Object.entries(classCounts)) {
       expect(count).toBeGreaterThanOrEqual(5);
     }
   });

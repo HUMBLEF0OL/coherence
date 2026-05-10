@@ -24,7 +24,7 @@ describe('groupEntries', () => {
   it('puts single entry in its own group', () => {
     const groups = groupEntries([entry('docs/api.md', 'intro')]);
     expect(groups).toHaveLength(1);
-    expect(groups[0]!.entries).toHaveLength(1);
+    expect(groups[0].entries).toHaveLength(1);
   });
 
   it('groups two entries from the same file', () => {
@@ -33,7 +33,7 @@ describe('groupEntries', () => {
       entry('docs/api.md', 'usage'),
     ]);
     expect(groups).toHaveLength(1);
-    expect(groups[0]!.entries).toHaveLength(2);
+    expect(groups[0].entries).toHaveLength(2);
   });
 
   it('keeps entries from different files in separate groups', () => {
@@ -57,7 +57,7 @@ describe('groupEntries', () => {
       entry('docs/api.md', 's3'),
     ]);
     expect(groups).toHaveLength(1);
-    expect(groups[0]!.entries).toHaveLength(3);
+    expect(groups[0].entries).toHaveLength(3);
   });
 
   it('group_id is unique per group', () => {
@@ -75,7 +75,7 @@ describe('groupEntries', () => {
       entry('docs/api.md', 's1'),
       entry('docs/api.md', 's2'),
     ]);
-    expect(groups[0]!.triggering_files).toContain('docs/api.md');
-    expect(groups[0]!.triggering_files).toHaveLength(1);
+    expect(groups[0].triggering_files).toContain('docs/api.md');
+    expect(groups[0].triggering_files).toHaveLength(1);
   });
 });

@@ -8,7 +8,7 @@ import { hashContent } from '../buffer/contentHash.js';
 import { normalizePath, makeSectionRef } from '../state/pathNormaliser.js';
 import { discoverFiles } from './discovery.js';
 import { nowIsoUtc } from '../util/time.js';
-import type { SectionIndexEntry, NormalizedPath } from '../types/index.js';
+import type { SectionIndexEntry } from '../types/index.js';
 
 export interface SectionIndex {
   built_at: string;
@@ -27,7 +27,7 @@ export function buildSectionIndex(projectRoot: string): SectionIndex {
       continue;
     }
 
-    const normalizedPath = normalizePath(file.path) as NormalizedPath;
+    const normalizedPath = normalizePath(file.path);
     const { sections } = scanAnchors(source, file.path);
 
     for (const section of sections) {

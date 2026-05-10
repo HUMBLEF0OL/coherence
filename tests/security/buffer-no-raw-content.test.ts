@@ -8,7 +8,7 @@ import { tmpdir } from 'os';
 import path from 'path';
 import { BufferLifecycle } from '../../src/buffer/lifecycle.js';
 import { StateStore } from '../../src/state/stateStore.js';
-import type { BufferEntry, NormalizedPath, SectionRef, ContentHash } from '../../src/types/index.js';
+import type { BufferEntry, NormalizedPath, SectionRef } from '../../src/types/index.js';
 import { hashContent } from '../../src/buffer/contentHash.js';
 
 describe('buffer no-raw-content (NFR-PRIVACY-4)', () => {
@@ -35,6 +35,6 @@ describe('buffer no-raw-content (NFR-PRIVACY-4)', () => {
     expect(fileContent).toContain('contentHash');
     // Verify contentHash is a sha256 (64 hex chars)
     const parsed = JSON.parse(fileContent) as { entries: Array<{ contentHash: string }> };
-    expect(parsed.entries[0]!.contentHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(parsed.entries[0].contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 });

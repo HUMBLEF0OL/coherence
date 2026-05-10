@@ -82,15 +82,15 @@ export function extractImportSet(filePath: string, content: string): Set<string>
   if (ext === '.js' || ext === '.mjs' || ext === '.cjs' || ext === '.ts' || ext === '.tsx' || ext === '.jsx') {
     // ESM: import ... from 'x' / import 'x'
     for (const m of head.matchAll(/\bimport\s+(?:[\s\S]*?\sfrom\s+)?['"]([^'"\n]+)['"]/g)) {
-      out.add(m[1]!.toLowerCase());
+      out.add(m[1].toLowerCase());
     }
     // CJS: require('x')
     for (const m of head.matchAll(/\brequire\(\s*['"]([^'"\n]+)['"]\s*\)/g)) {
-      out.add(m[1]!.toLowerCase());
+      out.add(m[1].toLowerCase());
     }
     // Dynamic import
     for (const m of head.matchAll(/\bimport\(\s*['"]([^'"\n]+)['"]\s*\)/g)) {
-      out.add(m[1]!.toLowerCase());
+      out.add(m[1].toLowerCase());
     }
     return out;
   }
@@ -98,11 +98,11 @@ export function extractImportSet(filePath: string, content: string): Set<string>
   // Python
   if (ext === '.py') {
     for (const m of head.matchAll(/^\s*from\s+([\w.]+)\s+import\b/gm)) {
-      out.add(m[1]!.toLowerCase());
+      out.add(m[1].toLowerCase());
     }
     for (const m of head.matchAll(/^\s*import\s+([\w.,\s]+)$/gm)) {
-      for (const name of m[1]!.split(',')) {
-        const t = name.trim().split(/\s+as\s+/i)[0]!.trim().toLowerCase();
+      for (const name of m[1].split(',')) {
+        const t = name.trim().split(/\s+as\s+/i)[0].trim().toLowerCase();
         if (t) out.add(t);
       }
     }
@@ -112,7 +112,7 @@ export function extractImportSet(filePath: string, content: string): Set<string>
   // Rust
   if (ext === '.rs') {
     for (const m of head.matchAll(/^\s*use\s+([\w:]+)/gm)) {
-      out.add(m[1]!.toLowerCase());
+      out.add(m[1].toLowerCase());
     }
     return out;
   }
@@ -122,9 +122,9 @@ export function extractImportSet(filePath: string, content: string): Set<string>
     // Single-line + grouped import blocks.
     for (const m of head.matchAll(/^\s*import\s+(?:\(([^)]*)\)|"([^"]+)")/gm)) {
       const block = m[1] ?? '';
-      if (m[2]) out.add(m[2]!.toLowerCase());
+      if (m[2]) out.add(m[2].toLowerCase());
       for (const im of block.matchAll(/"([^"]+)"/g)) {
-        out.add(im[1]!.toLowerCase());
+        out.add(im[1].toLowerCase());
       }
     }
     return out;
@@ -133,7 +133,7 @@ export function extractImportSet(filePath: string, content: string): Set<string>
   // C/C++/ObjC
   if (ext === '.c' || ext === '.h' || ext === '.cc' || ext === '.cpp' || ext === '.hpp' || ext === '.m' || ext === '.mm') {
     for (const m of head.matchAll(/^\s*#\s*include\s+[<"]([^>"\n]+)[>"]/gm)) {
-      out.add(m[1]!.toLowerCase());
+      out.add(m[1].toLowerCase());
     }
     return out;
   }
@@ -141,7 +141,7 @@ export function extractImportSet(filePath: string, content: string): Set<string>
   // Java/Kotlin/Scala
   if (ext === '.java' || ext === '.kt' || ext === '.kts' || ext === '.scala') {
     for (const m of head.matchAll(/^\s*import\s+([\w.*]+)/gm)) {
-      out.add(m[1]!.toLowerCase());
+      out.add(m[1].toLowerCase());
     }
     return out;
   }
@@ -149,7 +149,7 @@ export function extractImportSet(filePath: string, content: string): Set<string>
   // Ruby
   if (ext === '.rb') {
     for (const m of head.matchAll(/^\s*require(?:_relative)?\s+['"]([^'"\n]+)['"]/gm)) {
-      out.add(m[1]!.toLowerCase());
+      out.add(m[1].toLowerCase());
     }
     return out;
   }
@@ -198,8 +198,8 @@ export function extractHeadingHierarchy(filePath: string, content: string): Set<
     const line = raw.trimEnd();
     const atx = /^(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line);
     if (atx) {
-      const depth = atx[1]!.length;
-      const slug = slugify(atx[2]!);
+      const depth = atx[1].length;
+      const slug = slugify(atx[2]);
       if (slug.length === 0) {
         prevText = line;
         continue;

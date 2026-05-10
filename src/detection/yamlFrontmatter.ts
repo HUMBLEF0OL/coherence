@@ -21,7 +21,7 @@ export function parseFrontmatter(source: string): FrontmatterResult {
 
   let data: Record<string, unknown> | null = null;
   try {
-    data = yaml.load(match[1]!) as Record<string, unknown>;
+    data = yaml.load(match[1]) as Record<string, unknown>;
   } catch (e) {
     return { data: null, body: match[2] ?? '', error: String(e) };
   }
@@ -34,7 +34,7 @@ export function validateNoHtmlCoherenceAnchors(body: string, filePath: string): 
   const warnings: string[] = [];
   const lines = body.split('\n');
   for (let i = 0; i < lines.length; i++) {
-    if (HTML_COHERENCE_RE.test(lines[i]!)) {
+    if (HTML_COHERENCE_RE.test(lines[i])) {
       warnings.push(
         `HTML coherence anchor not allowed in skill/agent body: ${filePath}:${i + 1}`,
       );

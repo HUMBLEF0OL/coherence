@@ -5,7 +5,7 @@
  */
 import { readFileSync, readdirSync, statSync } from 'fs';
 import path from 'path';
-import type { BufferEntry, NormalizedPath, SectionRef, ContentHash } from '../types/index.js';
+import type { BufferEntry, SectionRef, NormalizedPath } from '../types/index.js';
 import { hashContent } from '../buffer/contentHash.js';
 import { nowIsoUtc } from '../util/time.js';
 
@@ -67,7 +67,7 @@ export function evaluateAssertions(
       const syntheticEntry: BufferEntry = {
         path: assertion.sectionRef.split('#')[0] as NormalizedPath,
         sectionRef: assertion.sectionRef,
-        contentHash: hashContent(`assertion:import_exists:${assertion.token}`) as ContentHash,
+        contentHash: hashContent(`assertion:import_exists:${assertion.token}`),
         triggeredAt: nowIsoUtc(),
         source: 'assertion',
       };

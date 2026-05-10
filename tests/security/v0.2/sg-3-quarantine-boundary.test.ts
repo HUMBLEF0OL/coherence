@@ -43,7 +43,7 @@ describe('SG-3 quarantine boundary (DD-065)', () => {
       '# proposal content',
     );
     expect(isUnderQuarantine(root, result.artifactPath)).toBe(true);
-    expect(result.artifactPath).toMatch(/\.claude[\/\\]coherence[\/\\]proposals[\/\\]skill[\/\\]abc123[\/\\]SKILL\.md$/);
+    expect(result.artifactPath).toMatch(/\.claude[/\\]coherence[/\\]proposals[/\\]skill[/\\]abc123[/\\]SKILL\.md$/);
     expect(readFileSync(result.artifactPath, 'utf8')).toBe('# proposal content');
   });
 

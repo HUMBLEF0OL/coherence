@@ -72,7 +72,7 @@ describe('NFR-OBS-5: log file timestamps are ISO-8601', () => {
     expect(tsMatches.length).toBeGreaterThan(0);
 
     for (const match of tsMatches) {
-      const ts = match.replace('## ', '').split(' — ')[0]!;
+      const ts = match.replace('## ', '').split(' — ')[0];
       expect(ISO_8601_RE.test(ts), `timestamp "${ts}" should match ISO-8601`).toBe(true);
     }
   });

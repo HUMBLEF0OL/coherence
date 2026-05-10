@@ -46,7 +46,7 @@ describe('Install size gate (NFR-PERF-8)', () => {
       execSync('npm pack', { cwd: PROJECT_ROOT, shell: true, stdio: 'pipe' });
       const tarballs = readdirSync(PROJECT_ROOT).filter((f) => f.endsWith('.tgz'));
       if (tarballs.length > 0) {
-        packFile = path.join(PROJECT_ROOT, tarballs[tarballs.length - 1]!);
+        packFile = path.join(PROJECT_ROOT, tarballs[tarballs.length - 1]);
         const stat = statSync(packFile);
         expect(
           stat.size,

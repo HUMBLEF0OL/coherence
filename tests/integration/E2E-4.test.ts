@@ -44,8 +44,8 @@ describe('E2E-4: checkpoint + resume (R-4)', () => {
 
     const loaded = await checkpoint.load();
     expect(loaded).not.toBeNull();
-    expect(loaded!.groups[0]!.sections).toHaveLength(4);
-    expect(loaded!.groups[0]!.sections.every((s) => s.status === 'pending')).toBe(true);
+    expect(loaded!.groups[0].sections).toHaveLength(4);
+    expect(loaded!.groups[0].sections.every((s) => s.status === 'pending')).toBe(true);
   });
 
   it('marks a section done and persists', async () => {
@@ -103,7 +103,7 @@ describe('E2E-4: checkpoint + resume (R-4)', () => {
     await checkpoint.clear();
 
     const progress = await checkpoint.load();
-    expect(progress!.groups[0]!.sections.every((s) => s.status === 'done')).toBe(true);
+    expect(progress!.groups[0].sections.every((s) => s.status === 'done')).toBe(true);
   });
 
   it('pendingSections returns empty array for unknown group', async () => {

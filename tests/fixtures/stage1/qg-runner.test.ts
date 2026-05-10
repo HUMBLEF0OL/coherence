@@ -46,8 +46,11 @@ describe('Stage 1 QG gates (cassette replay)', () => {
   const scenariosPath = path.join(__dirname, 'scenarios.json');
   const scenarios: Scenario[] = JSON.parse(readFileSync(scenariosPath, 'utf8')) as Scenario[];
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- aggregated counters reserved for future QG reporting
   let schemaValidCount = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let correctCanonicalCount = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let total = 0;
 
   for (const scenario of scenarios) {

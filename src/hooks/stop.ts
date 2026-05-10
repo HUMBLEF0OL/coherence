@@ -84,7 +84,7 @@ export async function stopHook(
       const agentIdRaw = event['agent_id'] as string | undefined;
       const responseLines =
         typeof event['response_lines'] === 'number'
-          ? (event['response_lines'] as number)
+          ? (event['response_lines'])
           : 0;
       if (agentIdRaw && responseLines > 0) {
         await emitAgentResponseId(store, sessionId, {

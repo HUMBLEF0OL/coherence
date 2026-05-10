@@ -42,7 +42,7 @@ describe('runRetentionSweep', () => {
 
     const remaining = readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean);
     expect(remaining).toHaveLength(1);
-    const parsed = JSON.parse(remaining[0]!) as { session_id: string };
+    const parsed = JSON.parse(remaining[0]) as { session_id: string };
     expect(parsed.session_id).toBe('recent');
   });
 
@@ -92,7 +92,7 @@ describe('runRetentionSweep', () => {
 
     const remaining = readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean);
     expect(remaining).toHaveLength(1);
-    const parsed = JSON.parse(remaining[0]!) as { session_id: string };
+    const parsed = JSON.parse(remaining[0]) as { session_id: string };
     expect(parsed.session_id).toBe('new');
   });
 });

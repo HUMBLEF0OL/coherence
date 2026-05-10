@@ -17,6 +17,7 @@ interface MetricsSummary {
   counts: Record<string, number>;
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- async public API; matches store.write signature
 export async function runRetentionSweep(store: StateStore, coherenceDir: string): Promise<void> {
   const jsonlPath = path.join(coherenceDir, 'metrics.jsonl');
   if (!existsSync(jsonlPath)) return;

@@ -15,10 +15,10 @@ const REFS = [ref('docs/api.md#intro'), ref('docs/guide.md#overview')];
 describe('validatePlan', () => {
   it('passes a valid two-section plan', () => {
     const plan: CoherencePlan = {
-      canonical: REFS[0]!,
+      canonical: REFS[0],
       sections: [
-        { sectionRef: REFS[0]!, role: 'canonical' },
-        { sectionRef: REFS[1]!, role: 'reference', relation: 'mirrors' },
+        { sectionRef: REFS[0], role: 'canonical' },
+        { sectionRef: REFS[1], role: 'reference', relation: 'mirrors' },
       ],
     };
     expect(validatePlan(plan, REFS)).toEqual({ valid: true });
@@ -26,10 +26,10 @@ describe('validatePlan', () => {
 
   it('rejects plan with zero canonicals', () => {
     const plan: CoherencePlan = {
-      canonical: REFS[0]!,
+      canonical: REFS[0],
       sections: [
-        { sectionRef: REFS[0]!, role: 'no-change' },
-        { sectionRef: REFS[1]!, role: 'reference', relation: 'mirrors' },
+        { sectionRef: REFS[0], role: 'no-change' },
+        { sectionRef: REFS[1], role: 'reference', relation: 'mirrors' },
       ],
     };
     const result = validatePlan(plan, REFS);
@@ -41,10 +41,10 @@ describe('validatePlan', () => {
 
   it('rejects plan with two canonicals', () => {
     const plan: CoherencePlan = {
-      canonical: REFS[0]!,
+      canonical: REFS[0],
       sections: [
-        { sectionRef: REFS[0]!, role: 'canonical' },
-        { sectionRef: REFS[1]!, role: 'canonical' },
+        { sectionRef: REFS[0], role: 'canonical' },
+        { sectionRef: REFS[1], role: 'canonical' },
       ],
     };
     const result = validatePlan(plan, REFS);
@@ -55,8 +55,8 @@ describe('validatePlan', () => {
     const plan: CoherencePlan = {
       canonical: ref('docs/other.md#x'),
       sections: [
-        { sectionRef: REFS[0]!, role: 'canonical' },
-        { sectionRef: REFS[1]!, role: 'reference', relation: 'mirrors' },
+        { sectionRef: REFS[0], role: 'canonical' },
+        { sectionRef: REFS[1], role: 'reference', relation: 'mirrors' },
       ],
     };
     const result = validatePlan(plan, REFS);
@@ -65,8 +65,8 @@ describe('validatePlan', () => {
 
   it('rejects plan missing an expected section', () => {
     const plan: CoherencePlan = {
-      canonical: REFS[0]!,
-      sections: [{ sectionRef: REFS[0]!, role: 'canonical' }],
+      canonical: REFS[0],
+      sections: [{ sectionRef: REFS[0], role: 'canonical' }],
     };
     const result = validatePlan(plan, REFS);
     expect(result.valid).toBe(false);
@@ -74,10 +74,10 @@ describe('validatePlan', () => {
 
   it('rejects plan with unexpected extra sections', () => {
     const plan: CoherencePlan = {
-      canonical: REFS[0]!,
+      canonical: REFS[0],
       sections: [
-        { sectionRef: REFS[0]!, role: 'canonical' },
-        { sectionRef: REFS[1]!, role: 'reference', relation: 'mirrors' },
+        { sectionRef: REFS[0], role: 'canonical' },
+        { sectionRef: REFS[1], role: 'reference', relation: 'mirrors' },
         { sectionRef: ref('docs/extra.md#x'), role: 'no-change' },
       ],
     };
@@ -87,10 +87,10 @@ describe('validatePlan', () => {
 
   it('rejects no-change + omits (FR-STOP-16 contradiction)', () => {
     const plan: CoherencePlan = {
-      canonical: REFS[0]!,
+      canonical: REFS[0],
       sections: [
-        { sectionRef: REFS[0]!, role: 'canonical' },
-        { sectionRef: REFS[1]!, role: 'no-change', relation: 'omits' },
+        { sectionRef: REFS[0], role: 'canonical' },
+        { sectionRef: REFS[1], role: 'no-change', relation: 'omits' },
       ],
     };
     const result = validatePlan(plan, REFS);
@@ -105,8 +105,8 @@ describe('buildIndependentFallback', () => {
   it('produces one plan per section', () => {
     const plans = buildIndependentFallback(REFS);
     expect(plans).toHaveLength(2);
-    expect(plans[0]!.canonical).toBe(REFS[0]);
-    expect(plans[1]!.canonical).toBe(REFS[1]);
+    expect(plans[0].canonical).toBe(REFS[0]);
+    expect(plans[1].canonical).toBe(REFS[1]);
   });
 
   it('each plan has exactly one canonical section', () => {

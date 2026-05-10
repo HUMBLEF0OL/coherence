@@ -39,14 +39,14 @@ export function scanAnchors(source: string, filePath: string): AnchorScanResult 
   let lastHeading: string | undefined;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
+    const line = lines[i];
 
     // Fenced code block detection (R-18)
     const fenceMatch = FENCE_RE.exec(line);
     if (!inFence && fenceMatch) {
       inFence = true;
-      fenceChar = fenceMatch[1]![0]!;
-      fenceLen = fenceMatch[1]!.length;
+      fenceChar = fenceMatch[1][0]!;
+      fenceLen = fenceMatch[1].length;
       continue;
     }
     if (inFence) {
@@ -55,20 +55,20 @@ export function scanAnchors(source: string, filePath: string): AnchorScanResult 
         inFence = false;
       }
       // Push line to current stack frame if inside
-      if (stack.length > 0) stack[stack.length - 1]!.contentLines.push(line);
+      if (stack.length > 0) stack[stack.length - 1].contentLines.push(line);
       continue;
     }
 
     // Track headings for fallback IDs
     const headingMatch = HEADING_RE.exec(line);
     if (headingMatch) {
-      lastHeading = headingMatch[1]!.trim();
+      lastHeading = headingMatch[1].trim();
     }
 
     // Check for open anchor
     const openMatch = OPEN_RE.exec(line);
     if (openMatch) {
-      const rawId = openMatch[1]!;
+      const rawId = openMatch[1];
       const heading = openMatch[2] ?? lastHeading;
       const normId = normalizeSectionId(rawId);
 
@@ -103,7 +103,7 @@ export function scanAnchors(source: string, filePath: string): AnchorScanResult 
 
     // Accumulate content for open frames
     if (stack.length > 0) {
-      stack[stack.length - 1]!.contentLines.push(line);
+      stack[stack.length - 1].contentLines.push(line);
     }
   }
 
@@ -126,7 +126,7 @@ export function scanAnchors(source: string, filePath: string): AnchorScanResult 
  * Generate GitHub-style slug from a heading string, with collision disambiguation.
  */
 export function slugifyHeading(heading: string, existing: Set<string>): string {
-  let slug = normalizeSectionId(
+  const slug = normalizeSectionId(
     heading
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')

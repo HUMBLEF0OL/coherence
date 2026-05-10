@@ -2,7 +2,7 @@
  * R-14 + E2E-8 harness foundation: migration v0.0.x → v0.1
  * Tests: backup in quarantine, prior_versions appended (DD-064)
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';

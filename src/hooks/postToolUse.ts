@@ -13,7 +13,7 @@ import { scanAnchors } from '../detection/anchorScanner.js';
 import { hashContent } from '../buffer/contentHash.js';
 import { BufferLifecycle } from '../buffer/lifecycle.js';
 import { normalizePath, makeSectionRef } from '../state/pathNormaliser.js';
-import type { BufferEntry, NormalizedPath } from '../types/index.js';
+import type { BufferEntry } from '../types/index.js';
 import { nowIsoUtc } from '../util/time.js';
 import { emitToolInvocationSignature } from '../signal/telemetry.js';
 import { detectBashRepetition } from '../signal/bashRepetition.js';
@@ -153,7 +153,7 @@ export async function postToolUseHook(
           const { sections } = scanAnchors(source, filePath);
           if (sections.length > 0) {
             const buffer = new BufferLifecycle(store);
-            const normalizedPath = normalizePath(filePath) as NormalizedPath;
+            const normalizedPath = normalizePath(filePath);
             for (const section of sections) {
               const entry: BufferEntry = {
                 path: normalizedPath,
@@ -314,7 +314,7 @@ async function appendTrickleEntries(
       const source = readFileSync(docPath, 'utf8');
       const { sections } = scanAnchors(source, docPath);
       if (sections.length === 0) continue;
-      const normalizedPath = normalizePath(docPath) as NormalizedPath;
+      const normalizedPath = normalizePath(docPath);
       for (const section of sections) {
         const entry: BufferEntry = {
           path: normalizedPath,

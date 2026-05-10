@@ -2,6 +2,7 @@
  * Anthropic SDK wrapper with prompt caching, cost tracking, and cassette replay.
  * TS-2 §2.6, TS-5 §5.2, FR-STOP-13, NFR-COST-6
  */
+// eslint-disable-next-line import/no-named-as-default -- @anthropic-ai/sdk default export name collides with named
 import Anthropic from '@anthropic-ai/sdk';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';

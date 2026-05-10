@@ -6,10 +6,10 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const AjvCtor = require('ajv') as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const addFormatsFn = require('ajv-formats') as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+const AjvCtor = require('ajv');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+const addFormatsFn = require('ajv-formats');
 
 export interface AjvLike {
   addSchema(schema: object, id: string): void;

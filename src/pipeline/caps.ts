@@ -27,7 +27,7 @@ export function enforceCaps(groups: SectionGroup[]): CapsResult {
   let totalSections = 0;
 
   for (let i = 0; i < groups.length; i++) {
-    const group = groups[i]!;
+    const group = groups[i];
     const groupSectionCount = group.entries.length;
 
     if (

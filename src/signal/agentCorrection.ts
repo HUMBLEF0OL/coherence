@@ -111,7 +111,7 @@ export function detectAgentCorrection(
   if (sortedTimes.length >= occurrenceCount) {
     let left = 0;
     for (let right = 0; right < sortedTimes.length; right += 1) {
-      while (sortedTimes[right]! - sortedTimes[left]! > burstWindowMs) left += 1;
+      while (sortedTimes[right] - sortedTimes[left] > burstWindowMs) left += 1;
       burstCount = Math.max(burstCount, right - left + 1);
     }
   } else {

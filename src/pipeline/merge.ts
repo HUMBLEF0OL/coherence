@@ -38,7 +38,7 @@ export function mergePatches(patches: Patch[]): MergeResult {
     }
 
     // Check for overlapping hunks
-    const hasOverlap = detectOverlap(filePatches.map((p) => p.diff as string));
+    const hasOverlap = detectOverlap(filePatches.map((p) => p.diff));
     if (hasOverlap) {
       for (const patch of filePatches) {
         rejected.push({
@@ -69,7 +69,7 @@ function detectOverlap(diffs: string[]): boolean {
     for (const line of diff.split('\n')) {
       const hunkMatch = line.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
       if (hunkMatch) {
-        const start = parseInt(hunkMatch[1]!, 10);
+        const start = parseInt(hunkMatch[1], 10);
         const count = hunkMatch[2] !== undefined ? parseInt(hunkMatch[2], 10) : 1;
         ranges.push([start, start + count]);
       }
@@ -79,8 +79,8 @@ function detectOverlap(diffs: string[]): boolean {
   // Check pairwise overlap
   for (let i = 0; i < ranges.length; i++) {
     for (let j = i + 1; j < ranges.length; j++) {
-      const [a1, a2] = ranges[i]!;
-      const [b1, b2] = ranges[j]!;
+      const [a1, a2] = ranges[i];
+      const [b1, b2] = ranges[j];
       if (a1 < b2 && b1 < a2) return true;
     }
   }

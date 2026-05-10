@@ -3,7 +3,7 @@
  * FR-LAYERS-5, DD-008 Coherence Pass
  * Bounded by DD-056 caps.
  */
-import type { BufferEntry, SectionRef, NormalizedPath, SectionIndexEntry } from '../types/index.js';
+import type { BufferEntry, SectionIndexEntry } from '../types/index.js';
 import type { SectionGroup } from './grouping.js';
 import { nowIsoUtc } from '../util/time.js';
 
@@ -44,8 +44,8 @@ export function crossLayerExpand(
 
     if (isRelated) {
       additional.push({
-        path: entry.path as NormalizedPath,
-        sectionRef: entry.sectionRef as SectionRef,
+        path: entry.path,
+        sectionRef: entry.sectionRef,
         contentHash: entry.contentHash,
         triggeredAt: nowIsoUtc(),
         source: 'posttooluse',

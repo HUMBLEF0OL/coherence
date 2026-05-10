@@ -9,7 +9,7 @@ import path from 'path';
 import type { StateStore } from '../state/stateStore.js';
 import type { ProposalKind } from './quarantine.js';
 import { writeProposalArtifact } from './quarantine.js';
-import { newManifest, writeManifest, type ProposalManifest } from './manifest.js';
+import { newManifest, writeManifest, type ProposalManifest , ProposalState } from './manifest.js';
 import {
   readCache,
   writeCache,
@@ -21,7 +21,7 @@ import {
   type SignalKind,
 } from '../state/proposalCache.js';
 import { counts as cacheCounts } from '../state/proposalCache.js';
-import type { ProposalState } from './manifest.js';
+
 import { emitMetric } from '../state/metrics.js';
 import { lockManager } from '../state/locks.js';
 import { quarantineFile } from '../state/quarantine.js';
@@ -191,7 +191,7 @@ export class ProposalStore {
           e.proposal_id === manifest.proposal_id
             ? {
                 ...e,
-                state_history: carriedHistory!.slice(-STATE_HISTORY_CAP),
+                state_history: carriedHistory.slice(-STATE_HISTORY_CAP),
               }
             : e,
         ),

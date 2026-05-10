@@ -4,9 +4,8 @@
  * in any file under .claude/coherence/.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, readFileSync, existsSync } from 'fs';
-import { readdirSync, statSync } from 'fs';
-import os from 'os';
+import { readFileSync, existsSync, readdirSync } from 'fs';
+
 import path from 'path';
 import { ClaudeCodeStub } from '../e2e/harness/claudeCodeStub.js';
 

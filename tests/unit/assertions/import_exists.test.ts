@@ -19,8 +19,8 @@ describe('import_exists assertion', () => {
       },
     ];
     const results = evaluateAssertions(assertions, projectRoot);
-    expect(results[0]!.passed).toBe(true);
-    expect(results[0]!.syntheticEntry).toBeUndefined();
+    expect(results[0].passed).toBe(true);
+    expect(results[0].syntheticEntry).toBeUndefined();
   });
 
   it('fails and produces synthetic buffer entry when token missing', () => {
@@ -32,10 +32,10 @@ describe('import_exists assertion', () => {
       },
     ];
     const results = evaluateAssertions(assertions, projectRoot);
-    expect(results[0]!.passed).toBe(false);
-    expect(results[0]!.syntheticEntry).toBeDefined();
-    expect(results[0]!.syntheticEntry!.source).toBe('assertion');
-    expect(results[0]!.syntheticEntry!.sectionRef).toBe('/docs/api.md#missing-section');
+    expect(results[0].passed).toBe(false);
+    expect(results[0].syntheticEntry).toBeDefined();
+    expect(results[0].syntheticEntry!.source).toBe('assertion');
+    expect(results[0].syntheticEntry!.sectionRef).toBe('/docs/api.md#missing-section');
   });
 
   it('synthetic entry does not contain raw content (NFR-PRIVACY-4)', () => {
@@ -47,7 +47,7 @@ describe('import_exists assertion', () => {
       },
     ];
     const results = evaluateAssertions(assertions, projectRoot);
-    const entry = results[0]!.syntheticEntry!;
+    const entry = results[0].syntheticEntry!;
     expect(entry.contentHash).toMatch(/^[0-9a-f]{64}$/);
     // No raw section content in entry
     expect(JSON.stringify(entry)).not.toContain('ABSENT_TOKEN');

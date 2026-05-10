@@ -31,7 +31,7 @@ export function runFinalizeSweep(projectRoot: string): { finalized: string[] } {
 
     PENDING_MARKER_RE.lastIndex = 0;
     while ((match = PENDING_MARKER_RE.exec(source)) !== null) {
-      const dateStr = match[1]!;
+      const dateStr = match[1];
       const markerDate = new Date(dateStr);
       if (markerDate < cutoff) {
         // Remove the marker — the patch is now finalized

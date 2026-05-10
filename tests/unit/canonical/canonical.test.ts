@@ -89,7 +89,7 @@ describe('selectCanonical — Rule 2: declared-canonical absolute honour (DD-015
     ];
     const { canonical, demoted } = selectCanonical(candidates, []);
     expect(demoted).toHaveLength(1);
-    expect(demoted[0]!.path).not.toBe(canonical.path);
+    expect(demoted[0].path).not.toBe(canonical.path);
   });
 });
 

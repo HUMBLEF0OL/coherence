@@ -150,7 +150,7 @@ export async function runStatus(
   // Cost (last entry from cost-ledger.json)
   const costLedger = await store.read<{ entries: Array<{ cost_usd: number; timestamp: string }> }>('cost-ledger.json');
   if (costLedger?.entries && costLedger.entries.length > 0) {
-    const last = costLedger.entries[costLedger.entries.length - 1]!;
+    const last = costLedger.entries[costLedger.entries.length - 1];
     const total = costLedger.entries.reduce((s, e) => s + e.cost_usd, 0);
     lines.push(`Cost: last stop $${last.cost_usd.toFixed(4)} | session total $${total.toFixed(4)}`);
     lines.push('');

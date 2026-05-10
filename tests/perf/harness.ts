@@ -38,7 +38,7 @@ export interface HarnessCellResult {
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
   const idx = Math.ceil((p / 100) * sorted.length) - 1;
-  return sorted[Math.max(0, idx)]!;
+  return sorted[Math.max(0, idx)];
 }
 
 async function runHookOnce(
@@ -95,14 +95,14 @@ export async function runHarnessCell(
         p50: percentile(latencies, 50),
         p95: percentile(latencies, 95),
         p99: percentile(latencies, 99),
-        min: latencies[0]!,
-        max: latencies[latencies.length - 1]!,
+        min: latencies[0],
+        max: latencies[latencies.length - 1],
         samples: iterations,
       },
       memory: {
         p50RssBytes: percentile(rssValues, 50),
         p95RssBytes: percentile(rssValues, 95),
-        maxRssBytes: rssValues[rssValues.length - 1]!,
+        maxRssBytes: rssValues[rssValues.length - 1],
       },
     };
   } finally {

@@ -48,7 +48,7 @@ export function groupEntries(entries: BufferEntry[]): SectionGroup[] {
   // Union all section refs that share a path
   for (const refs of pathToEntries.values()) {
     for (let i = 1; i < refs.length; i++) {
-      uf.union(refs[0]!, refs[i]!);
+      uf.union(refs[0], refs[i]);
     }
   }
 

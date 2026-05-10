@@ -32,6 +32,7 @@ export async function preCompactHook(
   projectRoot: string,
 ): Promise<HookResult> {
   const sentinels = new Sentinels(getCoherenceDir(projectRoot));
+  // eslint-disable-next-line @typescript-eslint/require-await
   return withExceptionGuard(sentinels, async () => {
     if (sentinels.isDisabled()) return SUCCESS;
 

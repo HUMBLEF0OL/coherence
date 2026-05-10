@@ -3,7 +3,7 @@
  * DISABLED and auto-disabled sentinel behaviour.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { writeFileSync, existsSync } from 'fs';
+import { writeFileSync } from 'fs';
 import path from 'path';
 import { ClaudeCodeStub } from './harness/claudeCodeStub.js';
 import { Sentinels } from '../../src/state/sentinels.js';

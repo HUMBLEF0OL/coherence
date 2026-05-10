@@ -72,8 +72,8 @@ function uuidV5Hex(namespaceUuid: string, name: string): string {
   const ns = uuidStringToBytes(namespaceUuid);
   const hash = createHash('sha1').update(ns).update(name, 'utf8').digest();
   const out = Buffer.from(hash.subarray(0, 16));
-  out[6] = (out[6]! & 0x0f) | 0x50; // version 5
-  out[8] = (out[8]! & 0x3f) | 0x80; // RFC-4122 variant
+  out[6] = (out[6] & 0x0f) | 0x50; // version 5
+  out[8] = (out[8] & 0x3f) | 0x80; // RFC-4122 variant
   return out.toString('hex');
 }
 
@@ -84,7 +84,7 @@ function uuidV5Hex(namespaceUuid: string, name: string): string {
  *
  * Precomputed at module load — the value is constant across processes.
  */
-const PROPOSAL_NAMESPACE_UUID: string = (() => {
+const PROPOSAL_NAMESPACE_UUID: string = ((): string => {
   const hex = uuidV5Hex(NIL_NAMESPACE_UUID, PROPOSAL_NAMESPACE);
   // Format as dashed UUID for the inner uuidV5Hex call.
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;

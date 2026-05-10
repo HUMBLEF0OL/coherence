@@ -19,8 +19,8 @@ export interface SidecarResult {
 function parseFrontmatterName(content: string): string | null {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return null;
-  const nameMatch = match[1]!.match(/^name:\s*(.+)$/m);
-  return nameMatch ? nameMatch[1]!.trim() : null;
+  const nameMatch = match[1].match(/^name:\s*(.+)$/m);
+  return nameMatch ? nameMatch[1].trim() : null;
 }
 
 function buildSidecarYaml(name: string, sectionRef: string): string {
@@ -34,6 +34,7 @@ function buildSidecarYaml(name: string, sectionRef: string): string {
   ].join('\n');
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- async public API; future implementations may await IO
 export async function runEnableSidecars(opts: EnableSidecarsOptions): Promise<SidecarResult> {
   const provisioned: string[] = [];
   const skipped: string[] = [];

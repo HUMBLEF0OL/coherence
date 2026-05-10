@@ -77,7 +77,7 @@ export function registerFileTouched(filePath: string): void {
   recentFileLevelFiles.push({ path: filePath, ts: Date.now() });
   // Prune entries older than window
   const cutoff = Date.now() - FILE_LEVEL_WINDOW_MS;
-  while (recentFileLevelFiles.length > 0 && recentFileLevelFiles[0]!.ts < cutoff) {
+  while (recentFileLevelFiles.length > 0 && recentFileLevelFiles[0].ts < cutoff) {
     recentFileLevelFiles.shift();
   }
 }

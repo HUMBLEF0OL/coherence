@@ -2,6 +2,7 @@
  * v0.2 schema round-trip tests (M2).
  */
 import { describe, it, expect } from 'vitest';
+// eslint-disable-next-line import/no-named-as-default
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { readFileSync } from 'fs';

@@ -44,7 +44,7 @@ function extractTokensFromDiff(diffRaw: string): string[] {
 
   for (const line of addedLines) {
     // Split on whitespace and punctuation to get word tokens
-    const words = line.split(/[\s,;()\[\]{}=<>!&|^~`@#$%]+/).filter(Boolean);
+    const words = line.split(/[\s,;()[\]{}=<>!&|^~`@#$%]+/).filter(Boolean);
     for (const w of words) tokens.add(w);
 
     // Also extract import-line tokens for supported languages
@@ -71,7 +71,7 @@ function extractTokensFromDiff(diffRaw: string): string[] {
 export function buildKnownTokenSet(fileContents: string[]): Set<string> {
   const known = new Set<string>();
   for (const content of fileContents) {
-    const words = content.split(/[\s,;()\[\]{}=<>!&|^~`@#$%*'"]+/).filter(Boolean);
+    const words = content.split(/[\s,;()[\]{}=<>!&|^~`@#$%*'"]+/).filter(Boolean);
     for (const w of words) known.add(w);
   }
   return known;

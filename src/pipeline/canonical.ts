@@ -18,7 +18,7 @@ export interface SectionCandidate {
 export function deepestCommonAncestor(paths: string[]): string {
   if (paths.length === 0) return '';
   if (paths.length === 1) {
-    const p = paths[0]!;
+    const p = paths[0];
     const idx = p.lastIndexOf('/');
     return idx > 0 ? p.slice(0, idx) : '';
   }
@@ -30,13 +30,13 @@ export function deepestCommonAncestor(paths: string[]): string {
 
   const shortest = dirParts.reduce(
     (acc, parts) => (parts.length < acc.length ? parts : acc),
-    dirParts[0]!,
+    dirParts[0],
   );
 
   const common: string[] = [];
   for (let i = 0; i < shortest.length; i++) {
     if (dirParts.every((parts) => parts[i] === shortest[i])) {
-      common.push(shortest[i]!);
+      common.push(shortest[i]);
     } else {
       break;
     }
@@ -112,7 +112,7 @@ function shallowest(candidates: SectionCandidate[]): SectionCandidate[] {
  * Lex-path final tiebreak — ascending lexicographic sort, first wins.
  */
 function lexFirst(candidates: SectionCandidate[]): SectionCandidate {
-  return candidates.slice().sort((a, b) => a.path.localeCompare(b.path))[0]!;
+  return candidates.slice().sort((a, b) => a.path.localeCompare(b.path))[0];
 }
 
 /**
@@ -131,7 +131,7 @@ export function selectCanonical(
   // Rule 2: Declared-canonical absolute honour
   const declared = candidates.filter((c) => c.declared_canonical);
   if (declared.length === 1) {
-    const winner = declared[0]!;
+    const winner = declared[0];
     const demoted = candidates.filter(
       (c) => c.declared_canonical && c !== winner,
     );
@@ -150,18 +150,18 @@ export function selectCanonical(
   const archPreferred = candidates.filter(
     (c) => /architecture|spec|design/i.test(c.path),
   );
-  if (archPreferred.length === 1) return { canonical: archPreferred[0]!, demoted: [] };
+  if (archPreferred.length === 1) return { canonical: archPreferred[0], demoted: [] };
 
   const pool = archPreferred.length > 0 ? archPreferred : candidates;
 
   // Rule 3b: SKILL.md preference
   const skillPreferred = pool.filter((c) => /SKILL\.md$/i.test(c.path));
-  if (skillPreferred.length === 1) return { canonical: skillPreferred[0]!, demoted: [] };
+  if (skillPreferred.length === 1) return { canonical: skillPreferred[0], demoted: [] };
 
   // Rule 3c: CLAUDE.md preference
   const pool2 = skillPreferred.length > 0 ? skillPreferred : pool;
   const claudePreferred = pool2.filter((c) => /CLAUDE\.md$/i.test(c.path));
-  if (claudePreferred.length === 1) return { canonical: claudePreferred[0]!, demoted: [] };
+  if (claudePreferred.length === 1) return { canonical: claudePreferred[0], demoted: [] };
 
   // Rule 3d + DD-028: filter at/below deepest common ancestor
   const pool3 = claudePreferred.length > 0 ? claudePreferred : pool2;

@@ -20,7 +20,7 @@ module.exports = {
   ],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'warn',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'error',
     'import/no-cycle': ['error', { maxDepth: 3 }],
     'no-restricted-imports': [
@@ -51,6 +51,14 @@ module.exports = {
         '@typescript-eslint/no-unsafe-assignment': 'off',
         '@typescript-eslint/no-unsafe-call': 'off',
         '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-return': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        // Mock transports / fake handlers must match async interfaces even
+        // when the body is synchronous; flagging this in tests is noise.
+        '@typescript-eslint/require-await': 'off',
+        // Test callbacks (it/describe/etc.) are inferred well enough.
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/no-var-requires': 'off',
       },
     },
   ],

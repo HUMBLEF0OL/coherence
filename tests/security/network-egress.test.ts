@@ -3,7 +3,7 @@
  * No hook, state module, or command may make direct network requests.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -47,7 +47,7 @@ describe('NFR-PRIVACY-3: network egress', () => {
       const lines = content.split('\n');
 
       for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]!;
+        const line = lines[i];
         // Skip comments
         if (line.trim().startsWith('//') || line.trim().startsWith('*')) continue;
 

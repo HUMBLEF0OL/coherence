@@ -11,12 +11,12 @@ import { evaluateAssertions } from '../../src/detection/assertions.js';
 import type { SectionIndexEntry, NormalizedPath, SectionRef, ContentHash } from '../../src/types/index.js';
 
 let tmpDir: string;
-let store: StateStore;
 
 beforeEach(() => {
   tmpDir = mkdtempSync(path.join(os.tmpdir(), 'coherence-e2e6-'));
   mkdirSync(path.join(tmpDir, '.claude', 'coherence', 'quarantine'), { recursive: true });
-  store = new StateStore(
+  // Constructor call has init side effects; the instance itself isn't read.
+  new StateStore(
     path.join(tmpDir, '.claude', 'coherence'),
     path.join(tmpDir, '.claude', 'coherence', 'quarantine'),
   );

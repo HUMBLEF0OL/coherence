@@ -35,7 +35,7 @@ export function validatePlan(
   }
 
   // Top-level canonical matches section array
-  const canonicalSection = canonicals[0]!;
+  const canonicalSection = canonicals[0];
   if (plan.canonical !== canonicalSection.sectionRef) {
     return {
       valid: false,

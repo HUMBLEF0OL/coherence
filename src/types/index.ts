@@ -53,6 +53,7 @@ export interface PlanSection {
 
 export interface Patch {
   sectionRef: SectionRef;
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- explicit literal sentinels for documentation
   diff: string | 'NO_PATCH_NEEDED' | 'ESCALATE';
   changeClass: ChangeClass;
   validationPassed: boolean;

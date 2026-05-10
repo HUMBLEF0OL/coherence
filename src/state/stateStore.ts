@@ -92,6 +92,7 @@ export class StateStore {
   }
 
   /** Read and validate a JSON state file. Returns null if missing or corrupt (quarantined). */
+  // eslint-disable-next-line @typescript-eslint/require-await -- public StateStore.read API; tests + callers expect Promise
   async read<T>(filename: string): Promise<T | null> {
     const filePath = path.join(this.coherenceDir, filename);
     if (!existsSync(filePath)) return null;

@@ -91,7 +91,7 @@ export async function runStopOrchestrator(
     if (!existingProgress) {
       const progressGroups: StopProgressGroup[] = allowed.map((g) => ({
         group_id: g.group_id,
-        canonical: g.entries[0]!.sectionRef,
+        canonical: g.entries[0].sectionRef,
         sections: g.entries.map((e) => ({
           sectionRef: e.sectionRef,
           status: 'pending' as const,
@@ -125,7 +125,7 @@ export async function runStopOrchestrator(
       .filter((e) => !pendingSectionRefs || pendingSectionRefs.includes(e.sectionRef))
       .map((e) => {
         const indexed = sectionIndex.find((s) => s.sectionRef === e.sectionRef);
-        const planSection = plan!.sections.find((s) => s.sectionRef === e.sectionRef);
+        const planSection = plan.sections.find((s) => s.sectionRef === e.sectionRef);
         return {
           sectionRef: e.sectionRef,
           role: planSection?.role ?? 'canonical',

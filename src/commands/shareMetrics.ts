@@ -130,6 +130,7 @@ function anonymizeRecord(record: Record<string, unknown>): Record<string, unknow
   return out;
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- async public API
 export async function runShareMetrics(opts: ShareMetricsOptions): Promise<ShareMetricsResult> {
   if (!opts.confirmed) {
     return {

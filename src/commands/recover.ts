@@ -12,6 +12,7 @@ export interface RecoverResult {
   actions: string[];
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- async public API
 export async function runRecover(coherenceDir: string): Promise<RecoverResult> {
   const actions: string[] = [];
   const sentinels = new Sentinels(coherenceDir);

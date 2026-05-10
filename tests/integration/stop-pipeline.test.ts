@@ -9,7 +9,6 @@ import path from 'path';
 import { StateStore } from '../../src/state/stateStore.js';
 import { BufferLifecycle } from '../../src/buffer/lifecycle.js';
 import { enforceCaps } from '../../src/pipeline/caps.js';
-import { groupEntries } from '../../src/pipeline/grouping.js';
 import { buildCommitMessage } from '../../src/git/coherenceCommit.js';
 import { mergePatches } from '../../src/pipeline/merge.js';
 import { assembleBundle } from '../../src/pipeline/bundle.js';
@@ -113,7 +112,7 @@ describe('mergePatches (FR-STOP-8)', () => {
       patch('docs/api.md#intro', '--- a/docs/api.md\n+++ b/docs/api.md\n@@ -1,2 +1,2 @@\n # API\n-old\n+new', true),
       patch('docs/api.md#usage', '--- a/docs/api.md\n+++ b/docs/api.md\n@@ -10,2 +10,2 @@\n ## Usage\n-old\n+new', true),
     ];
-    const { merged, rejected } = mergePatches(patches);
+    const { merged: _merged, rejected } = mergePatches(patches);
     expect(rejected).toHaveLength(0);
   });
 

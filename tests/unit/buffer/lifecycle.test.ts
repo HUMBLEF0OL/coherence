@@ -51,7 +51,7 @@ describe('BufferLifecycle', () => {
     await buffer.append(makeEntry('section-a', 'b'.repeat(64)));
     const buf = await buffer.read();
     expect(buf.entries).toHaveLength(1);
-    expect(buf.entries[0]!.contentHash).toBe('b'.repeat(64));
+    expect(buf.entries[0].contentHash).toBe('b'.repeat(64));
   });
 
   it('clears the buffer', async () => {

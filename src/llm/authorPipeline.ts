@@ -117,6 +117,7 @@ export async function runAuthorPipeline(
  * Deterministic test transport. Returns canned JSON for known signal kinds
  * unless the envelope.signal_evidence carries a `mock_response` override.
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- mock transport must match async AuthorTransport signature
 export const mockAuthorTransport: AuthorTransport = async (envelope) => {
   const override = (envelope.signal_evidence as { mock_response?: string }).mock_response;
   if (override !== undefined) return override;
