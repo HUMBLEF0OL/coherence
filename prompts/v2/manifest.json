@@ -1,9 +1,21 @@
 {
   "model": "claude-sonnet-4-5-20251022",
   "temperature": 0,
+  "schema_version": 1,
+  "stage1_version": "v1.0",
+  "stage2_version": "v1.0",
   "author_version": "v2.0",
   "annotate_version": "v2.0",
+  "cassette_ids": [],
   "prompts": {
+    "stage1-planner.md": {
+      "version": "v1.0",
+      "purpose": "Stage 1 planner: assign roles/relations across a section group."
+    },
+    "stage2-patch.md": {
+      "version": "v1.0",
+      "purpose": "Stage 2 patch writer: produce a minimal surgical unified diff for a section."
+    },
     "author/skill.md": {
       "version": "v2.0",
       "purpose": "Propose a new skill from a recurring file-creation signal."

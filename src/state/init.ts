@@ -8,8 +8,8 @@ import { StateStore } from './stateStore.js';
 import type { VersionInfo, CoherenceConfig } from '../types/index.js';
 import { nowIsoUtc } from '../util/time.js';
 
-const CURRENT_SCHEMA_VERSION = 2;
-const PLUGIN_VERSION = '0.2.0';
+const CURRENT_SCHEMA_VERSION = 3;
+const PLUGIN_VERSION = '0.3.0-pre.0';
 
 export function getCoherenceDir(projectRoot: string): string {
   return path.join(projectRoot, '.claude', 'coherence');
@@ -73,8 +73,9 @@ export async function initCoherenceDir(projectRoot: string): Promise<void> {
     );
   }
 
-  // Lay down v0.2 state files on fresh installs (M2). The v1→v2 migrator
-  // handles upgrade installs.
+  // Lay down v0.2 state files on fresh installs (M2). v0.3 (DD-118) drops
+  // cross-major-version migration: pre-v3 installs are refused at SessionStart
+  // by `refuseLegacy()`, never migrated.
   const graduation = await store.read('graduation.json');
   if (!graduation) {
     await store.write('graduation.json', {

@@ -42,7 +42,6 @@ const ALLOW_LIST = new Set<string>([
   'src/state/metricsRetention.ts',
   'src/state/finalizeSweep.ts',
   'src/state/migrate/v0_to_v1.ts',
-  'src/state/migrate/v1_to_v2.ts',
   // v0.2 writers that target only quarantine (.claude/coherence/proposals/).
   'src/proposals/quarantine.ts',
   'src/proposals/manifest.ts',

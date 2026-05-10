@@ -12,17 +12,9 @@
  *   - SG-3 boundary
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-  readFileSync,
-  mkdirSync,
-  existsSync,
-} from 'fs';
+import { mkdtempSync, rmSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
-import { runMigrations } from '../../src/state/migrate/index.js';
 import { initCoherenceDir, makeStateStore } from '../../src/state/init.js';
 import { runGraduate } from '../../src/commands/graduate.js';
 import { detectBashRepetition } from '../../src/signal/bashRepetition.js';
@@ -42,24 +34,9 @@ afterEach(() => {
 });
 
 describe('v0.2.0 GA acceptance checklist (BRD-4 §7.1)', () => {
-  it('FG-1: v1→v2 migration on synthetic v1 fixture', async () => {
-    const cohDir = path.join(dir, '.claude', 'coherence');
-    mkdirSync(cohDir, { recursive: true });
-    mkdirSync(path.join(cohDir, 'quarantine'), { recursive: true });
-    writeFileSync(
-      path.join(cohDir, 'version.json'),
-      JSON.stringify({
-        schema_version: 1,
-        plugin_version: '0.1.1',
-        installed_at: '2026-04-01T00:00:00.000Z',
-        prior_versions: [],
-      }),
-    );
-    const results = await runMigrations(cohDir, path.join(cohDir, 'quarantine'));
-    expect(results.find((r) => r.from === 1 && r.to === 2)?.migrated).toBe(true);
-    const v = JSON.parse(readFileSync(path.join(cohDir, 'version.json'), 'utf8'));
-    expect(v.schema_version).toBe(2);
-  });
+  // FG-1 v1→v2 migration retired in v0.3 (DD-118: each major version stands
+  // alone). Pre-v3 state is refused at SessionStart by refuseLegacy(); see
+  // tests/unit/state/refuse-legacy.test.ts.
 
   it('FG-2: graduate annotate sets per-scope mode', async () => {
     await initCoherenceDir(dir);

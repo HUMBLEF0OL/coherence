@@ -21,10 +21,21 @@ export interface PromptManifest {
   cassette_ids: string[];
 }
 
-/** v0.2 prompts/v2/manifest.json shape (DD-091). */
+/**
+ * Unified v0.3 prompts/v2/manifest.json shape.
+ *
+ * v0.3 (DD-118) collapses prompts/v1 into prompts/v2 — stage1/stage2 prompts
+ * (planner + patch writer) and v0.2 author/annotate prompts now share a single
+ * manifest. PromptManifestV2 carries the stage-prompt fields (schema_version,
+ * stage1_version, stage2_version, cassette_ids) alongside the v0.2 fields.
+ */
 export interface PromptManifestV2 {
   model: string;
   temperature: number;
+  schema_version?: number;
+  stage1_version?: string;
+  stage2_version?: string;
+  cassette_ids?: string[];
   author_version?: string;
   annotate_version?: string;
   prompts: Record<string, { version: string; purpose?: string }>;
@@ -57,12 +68,21 @@ let _manifestV2: PromptManifestV2 | null = null;
 
 function loadManifest(): PromptManifest {
   if (_manifest) return _manifest;
+  // v0.3: stage1/stage2 manifest fields live in the unified prompts/v2/manifest.json.
   const manifestPath = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
-    '../../prompts/v1/manifest.json',
+    '../../prompts/v2/manifest.json',
   );
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  _manifest = require(manifestPath) as PromptManifest;
+  const raw = require(manifestPath) as PromptManifestV2;
+  _manifest = {
+    model: raw.model,
+    temperature: raw.temperature,
+    schema_version: raw.schema_version ?? 1,
+    stage1_version: raw.stage1_version ?? 'v1.0',
+    stage2_version: raw.stage2_version ?? 'v1.0',
+    cassette_ids: raw.cassette_ids ?? [],
+  };
   return _manifest;
 }
 
@@ -83,7 +103,7 @@ export function loadStagePrompt(stage: LlmStage): string {
   if (stage === 'stage1' || stage === 'stage2') {
     const promptsDir = path.join(
       path.dirname(fileURLToPath(import.meta.url)),
-      '../../prompts/v1',
+      '../../prompts/v2',
     );
     const filename = stage === 'stage1' ? 'stage1-planner.md' : 'stage2-patch.md';
     return readFileSync(path.join(promptsDir, filename), 'utf8');

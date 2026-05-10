@@ -7,6 +7,13 @@ import { Sentinels } from '../state/sentinels.js';
 export interface HookResult {
   success: boolean;
   additionalContext?: string;
+  /**
+   * v0.3 NFR-COMPAT-N4: SessionStart sets this when `refuseLegacy()` rejected
+   * pre-v3 state. The hook still returns `success: true` so Claude Code does
+   * not surface an error, but the rest of the SessionStart pipeline is
+   * skipped. Tests assert this flag rather than parsing console output.
+   */
+  refusedLegacy?: boolean;
 }
 
 const SUCCESS: HookResult = { success: true };

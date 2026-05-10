@@ -1,9 +1,13 @@
 /**
  * Migration chain entry point.
- * Runs all pending migrations in order: v0→v1, v1→v2 (future), etc.
+ *
+ * v0.3 (DD-118): each major version stands alone — no cross-major-version
+ * migrators. SessionStart now consults `refuseLegacy()` instead of running this
+ * chain (NFR-COMPAT-N4). The v0→v1 migrator survives only as historical baseline
+ * for tests that exercise the v0.2 substrate; new installs hit the v3 sentinel
+ * directly via `firstRun.runFreshInstall()`.
  */
 import { migrateV0ToV1 } from './v0_to_v1.js';
-import { migrateV1ToV2 } from './v1_to_v2.js';
 import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 
@@ -11,7 +15,7 @@ interface VersionFile {
   schema_version?: number;
 }
 
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
 export interface MigrationResult {
   from: number;
@@ -35,6 +39,7 @@ function readSchemaVersion(coherenceDir: string): number {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- async public API; v0.3 retains the chain only as historical baseline.
 export async function runMigrations(
   coherenceDir: string,
   quarantineDir: string,
@@ -44,19 +49,15 @@ export async function runMigrations(
   const versionPath = path.join(coherenceDir, 'version.json');
   if (!existsSync(versionPath)) return results;
 
-  let schemaVersion = readSchemaVersion(coherenceDir);
+  const schemaVersion = readSchemaVersion(coherenceDir);
 
   if (schemaVersion < 1) {
     const result = migrateV0ToV1(coherenceDir, quarantineDir);
     results.push({ from: 0, to: 1, ...result });
-    schemaVersion = readSchemaVersion(coherenceDir);
   }
 
-  if (schemaVersion < 2) {
-    const result = await migrateV1ToV2(coherenceDir, quarantineDir);
-    results.push({ from: 1, to: 2, ...result });
-  }
-
+  // v0.3 DD-118: no v1→v2 / v2→v3 chain. Pre-v3 state is refused at
+  // SessionStart (refuseLegacy.ts), not migrated.
   return results;
 }
 

@@ -6,7 +6,8 @@
  *   - Annotate share ≤ 30% of the same headroom
  *   - Trickle share ≤ 10% of the same headroom
  *
- * The v0.1 baseline is anchored by `prompts/v1/manifest.json`; the v0.2
+ * The v0.1 baseline is anchored by the stage1/stage2 prompt fields in
+ * `prompts/v2/manifest.json` (folded into v0.3 per DD-118); the v0.2
  * cassette files supply per-call cost figures. Aggregate sum is checked
  * against the headroom budget.
  */

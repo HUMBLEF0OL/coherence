@@ -5,9 +5,9 @@
 import type { HookResult } from './exceptionGuard.js';
 import { withExceptionGuard } from './exceptionGuard.js';
 import { Sentinels } from '../state/sentinels.js';
-import { getCoherenceDir, getQuarantineDir, initCoherenceDir, makeStateStore } from '../state/init.js';
-import { runMigrations } from '../state/migrate/index.js';
-import { emitMetric } from '../state/metrics.js';
+import { getCoherenceDir, makeStateStore } from '../state/init.js';
+import { refuseLegacy } from '../state/refuseLegacy.js';
+import { runFreshInstall } from '../state/firstRun.js';
 import { runRetentionSweep } from '../state/metricsRetention.js';
 import { buildSectionIndex } from '../detection/sectionIndex.js';
 import { runFinalizeSweep } from '../state/finalizeSweep.js';
@@ -38,9 +38,18 @@ export async function sessionStartHook(
     // Step 1: kill-switch check (TS-4 §4.1)
     if (sentinels.isDisabled()) return SUCCESS;
 
-    // Step 2: first-touch init + migrations
-    await initCoherenceDir(projectRoot);
-    const migrationResults = await runMigrations(coherenceDir, getQuarantineDir(projectRoot));
+    // Step 2: v0.3 NFR-COMPAT-N4 — refuse pre-v3 state, fresh-install otherwise.
+    // DD-118 retired the cross-major-version migration chain; SessionStart now
+    // consults `refuseLegacy()` before laying down v3 state.
+    const decision = refuseLegacy(coherenceDir);
+    if (decision.status === 'refuse') {
+      console.error(`[coherence] ${decision.message}`);
+      return { success: true, refusedLegacy: true };
+    }
+    if (decision.status === 'fresh') {
+      await runFreshInstall(projectRoot);
+    }
+    // 'proceed' — version sentinel already === 3; nothing to do.
 
     // Step 3: anchor integrity sweep (builds section index for this session)
     buildSectionIndex(projectRoot);
@@ -71,26 +80,8 @@ export async function sessionStartHook(
     const evt = normaliseHookEvent(event);
     const sessionId = evt.sessionId ?? `session-${Date.now()}`;
 
-    // DD-080 sub-step (h): emit migration_completed once per actual migration.
-    // The metric is registered in metrics.ts but was never emitted; this is
-    // the call-site the audit flagged.
-    for (const r of migrationResults) {
-      if (r.migrated) {
-        try {
-          await emitMetric(store, {
-            event: 'migration_completed',
-            session_id: sessionId,
-            from: r.from,
-            to: r.to,
-            duration_ms: r.duration_ms ?? 0,
-            files_created: r.files_created ?? [],
-            files_quarantined: r.files_quarantined ?? [],
-          });
-        } catch {
-          /* migration metric emit non-fatal */
-        }
-      }
-    }
+    // DD-080 retired in v0.3 (DD-118): no migration chain, no
+    // `migration_completed` event to emit. Pre-v3 installs are refused above.
 
     // FR-OBS-N2: clear cross-session correlation cache.
     clearResponseCorrelation();

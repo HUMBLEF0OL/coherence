@@ -12,18 +12,10 @@
  *   - SG-3 boundary preserved end-to-end
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-  mkdirSync,
-  readFileSync,
-  existsSync,
-} from 'fs';
+import { mkdtempSync, rmSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
 import { initCoherenceDir, makeStateStore } from '../../src/state/init.js';
-import { runMigrations } from '../../src/state/migrate/index.js';
 import { runGraduate } from '../../src/commands/graduate.js';
 import { ProposalStore } from '../../src/proposals/store.js';
 import { runProposeList } from '../../src/commands/proposeList.js';
@@ -52,25 +44,9 @@ describe('v0.2 acceptance checklist', () => {
     expect(existsSync(path.join(dir, '.claude', 'coherence', 'signal-cache.json'))).toBe(true);
   });
 
-  it('FG-1: v1 → v2 migration via runMigrations()', async () => {
-    const cohDir = path.join(dir, '.claude', 'coherence');
-    const qDir = path.join(cohDir, 'quarantine');
-    mkdirSync(cohDir, { recursive: true });
-    mkdirSync(qDir, { recursive: true });
-    writeFileSync(
-      path.join(cohDir, 'version.json'),
-      JSON.stringify({
-        schema_version: 1,
-        plugin_version: '0.1.1',
-        installed_at: '2026-04-01T00:00:00.000Z',
-        prior_versions: [],
-      }),
-    );
-    const results = await runMigrations(cohDir, qDir);
-    expect(results.find((r) => r.from === 1 && r.to === 2)?.migrated).toBe(true);
-    const v = JSON.parse(readFileSync(path.join(cohDir, 'version.json'), 'utf8'));
-    expect(v.schema_version).toBe(2);
-  });
+  // FG-1 v1 → v2 migration assertion retired in v0.3 (DD-118: each major
+  // version stands alone; pre-v3 state is refused at SessionStart by
+  // refuseLegacy(), not migrated). See tests/unit/state/refuse-legacy.test.ts.
 
   it('FG-2: graduate v0.2 sets per-scope mode + --status reflects it', async () => {
     await initCoherenceDir(dir);

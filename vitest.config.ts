@@ -77,6 +77,20 @@ export default defineConfig({
           environment: 'node',
         },
       },
+      {
+        test: {
+          name: 'static-analysis',
+          include: ['tests/static-analysis/**/*.test.ts'],
+          environment: 'node',
+        },
+      },
+      {
+        test: {
+          name: 'ship',
+          include: ['tests/ship/**/*.test.ts'],
+          environment: 'node',
+        },
+      },
     ],
     coverage: {
       provider: 'v8',

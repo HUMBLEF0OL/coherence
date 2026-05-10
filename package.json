@@ -1,6 +1,6 @@
 {
   "name": "cohrence",
-  "version": "0.2.0-alpha.1",
+  "version": "0.3.0-pre.0",
   "description": "Claude Code plugin that detects documentation-vs-code drift and proposes surgical patches",
   "type": "module",
   "engines": {
@@ -17,7 +17,7 @@
   "files": [
     "dist",
     "plugin.json",
-    "prompts"
+    "prompts/v2"
   ],
   "scripts": {
     "build": "tsc --project tsconfig.json",
