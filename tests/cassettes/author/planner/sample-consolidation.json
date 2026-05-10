@@ -1,0 +1,7 @@
+{
+  "content": "{\n  \"consolidate\": true,\n  \"consolidated_kind\": \"skill\",\n  \"name\": \"build-and-fixture\",\n  \"description\": \"Skill that covers repetitive build commands plus the fixture-creation shape.\",\n  \"rationale\": \"Bash repetition (build commands) co-occurs with file-creation (test fixtures) in the same directory; one skill covers both signals.\",\n  \"covered_signal_hashes\": [\"abc123def456\", \"789ghi012jkl\"]\n}",
+  "input_tokens": 425,
+  "output_tokens": 93,
+  "cost_usd": 0.00266,
+  "timestamp": "2026-05-10T12:00:00.000Z"
+}

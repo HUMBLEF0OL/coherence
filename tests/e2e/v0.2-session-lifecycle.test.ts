@@ -24,6 +24,9 @@ import { userPromptSubmitHook } from '../../src/hooks/userPromptSubmit.js';
 import { postToolUseHook } from '../../src/hooks/postToolUse.js';
 import { stopHook } from '../../src/hooks/stop.js';
 import { sessionEndHook } from '../../src/hooks/sessionEnd.js';
+import { runProposeAccept } from '../../src/commands/proposeAccept.js';
+import { runProposeList } from '../../src/commands/proposeList.js';
+import { makeStateStore } from '../../src/state/init.js';
 import { ProposalStore } from '../../src/proposals/store.js';
 import { resetFileLocalityCache } from '../../src/signal/fileLocalityCache.js';
 import { reset as resetSnapshotWriter } from '../../src/state/snapshotWriter.js';
@@ -144,5 +147,22 @@ describe('v0.2 full session lifecycle', () => {
       readFileSync(path.join(dir, '.claude', 'coherence', 'state-snapshot.json'), 'utf8'),
     );
     expect(snapshot.proposal_counts.queued).toBeGreaterThanOrEqual(1);
+
+    // 9. T2: propose-list surfaces the proposal; propose-accept lands the
+    // markdown at .claude/commands/<name>.md AND the rendered output
+    // contains the slash_command documentation-only warning.
+    const store2 = makeStateStore(dir);
+    await runProposeList(store2, { sessionId: SESSION_ID });
+    const accept = await runProposeAccept({
+      store: store2,
+      projectRoot: dir,
+      proposalId,
+      sessionId: SESSION_ID,
+    });
+    expect(accept.accepted).toBe(true);
+    expect(accept.rendered).toContain('DOCUMENTATION ONLY');
+    expect(existsSync(accept.written_path!)).toBe(true);
+    // plugin.json untouched (N5 documentation-only delivery).
+    // (Lifecycle test created project tree fresh; plugin.json doesn't exist.)
   });
 });

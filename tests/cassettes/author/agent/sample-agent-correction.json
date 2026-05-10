@@ -1,0 +1,7 @@
+{
+  "content": "{\n  \"name\": \"build-validator\",\n  \"description\": \"Updated build-validator agent with corrections from observed user edits.\",\n  \"frontmatter\": {\n    \"name\": \"build-validator\",\n    \"description\": \"Build validator with corrections folded in.\"\n  },\n  \"body_md\": \"# Build validator (updated)\\n\\nThis agent definition incorporates the line-edit patterns observed across the recent 7-day window.\"\n}",
+  "input_tokens": 198,
+  "output_tokens": 65,
+  "cost_usd": 0.00159,
+  "timestamp": "2026-05-10T12:00:00.000Z"
+}

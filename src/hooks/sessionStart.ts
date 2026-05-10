@@ -7,6 +7,7 @@ import { withExceptionGuard } from './exceptionGuard.js';
 import { Sentinels } from '../state/sentinels.js';
 import { getCoherenceDir, getQuarantineDir, initCoherenceDir, makeStateStore } from '../state/init.js';
 import { runMigrations } from '../state/migrate/index.js';
+import { runRetentionSweep } from '../state/metricsRetention.js';
 import { buildSectionIndex } from '../detection/sectionIndex.js';
 import { runFinalizeSweep } from '../state/finalizeSweep.js';
 import { detectReverts } from '../detection/revertDetect.js';
@@ -96,6 +97,17 @@ export async function sessionStartHook(
       await runExpirySweep(store, sessionId, { projectRoot });
     } catch {
       /* expiry sweep failure is non-fatal */
+    }
+
+    // T4 fix: 90-day metrics.jsonl retention sweep (NFR-OBS-2, DD-060).
+    // The v0.1 sweep wrote a metrics-summary.json once; v0.2 reuses it
+    // every SessionStart so the rolling window stays bounded. Without
+    // this, expirySweep's tail-read (P8) starts dropping entries past
+    // 5 MB before the retention sweep would have aggregated them.
+    try {
+      await runRetentionSweep(store, coherenceDir);
+    } catch {
+      /* retention non-fatal */
     }
 
     // Bootstrap initial state-snapshot (FR-STATUSLINE-10 — first-snapshot bootstrap exempt from debounce).

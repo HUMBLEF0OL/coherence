@@ -24,6 +24,14 @@ import type { SignalKind } from '../state/proposalCache.js';
 import { nowIsoUtc } from '../util/time.js';
 import { readGraduation } from '../state/graduation.js';
 import { resolveMode } from '../modes/resolver.js';
+import {
+  runAuthorPlanner,
+  pickPlannerTransport,
+  isPlannerEnabled,
+  shouldRunPlanner,
+  type PlannerSignal,
+} from '../llm/authorPlanner.js';
+import { emitMetric } from '../state/metrics.js';
 
 /**
  * N1 fix: pick the Author transport at hook-invocation time.
@@ -211,7 +219,73 @@ async function runAuthorPostStopTail(
     }
   }
 
+  // M9: planner stage (DD-067 staged adoption). Only runs when:
+  //   - the env opt-in COHERENCE_AUTHOR_PLANNER=1 is set, AND
+  //   - the candidate set spans ≥2 distinct signal kinds.
+  // Output: a Set of signal hashes that the consolidated proposal covers,
+  // so the per-signal loop below skips them.
+  const consolidatedHashes = new Set<string>();
+  if (
+    isPlannerEnabled() &&
+    shouldRunPlanner(
+      candidates.map((c) => ({
+        kind: c.signal_kind,
+        signal_hash: c.signal_hash,
+        evidence: c.signal_evidence,
+      })),
+      30,
+    )
+  ) {
+    try {
+      const plannerInput: PlannerSignal[] = candidates.map((c) => ({
+        kind: c.signal_kind,
+        signal_hash: c.signal_hash,
+        evidence: c.signal_evidence,
+      }));
+      const plannerOut = await runAuthorPlanner(
+        { signals: plannerInput, window_minutes: 30 },
+        pickPlannerTransport(),
+      );
+      if (plannerOut.status === 'consolidate' && plannerOut.consolidated_kind) {
+        // Enqueue the consolidated proposal first.
+        const aggHash = signatureHash(
+          'tool_invocation',
+          'consolidated::' + (plannerOut.covered_signal_hashes ?? []).join(':'),
+        );
+        const artifact = {
+          filename:
+            plannerOut.consolidated_kind === 'agent'
+              ? 'AGENT.md'
+              : plannerOut.consolidated_kind === 'slash_command'
+              ? `${plannerOut.name ?? 'consolidated'}.md`
+              : 'SKILL.md',
+          content: `# ${plannerOut.description ?? plannerOut.name ?? 'Consolidated proposal'}\n\n${plannerOut.rationale ?? ''}\n`,
+        };
+        await pstore.enqueue({
+          projectRoot,
+          kind: plannerOut.consolidated_kind,
+          signalHash: aggHash,
+          artifact,
+          sessionId,
+        });
+        for (const h of plannerOut.covered_signal_hashes ?? []) {
+          consolidatedHashes.add(h);
+        }
+        await emitMetric(store, {
+          event: 'proposal_proposed',
+          session_id: sessionId,
+          kind: plannerOut.consolidated_kind,
+          consolidated: true,
+          covered_signal_hashes: plannerOut.covered_signal_hashes ?? [],
+        });
+      }
+    } catch {
+      /* planner failure is non-fatal — fall through to per-signal authoring */
+    }
+  }
+
   for (const cand of candidates) {
+    if (consolidatedHashes.has(cand.signal_hash)) continue; // M9: skip
     if (ProposalStore.peekSessionCount(sessionId) >= 3) break;
     let out;
     try {

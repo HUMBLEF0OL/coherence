@@ -68,6 +68,38 @@ The only practical consequence is that any non-zero
 `entries_this_session` from prior dev sessions resets; trickle resumes
 with a clean per-session counter.
 
+### Author planner stage shipped behind env gate (M9, DD-067)
+
+`prompts/v2/author/planner.md` + `src/llm/authorPlanner.ts` ship the
+consolidation stage. Opt-in via `COHERENCE_AUTHOR_PLANNER=1`. Hard
+trigger: candidate set spans ≥ 2 distinct signal kinds within a 30-min
+window. When triggered, emits a single consolidated proposal covering
+the union of signals; per-signal authoring is suppressed for covered
+hashes. Default is OFF until v0.2-alpha telemetry justifies flipping
+per BRD-5 §3 trigger (≥ 25% cross-kind co-occurrence).
+
+### Cassette suite + cost partition gate (CG-1, CG-2)
+
+`tests/cassettes/author/{bash,file,agent,planner}/*.json` carry
+synthetic Author responses for the four prompt kinds.
+`tests/cost/cg-author-share.test.ts` enforces DD-085 partition: per-
+session worst-case cost ≤ 60% of v0.1-baseline × 1.30 headroom.
+Live-burn cost evidence captured during v0.2-alpha telemetry.
+
+### Wilson 95% calibration helper (DD-092)
+
+`src/util/wilson.ts` ships the Wilson interval calculator + the
+`meetsCalibrationFloor(successes, trials, floor=0.7)` helper. The
+v0.2-alpha telemetry close-out script
+(`scripts/alpha-telemetry-close.mjs`) now reports per-detector
+precision with Wilson 95% bounds and a `meets_calibration_floor`
+boolean per the DD-092 acceptance commitment.
+
+### Metrics retention sweep wired (T4, NFR-OBS-2)
+
+SessionStart invokes `runRetentionSweep` so `metrics.jsonl` is bounded
+at 90 days. Aggregated counts land in `metrics-summary.json` per DD-060.
+
 ### Slash-command kind: documentation-only delivery (N5)
 
 `/coherence:propose-accept` for `kind: 'slash_command'` writes the

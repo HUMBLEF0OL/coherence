@@ -1,0 +1,7 @@
+{
+  "content": "{\n  \"name\": \"test-fixture-skill\",\n  \"description\": \"Pattern-matched skill scaffold for repetitive test fixtures.\",\n  \"purpose\": \"You created three structurally similar test fixtures in the same directory; this skill captures the shape so future fixtures can reuse it.\",\n  \"usage\": \"Invoke when authoring a new test fixture in the same directory.\",\n  \"frontmatter\": {\n    \"name\": \"test-fixture-skill\",\n    \"description\": \"Repetitive test fixture skill\"\n  },\n  \"body_md\": \"# Test fixture skill\\n\\nWraps the common shape of test fixtures observed in this directory.\"\n}",
+  "input_tokens": 312,
+  "output_tokens": 121,
+  "cost_usd": 0.00275,
+  "timestamp": "2026-05-10T12:00:00.000Z"
+}

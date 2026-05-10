@@ -1,0 +1,7 @@
+{
+  "content": "{\n  \"name\": \"build-and-test\",\n  \"description\": \"Run build and unit tests in one step.\",\n  \"frontmatter\": {\n    \"name\": \"build-and-test\",\n    \"description\": \"Run build and unit tests in one step.\"\n  },\n  \"body_md\": \"# Build and test\\n\\nWraps `npm run build` followed by `npm test`.\"\n}",
+  "input_tokens": 245,
+  "output_tokens": 88,
+  "cost_usd": 0.00207,
+  "timestamp": "2026-05-10T12:00:00.000Z"
+}

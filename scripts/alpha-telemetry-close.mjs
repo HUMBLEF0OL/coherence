@@ -30,6 +30,25 @@ function bucketByEvent(events) {
   return out;
 }
 
+/** Wilson 95% confidence interval (mirrors src/util/wilson.ts).
+ * DD-092 acceptance: per-threshold projected precision ≥ 0.7. */
+function wilson95(successes, trials) {
+  const Z_95 = 1.959964;
+  if (trials === 0) return { mean: 0, lower: 0, upper: 0 };
+  const phat = successes / trials;
+  const z2 = Z_95 * Z_95;
+  const denom = 1 + z2 / trials;
+  const center = (phat + z2 / (2 * trials)) / denom;
+  const margin =
+    (Z_95 * Math.sqrt((phat * (1 - phat)) / trials + z2 / (4 * trials * trials))) /
+    denom;
+  return {
+    mean: phat,
+    lower: Math.max(0, center - margin),
+    upper: Math.min(1, center + margin),
+  };
+}
+
 function detectorPrecision(events) {
   const fired = events.filter(
     (e) => e.event === 'proposal_signal_observed' && e.would_have_fired === true,
@@ -37,12 +56,24 @@ function detectorPrecision(events) {
   const accepted = events.filter((e) => e.event === 'proposal_accepted');
   const rejected = events.filter((e) => e.event === 'proposal_rejected');
   const denom = fired.length;
-  if (denom === 0) return { precision: 0, fired: 0, accepted: accepted.length, rejected: rejected.length };
+  if (denom === 0) {
+    return {
+      precision: 0,
+      fired: 0,
+      accepted: accepted.length,
+      rejected: rejected.length,
+      wilson_95: { mean: 0, lower: 0, upper: 0 },
+      meets_calibration_floor: false,
+    };
+  }
+  const interval = wilson95(accepted.length, denom);
   return {
     precision: accepted.length / denom,
     fired: denom,
     accepted: accepted.length,
     rejected: rejected.length,
+    wilson_95: interval,
+    meets_calibration_floor: interval.lower >= 0.7,
   };
 }
 
