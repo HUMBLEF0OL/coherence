@@ -51,20 +51,24 @@ export async function subagentStopHook(
     const updated = addClassification(stats, attribution.classification);
     await store.write('subagent-stats.json', updated);
 
-    // R3 fix: emit DD-068 agent_response_id telemetry. Real Claude Code
-    // events typically don't carry `response_lines`, so we derive it from
-    // the SubagentAttribution counters (lines_added + lines_removed).
-    // This makes the digest meaningful per-invocation: distinct corrections
-    // with different line-deltas produce different ids, and zero-edit
-    // accepted invocations are skipped (per Q2 — the digest would degenerate
-    // to agent_id-only and pollute correlation).
+    // R3 + S1 fix: emit DD-068 agent_response_id with a meaningful
+    // per-invocation digest. Three sources of variance, in priority order:
+    //   1. Explicit `response_lines` from the host event (rare).
+    //   2. `lines_added + lines_removed` from line-level
+    //      SubagentAttribution (when host capability is available).
+    //   3. `files_touched.length` from file-level fallback. Combined with
+    //      the agent_id this yields distinct digests per invocation as
+    //      long as the agent touched a different set of files.
+    // We still skip emit when ALL three are zero (no signal to record).
     const evt = event as { session_id?: string; agent_id?: string; response_lines?: number };
     const sessionId = evt.session_id ?? attribution.session_id ?? `session-${Date.now()}`;
     const agentId = evt.agent_id ?? attribution.invocation_id;
     const explicitLines = typeof evt.response_lines === 'number' ? evt.response_lines : 0;
-    const derivedLines =
+    const lineLevelLines =
       (attribution.lines_added ?? 0) + (attribution.lines_removed ?? 0);
-    const responseLines = explicitLines > 0 ? explicitLines : derivedLines;
+    const fileLevelLines = attribution.files_touched.length;
+    const responseLines =
+      explicitLines > 0 ? explicitLines : lineLevelLines > 0 ? lineLevelLines : fileLevelLines;
     if (responseLines > 0) {
       try {
         await emitAgentResponseId(store, sessionId, { agentId, responseLines });

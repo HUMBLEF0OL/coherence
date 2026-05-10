@@ -58,6 +58,16 @@ DD-091 (Author/Annotate LLM contract), DD-092 (v0.2.1 calibration commit).
 - `cost-ledger.json` stage enum widened (`author`, `annotate`,
   `author_planner`).
 
+### Migration note for early-adopter installs (S4)
+
+`scan-cache/state.json#last_pass_at` now requires `format: "date-time"`.
+Installs that ran an earlier v0.2 dev build (which wrote `last_pass_at`
+as the empty string) will fail schema validation on first read. The
+file gets quarantined automatically and a fresh default replaces it.
+The only practical consequence is that any non-zero
+`entries_this_session` from prior dev sessions resets; trickle resumes
+with a clean per-session counter.
+
 ### Slash-command kind: documentation-only delivery (N5)
 
 `/coherence:propose-accept` for `kind: 'slash_command'` writes the

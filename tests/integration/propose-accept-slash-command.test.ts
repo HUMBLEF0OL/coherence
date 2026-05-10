@@ -49,6 +49,29 @@ describe('N5 fix: slash_command accept is documentation-only', () => {
     expect(existsSync(out.written_path!)).toBe(true);
     expect(out.written_path).toContain(path.join('.claude', 'commands'));
     expect(readFileSync(out.written_path!, 'utf8')).toBe('# Cleanup');
+
+    // S2: the rendered output warns the user the command isn't runnable yet.
+    // A regression that drops the warning would fail this test.
+    expect(out.rendered).toContain('DOCUMENTATION ONLY');
+    expect(out.rendered).toContain('JS handler');
+  });
+
+  it('S2: skill kind accept does NOT include the documentation-only warning', async () => {
+    const pstore = new ProposalStore(store);
+    const r = await pstore.enqueue({
+      projectRoot: dir,
+      kind: 'skill',
+      signalHash: 'h-skill',
+      artifact: { filename: 'SKILL.md', content: '# A skill' },
+      sessionId: 's',
+    });
+    const out = await runProposeAccept({
+      store,
+      projectRoot: dir,
+      proposalId: r.manifest.proposal_id,
+    });
+    expect(out.accepted).toBe(true);
+    expect(out.rendered).not.toContain('DOCUMENTATION ONLY');
   });
 
   it('does NOT modify plugin.json (no broken auto-registration)', async () => {

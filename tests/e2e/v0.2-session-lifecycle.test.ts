@@ -132,8 +132,10 @@ describe('v0.2 full session lifecycle', () => {
     expect(manifest.kind).toBe('slash_command');
     expect(manifest.state).toBe('queued');
     // The artifact body file (kebab-name).md or similar must exist alongside.
+    // S3: ≥ 1 (not exactly 1) so a future Author pipeline that emits a
+    // sidecar / multi-file proposal isn't blocked by this test.
     const artifactFiles = readdirSync(proposalDir).filter((f) => f !== 'manifest.json');
-    expect(artifactFiles.length).toBe(1);
+    expect(artifactFiles.length).toBeGreaterThanOrEqual(1);
     const body = readFileSync(path.join(proposalDir, artifactFiles[0]), 'utf8');
     expect(body.length).toBeGreaterThan(0);
 
