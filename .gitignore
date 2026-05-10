@@ -31,3 +31,6 @@ build/Release
 .eslintcache
 .mcp.json
 graphify-out
+
+# Coherence runtime + local scratch state
+.claude/coherence/

@@ -10,6 +10,7 @@
  */
 import { createHash } from 'crypto';
 import { writeProposalArtifact, type ProposalKind } from './quarantine.js';
+import { ajv } from '../state/ajvInstance.js';
 import { nowIsoUtc } from '../util/time.js';
 
 export const PROPOSAL_SCHEMA_VERSION = 2;
@@ -33,6 +34,13 @@ export interface ProposalManifest {
   state: ProposalState;
   ignored_count: number;
   schema_version: typeof PROPOSAL_SCHEMA_VERSION;
+  /**
+   * For `kind: 'annotate'`, the project-relative path of the source doc the
+   * accepted proposal must overwrite. Required for that kind, ignored
+   * otherwise. (D2 fix: annotate accept must land at the source, not at
+   * `.claude/annotations/...`.)
+   */
+  target_path?: string;
 }
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 3600 * 1000;
@@ -53,10 +61,11 @@ export function newManifest(
   kind: ProposalKind,
   signalHash: string,
   now: Date = new Date(),
+  options: { targetPath?: string } = {},
 ): ProposalManifest {
   const generated = now.toISOString();
   const expires = new Date(now.getTime() + FOURTEEN_DAYS_MS).toISOString();
-  return {
+  const m: ProposalManifest = {
     proposal_id: proposalId(kind, signalHash),
     kind,
     signal_hash: signalHash,
@@ -66,13 +75,26 @@ export function newManifest(
     ignored_count: 0,
     schema_version: PROPOSAL_SCHEMA_VERSION,
   };
+  if (options.targetPath) m.target_path = options.targetPath;
+  return m;
 }
 
-/** Atomically write a manifest under quarantine. */
+/** Atomically write a manifest under quarantine, validated against DD-087 schema. */
 export function writeManifest(
   projectRoot: string,
   manifest: ProposalManifest,
 ): void {
+  // G2: writer-time validation against `proposal.schema.json` (DD-087).
+  // Schema may not yet be registered (eg. on a fresh install before
+  // stateStore.ensureSchemasLoaded ran). Skip silently in that case —
+  // the cache schema (proposal-cache.schema.json) catches structural drift.
+  if (ajv.getSchema('proposal.schema.json') !== undefined) {
+    if (!ajv.validate('proposal.schema.json', manifest)) {
+      throw new Error(
+        `writeManifest: manifest fails proposal.schema.json: ${ajv.errorsText()}`,
+      );
+    }
+  }
   writeProposalArtifact(
     projectRoot,
     manifest.kind,
@@ -80,6 +102,13 @@ export function writeManifest(
     'manifest.json',
     JSON.stringify(manifest, null, 2) + '\n',
   );
+}
+
+/** Read-time validation (FR-PROPOSE-13 read-side). */
+export function validateManifest(value: unknown): { ok: boolean; reason?: string } {
+  if (ajv.getSchema('proposal.schema.json') === undefined) return { ok: true };
+  if (ajv.validate('proposal.schema.json', value)) return { ok: true };
+  return { ok: false, reason: ajv.errorsText() };
 }
 
 /** Convenience: build + write in one shot. */

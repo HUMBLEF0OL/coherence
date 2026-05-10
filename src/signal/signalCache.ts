@@ -15,7 +15,16 @@ export interface BashItem {
   first_seen: string;
   last_seen: string;
   occurrences: number;
+  /**
+   * Per-occurrence timestamps (D4 fix). Bounded at 200 entries; older
+   * timestamps are dropped FIFO. Required for windowed counting since
+   * `occurrences` is a lifetime counter that overcounts inside a 30-min
+   * rolling window.
+   */
+  timestamps: string[];
 }
+
+const TIMESTAMPS_CAP = 200;
 
 export interface FileItem {
   signature_hash: string;
@@ -72,15 +81,20 @@ export function appendBash(cache: SignalCache, hash: string, now: string): Signa
   const idx = items.findIndex((i) => i.signature_hash === hash);
   let next: BashItem[];
   if (idx >= 0) {
-    next = items.map((i, k) =>
-      k === idx ? { ...i, last_seen: now, occurrences: i.occurrences + 1 } : i,
-    );
+    next = items.map((i, k) => {
+      if (k !== idx) return i;
+      const ts = [...i.timestamps, now];
+      // Bound timestamps[] FIFO so cache size stays predictable.
+      const trimmed = ts.length > TIMESTAMPS_CAP ? ts.slice(ts.length - TIMESTAMPS_CAP) : ts;
+      return { ...i, last_seen: now, occurrences: i.occurrences + 1, timestamps: trimmed };
+    });
   } else {
     next = fifoAppend(items, cache.buckets.bash_repetition.maxItems, {
       signature_hash: hash,
       first_seen: now,
       last_seen: now,
       occurrences: 1,
+      timestamps: [now],
     });
   }
   return {
@@ -163,7 +177,11 @@ export function appendCorrection(
   };
 }
 
-/** SessionEnd prune: drop items with last_seen < cutoff (7-day rolling window). */
+/**
+ * SessionEnd prune: drop items with last_seen < cutoff (7-day rolling window).
+ * E5 fix: malformed `last_seen` (NaN from Date.parse) is treated as expired
+ * (fail-closed) rather than retained forever.
+ */
 export function pruneSignalCache(cache: SignalCache, cutoffIso: string): {
   cache: SignalCache;
   removed: { bash_repetition: number; file_creation: number; agent_correction: number };
@@ -171,22 +189,28 @@ export function pruneSignalCache(cache: SignalCache, cutoffIso: string): {
   const cutoff = Date.parse(cutoffIso);
   const removed = { bash_repetition: 0, file_creation: 0, agent_correction: 0 };
 
+  function expired(lastSeen: string): boolean {
+    const t = Date.parse(lastSeen);
+    if (Number.isNaN(t)) return true; // E5 fail-closed
+    return t < cutoff;
+  }
+
   const bash = cache.buckets.bash_repetition.items.filter((i) => {
-    if (Date.parse(i.last_seen) < cutoff) {
+    if (expired(i.last_seen)) {
       removed.bash_repetition += 1;
       return false;
     }
     return true;
   });
   const file = cache.buckets.file_creation.items.filter((i) => {
-    if (Date.parse(i.last_seen) < cutoff) {
+    if (expired(i.last_seen)) {
       removed.file_creation += 1;
       return false;
     }
     return true;
   });
   const correction = cache.buckets.agent_correction.items.filter((i) => {
-    if (Date.parse(i.last_seen) < cutoff) {
+    if (expired(i.last_seen)) {
       removed.agent_correction += 1;
       return false;
     }

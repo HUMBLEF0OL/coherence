@@ -27,6 +27,7 @@ const SCHEMA_NAMES = [
   // v0.2 additions (M2)
   'graduation.schema.json',
   'proposal-cache.schema.json',
+  'proposal.schema.json',
   'signal-cache.schema.json',
   'state-snapshot.schema.json',
   'scan-cache-state.schema.json',

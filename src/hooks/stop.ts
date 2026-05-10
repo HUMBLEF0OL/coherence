@@ -9,6 +9,11 @@ import { getCoherenceDir, makeStateStore } from '../state/init.js';
 import { runStopOrchestrator } from '../pipeline/stop.js';
 import type { StopOrchestratorResult } from '../pipeline/stop.js';
 import type { SectionIndexEntry } from '../types/index.js';
+import { runAuthorPipeline, mockAuthorTransport } from '../llm/authorPipeline.js';
+import { ProposalStore } from '../proposals/store.js';
+import { readSignalCache } from '../signal/signalCache.js';
+import { flush } from '../state/snapshotWriter.js';
+import { signatureHash } from '../signal/signatureHash.js';
 
 const SUCCESS: HookResult = { success: true };
 
@@ -39,6 +44,19 @@ export async function stopHook(
       mode,
     });
 
+    // ----- v0.2 Author tail (D1 fix, FR-AUTHOR-1..5) -----
+    try {
+      await runAuthorPostStopTail(store, projectRoot, sessionId);
+    } catch {
+      /* Author tail failure must not corrupt v0.1 output (FR-AUTHOR-5) */
+    }
+    // Force snapshot flush off the hot path (FR-STATUSLINE-7).
+    try {
+      await flush(store, { force: true });
+    } catch {
+      /* flush non-fatal */
+    }
+
     // Return additionalContext for review UI (M9 renders it properly)
     if (result.bundles.length === 0 && result.deferred === 0) {
       return SUCCESS;
@@ -63,4 +81,41 @@ export async function stopHook(
       additionalContext: lines.join('\n'),
     };
   });
+}
+
+/**
+ * Author pipeline post-Stop entry point. Walks the bash-repetition signal
+ * cache for items that fired this session; for each, invokes the Author
+ * pipeline and enqueues the result through proposalStore. The
+ * `proposals_per_session ≤ 3` cap is enforced inside the store (D5).
+ */
+async function runAuthorPostStopTail(
+  store: ReturnType<typeof makeStateStore>,
+  projectRoot: string,
+  sessionId: string,
+): Promise<void> {
+  const cache = await readSignalCache(store);
+  const candidates = cache.buckets.bash_repetition.items.filter((i) => i.occurrences >= 3);
+  if (candidates.length === 0) return;
+  const pstore = new ProposalStore(store);
+  for (const item of candidates) {
+    const out = await runAuthorPipeline(
+      {
+        signal_kind: 'bash_repetition',
+        signal_hash: item.signature_hash,
+        signal_evidence: { occurrences: item.occurrences, last_seen: item.last_seen },
+      },
+      mockAuthorTransport,
+    );
+    if (out.status !== 'proposal' || !out.artifact) continue;
+    const r = await pstore.enqueue({
+      projectRoot,
+      kind: out.kind,
+      signalHash: signatureHash('tool_invocation', item.signature_hash),
+      signalKind: 'bash_repetition',
+      artifact: out.artifact,
+      sessionId,
+    });
+    if (!r.enqueued && r.reason === 'session_cap') break;
+  }
 }

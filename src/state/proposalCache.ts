@@ -84,11 +84,13 @@ export function enqueueEntry(
   }
   const now = nowIsoUtc();
   const state: ProposalState = entry.state ?? 'queued';
+  // E6: state_history is bounded at construction too; ensures the cap is a
+  // structural invariant, not a transition-time-only check.
   const newEntry: ProposalCacheEntry = {
     ...entry,
     state,
     consecutive_ignored: entry.consecutive_ignored ?? 0,
-    state_history: [{ state, at: now }],
+    state_history: [{ state, at: now }].slice(-STATE_HISTORY_CAP),
   };
   return { ...cache, entries: [...cache.entries, newEntry] };
 }

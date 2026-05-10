@@ -15,6 +15,7 @@ import {
   isNoProposal,
   type AuthorPayload,
 } from '../validation/proposalValidator.js';
+import { llmCall, loadV2Prompt } from './client.js';
 
 export interface AuthorInputEnvelope {
   signal_kind: SignalKind;
@@ -131,4 +132,25 @@ export const mockAuthorTransport: AuthorTransport = async (envelope) => {
     body_md: '*body*',
   };
   return JSON.stringify(base);
+};
+
+/**
+ * D6 fix: live Author transport. Loads the v0.2 prompt + manifest, calls the
+ * Anthropic SDK via the v0.1 cassette-aware `llmCall` wrapper. Cost-ledger
+ * partition `stage: "author"` per DD-091.
+ *
+ * NOT exported as the default transport; opt-in via `runAuthorPipelineLive`
+ * because tests should keep using `mockAuthorTransport` for determinism.
+ */
+export const liveAuthorTransport: AuthorTransport = async (envelope, promptKey) => {
+  const systemPrompt = loadV2Prompt(promptKey);
+  const userMessage = JSON.stringify(envelope, null, 2);
+  const cassetteId = `author/${envelope.signal_kind}/${envelope.signal_hash}`;
+  const response = await llmCall({
+    stage: 'author',
+    systemPrompt,
+    userMessage,
+    cassetteId,
+  });
+  return response.content;
 };

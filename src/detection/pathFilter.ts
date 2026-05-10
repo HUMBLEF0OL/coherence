@@ -36,6 +36,12 @@ export class PathFilter {
       ...readIgnoreLines(coherenceIgnore),
       ...readIgnoreLines(gitIgnore),
       '.env', '.env.*', '*.lock', 'node_modules/**',
+      // G10 fix: never scan our own quarantine + cache files.
+      '.claude/coherence/proposals/**',
+      '.claude/coherence/proposal-cache.json',
+      '.claude/coherence/signal-cache.json',
+      '.claude/coherence/state-snapshot.json',
+      '.claude/coherence/scan-cache/**',
     ];
 
     this.ignorePatterns = patterns.map(globToRegex);

@@ -1,6 +1,6 @@
 /**
- * PostToolUse hook — detection + buffer append.
- * TS-4 §4.3 (steps 1-4, mid-session refresh in M5)
+ * PostToolUse hook — detection + buffer append + v0.2 signal detectors.
+ * TS-4 §4.3 (steps 1-4 v0.1) + v0.2 wiring (D1 fix, FR-OBS-N1, DD-076/077).
  */
 import type { HookResult } from './exceptionGuard.js';
 import { withExceptionGuard } from './exceptionGuard.js';
@@ -14,10 +14,20 @@ import { BufferLifecycle } from '../buffer/lifecycle.js';
 import { normalizePath, makeSectionRef } from '../state/pathNormaliser.js';
 import type { BufferEntry, NormalizedPath } from '../types/index.js';
 import { nowIsoUtc } from '../util/time.js';
+import { emitToolInvocationSignature } from '../signal/telemetry.js';
+import { detectBashRepetition } from '../signal/bashRepetition.js';
+import { readSignalCache, writeSignalCache } from '../signal/signalCache.js';
+import { markDirty } from '../state/snapshotWriter.js';
+import { emitMetric } from '../state/metrics.js';
+import { ProposalStore } from '../proposals/store.js';
+import { readGraduation } from '../state/graduation.js';
+import { resolveMode } from '../modes/resolver.js';
 
 interface PostToolUseEvent {
   tool?: string;
   path?: string;
+  command?: string;
+  session_id?: string;
   [key: string]: unknown;
 }
 
@@ -29,50 +39,92 @@ export async function postToolUseHook(
 ): Promise<HookResult> {
   const sentinels = new Sentinels(getCoherenceDir(projectRoot));
   return withExceptionGuard(sentinels, async () => {
-    // Step 1: kill-switch (TS-4 §4.1)
     if (sentinels.isDisabled()) return SUCCESS;
 
     const evt = event as PostToolUseEvent;
-    const filePath = evt.path;
-    if (!filePath) return SUCCESS;
-
-    // Step 2: path filter
-    const filter = new PathFilter(projectRoot);
-    if (!filter.isAllowed(filePath, projectRoot)) return SUCCESS;
-
-    // Only process files that could contain coherence anchors
-    if (!filePath.endsWith('.md')) return SUCCESS;
-
-    // Step 3: read file and scan anchors
-    if (!existsSync(filePath)) return SUCCESS;
-
-    let source: string;
-    try {
-      source = readFileSync(filePath, 'utf8');
-    } catch {
-      return SUCCESS;
-    }
-
-    const { sections } = scanAnchors(source, filePath);
-    if (sections.length === 0) return SUCCESS;
-
-    // Step 4: append hash-only entries to buffer (NFR-PRIVACY-4)
+    const sessionId = evt.session_id ?? `session-${Date.now()}`;
     const store = makeStateStore(projectRoot);
-    const buffer = new BufferLifecycle(store);
-    const normalizedPath = normalizePath(filePath) as NormalizedPath;
+    const tool = evt.tool ?? '';
 
-    for (const section of sections) {
-      const entry: BufferEntry = {
-        path: normalizedPath,
-        sectionRef: makeSectionRef(normalizedPath, section.id),
-        contentHash: hashContent(section.content),
-        triggeredAt: nowIsoUtc(),
-        source: 'posttooluse',
-      };
-      await buffer.append(entry);
+    // ----- v0.2: DD-068 telemetry + signal detection -----
+    if (tool === 'Bash' || tool === 'Edit' || tool === 'Write') {
+      try {
+        await emitToolInvocationSignature(store, sessionId, {
+          toolName: tool,
+          ...(evt.command !== undefined ? { command: evt.command } : {}),
+          ...(evt.path !== undefined ? { filePath: evt.path } : {}),
+        });
+      } catch {
+        /* telemetry non-fatal */
+      }
+      if (tool === 'Bash' && typeof evt.command === 'string') {
+        try {
+          const cache = await readSignalCache(store);
+          const result = detectBashRepetition(cache, evt.command);
+          await writeSignalCache(store, result.cache);
+          await emitMetric(store, {
+            event: 'proposal_signal_observed',
+            session_id: sessionId,
+            signal_kind: 'bash_repetition',
+            signal_hash: result.signature_hash,
+            would_have_fired: result.fired,
+            occurrences_in_window: result.occurrences_in_window,
+          });
+        } catch {
+          /* detector non-fatal */
+        }
+      }
     }
 
-    // Steps 5-6: mid-session refresh — deferred to M5
+    // ----- v0.1: drift-buffer append for markdown anchors -----
+    const filePath = evt.path;
+    if (filePath) {
+      const filter = new PathFilter(projectRoot);
+      if (
+        filter.isAllowed(filePath, projectRoot) &&
+        filePath.endsWith('.md') &&
+        existsSync(filePath)
+      ) {
+        try {
+          const source = readFileSync(filePath, 'utf8');
+          const { sections } = scanAnchors(source, filePath);
+          if (sections.length > 0) {
+            const buffer = new BufferLifecycle(store);
+            const normalizedPath = normalizePath(filePath) as NormalizedPath;
+            for (const section of sections) {
+              const entry: BufferEntry = {
+                path: normalizedPath,
+                sectionRef: makeSectionRef(normalizedPath, section.id),
+                contentHash: hashContent(section.content),
+                triggeredAt: nowIsoUtc(),
+                source: 'posttooluse',
+              };
+              await buffer.append(entry);
+            }
+          }
+        } catch {
+          /* read/scan non-fatal */
+        }
+      }
+    }
+
+    // ----- v0.2: snapshot mark-dirty (DD-084 hot-path-zero-cost) -----
+    try {
+      const graduation = await readGraduation(store);
+      const effective = resolveMode({ graduation, targetPath: '.' });
+      const pstore = new ProposalStore(store);
+      const counts = await pstore.counts();
+      const buf = await store.read<{ entries: unknown[] }>('drift-buffer.json');
+      markDirty({
+        schema_version: 2,
+        written_at: nowIsoUtc(),
+        buffer_count: buf?.entries.length ?? 0,
+        proposal_counts: counts,
+        mode: effective,
+      });
+    } catch {
+      /* mark-dirty non-fatal */
+    }
 
     return SUCCESS;
   });

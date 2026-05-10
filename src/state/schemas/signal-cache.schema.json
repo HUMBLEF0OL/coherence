@@ -22,13 +22,18 @@
               "maxItems": 500,
               "items": {
                 "type": "object",
-                "required": ["signature_hash", "first_seen", "last_seen", "occurrences"],
+                "required": ["signature_hash", "first_seen", "last_seen", "occurrences", "timestamps"],
                 "additionalProperties": false,
                 "properties": {
                   "signature_hash": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
                   "first_seen": { "type": "string", "format": "date-time" },
                   "last_seen": { "type": "string", "format": "date-time" },
-                  "occurrences": { "type": "integer", "minimum": 1 }
+                  "occurrences": { "type": "integer", "minimum": 1 },
+                  "timestamps": {
+                    "type": "array",
+                    "maxItems": 200,
+                    "items": { "type": "string", "format": "date-time" }
+                  }
                 }
               }
             }

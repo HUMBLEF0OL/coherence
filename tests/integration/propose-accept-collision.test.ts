@@ -16,6 +16,7 @@ beforeEach(() => {
   dir = mkdtempSync(path.join(tmpdir(), 'coherence-pa-'));
   const c = path.join(dir, '.claude', 'coherence');
   store = new StateStore(c, path.join(c, 'quarantine'));
+  ProposalStore.resetSessionCount('s');
 });
 
 afterEach(() => {

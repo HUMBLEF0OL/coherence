@@ -12,9 +12,12 @@
  * forces every cross-the-boundary write to flow through the typed
  * `/coherence:propose-accept <id>` command surface.
  */
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import path from 'path';
 import { getProposalDir, type ProposalKind } from '../proposals/quarantine.js';
+
+/** E4 fix: bound proposal artifact size on read. */
+export const MAX_PROPOSAL_ARTIFACT_BYTES = 256 * 1024;
 
 export const PROPOSE_ACCEPT_INVOCATION_TOKEN: unique symbol = Symbol.for(
   'coherence.propose-accept.invocation',
@@ -40,7 +43,8 @@ export class ProposeAcceptError extends Error {
       | 'invalid_token'
       | 'name_collision'
       | 'missing_artifact'
-      | 'path_escape',
+      | 'path_escape'
+      | 'artifact_too_large',
   ) {
     super(message);
     this.name = 'ProposeAcceptError';
@@ -80,8 +84,17 @@ export function loadProposalArtifact(args: ProposeAcceptArgs): string {
     );
   }
   try {
+    // E4: bound artifact size before reading.
+    const stat = statSync(artifactPath);
+    if (stat.size > MAX_PROPOSAL_ARTIFACT_BYTES) {
+      throw new ProposeAcceptError(
+        `proposal artifact ${artifactPath} exceeds ${MAX_PROPOSAL_ARTIFACT_BYTES} bytes (got ${stat.size})`,
+        'artifact_too_large',
+      );
+    }
     return readFileSync(artifactPath, 'utf8');
-  } catch {
+  } catch (err) {
+    if (err instanceof ProposeAcceptError) throw err;
     throw new ProposeAcceptError(
       `proposal artifact missing: ${artifactPath}`,
       'missing_artifact',

@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/proposal",
+  "type": "object",
+  "required": [
+    "proposal_id",
+    "kind",
+    "signal_hash",
+    "generated_at",
+    "expires_at",
+    "state",
+    "ignored_count",
+    "schema_version"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "proposal_id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "kind": { "type": "string", "enum": ["skill", "slash_command", "agent", "annotate"] },
+    "signal_hash": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "state": {
+      "type": "string",
+      "enum": ["queued", "surfaced", "ignored", "accepted", "rejected", "reverted", "expired"]
+    },
+    "ignored_count": { "type": "integer", "minimum": 0 },
+    "schema_version": { "type": "integer", "const": 2 },
+    "target_path": { "type": "string" }
+  }
+}

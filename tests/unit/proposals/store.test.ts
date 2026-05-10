@@ -20,6 +20,9 @@ beforeEach(() => {
   const coherenceDir = path.join(dir, '.claude', 'coherence');
   store = new StateStore(coherenceDir, path.join(coherenceDir, 'quarantine'));
   pstore = new ProposalStore(store);
+  // D5: clear per-session counter between tests so the cap doesn't leak.
+  ProposalStore.resetSessionCount('s');
+  ProposalStore.resetSessionCount('s1');
 });
 
 afterEach(() => {

@@ -20,8 +20,19 @@ export interface PromptManifest {
   cassette_ids: string[];
 }
 
+/** v0.2 prompts/v2/manifest.json shape (DD-091). */
+export interface PromptManifestV2 {
+  model: string;
+  temperature: number;
+  author_version?: string;
+  annotate_version?: string;
+  prompts: Record<string, { version: string; purpose?: string }>;
+}
+
+export type LlmStage = 'stage1' | 'stage2' | 'author' | 'annotate';
+
 export interface LlmRequest {
-  stage: 'stage1' | 'stage2';
+  stage: LlmStage;
   systemPrompt: string;
   userMessage: string;
   cassetteId?: string;
@@ -41,6 +52,7 @@ const INPUT_COST_PER_M = 3.0;
 const OUTPUT_COST_PER_M = 15.0;
 
 let _manifest: PromptManifest | null = null;
+let _manifestV2: PromptManifestV2 | null = null;
 
 function loadManifest(): PromptManifest {
   if (_manifest) return _manifest;
@@ -53,18 +65,48 @@ function loadManifest(): PromptManifest {
   return _manifest;
 }
 
-export function loadStagePrompt(stage: 'stage1' | 'stage2'): string {
+/** D6: load the v0.2 prompts manifest (model + temperature for author/annotate). */
+export function loadManifestV2(): PromptManifestV2 {
+  if (_manifestV2) return _manifestV2;
+  const manifestPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../prompts/v2/manifest.json',
+  );
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  _manifestV2 = require(manifestPath) as PromptManifestV2;
+  return _manifestV2;
+}
+
+export function loadStagePrompt(stage: LlmStage): string {
+  const { readFileSync } = require('fs') as typeof import('fs');
+  if (stage === 'stage1' || stage === 'stage2') {
+    const promptsDir = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '../../prompts/v1',
+    );
+    const filename = stage === 'stage1' ? 'stage1-planner.md' : 'stage2-patch.md';
+    return readFileSync(path.join(promptsDir, filename), 'utf8');
+  }
+  // For 'author' / 'annotate', the caller passes the specific prompt path
+  // via `loadV2Prompt`. This helper exists only for v0.1 stages.
+  throw new Error(`loadStagePrompt: unsupported stage '${stage}'`);
+}
+
+/** D6: load a v0.2 prompt body by its manifest key (e.g. "author/skill.md"). */
+export function loadV2Prompt(promptKey: string): string {
   const { readFileSync } = require('fs') as typeof import('fs');
   const promptsDir = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
-    '../../prompts/v1',
+    '../../prompts/v2',
   );
-  const filename = stage === 'stage1' ? 'stage1-planner.md' : 'stage2-patch.md';
-  return readFileSync(path.join(promptsDir, filename), 'utf8');
+  return readFileSync(path.join(promptsDir, promptKey), 'utf8');
 }
 
 export async function llmCall(req: LlmRequest): Promise<LlmResponse> {
   const manifest = loadManifest();
+  const v2 = req.stage === 'author' || req.stage === 'annotate' ? loadManifestV2() : null;
+  const model = v2 ? v2.model : manifest.model;
+  const temperature = v2 ? v2.temperature : manifest.temperature;
 
   // Cassette replay if available and not forcing refresh
   if (process.env['COHERENCE_REFRESH_CASSETTES'] !== '1' && req.cassetteId) {
@@ -73,7 +115,7 @@ export async function llmCall(req: LlmRequest): Promise<LlmResponse> {
       return {
         ...replayed,
         cached: true,
-        prompt_version: buildPromptVersion(req.stage, manifest),
+        prompt_version: buildPromptVersion(req.stage, manifest, v2),
       };
     }
   }
@@ -81,9 +123,9 @@ export async function llmCall(req: LlmRequest): Promise<LlmResponse> {
   const client = new Anthropic();
 
   const response = await client.messages.create({
-    model: manifest.model,
+    model,
     max_tokens: 8192,
-    temperature: manifest.temperature,
+    temperature,
     system: [
       {
         type: 'text',
@@ -108,7 +150,7 @@ export async function llmCall(req: LlmRequest): Promise<LlmResponse> {
     input_tokens,
     output_tokens,
     cost_usd,
-    prompt_version: buildPromptVersion(req.stage, manifest),
+    prompt_version: buildPromptVersion(req.stage, manifest, v2),
     cached: false,
   };
 
@@ -127,15 +169,18 @@ export async function llmCall(req: LlmRequest): Promise<LlmResponse> {
 }
 
 function buildPromptVersion(
-  stage: 'stage1' | 'stage2',
+  stage: LlmStage,
   manifest: PromptManifest,
-): { stage1?: string; stage2?: string } {
-  return stage === 'stage1'
-    ? { stage1: manifest.stage1_version }
-    : { stage2: manifest.stage2_version };
+  v2: PromptManifestV2 | null,
+): { stage1?: string; stage2?: string; author?: string; annotate?: string } {
+  if (stage === 'stage1') return { stage1: manifest.stage1_version };
+  if (stage === 'stage2') return { stage2: manifest.stage2_version };
+  if (stage === 'author') return { author: v2?.author_version ?? 'v2.0' };
+  return { annotate: v2?.annotate_version ?? 'v2.0' };
 }
 
-/** Exposed for testing: invalidate cached manifest */
+/** Exposed for testing: invalidate cached manifests */
 export function _resetManifestCache(): void {
   _manifest = null;
+  _manifestV2 = null;
 }

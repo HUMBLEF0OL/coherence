@@ -16,6 +16,9 @@ import type {
   VersionInfo,
 } from '../types/index.js';
 import type { DriftBuffer } from '../buffer/lifecycle.js';
+import { readGraduation } from '../state/graduation.js';
+import { resolveMode } from '../modes/resolver.js';
+import type { ProposalCache } from '../state/proposalCache.js';
 
 const DD_044_FOOTER =
   'Mid-session branch switches: not detected — Stop-time re-validation';
@@ -37,6 +40,37 @@ export async function runStatus(
   const config = await store.read<CoherenceConfig>('config.json');
   const mode = config?.mode ?? 'observe';
   lines.push(`[coherence] status — plugin ${version?.plugin_version ?? '0.1.0'} | mode: ${mode}`);
+
+  // G7 fix: FR-MODES-7 — surface effective v0.2 mode for cwd.
+  try {
+    const graduation = await readGraduation(store);
+    const effective = resolveMode({ graduation, targetPath: '.' });
+    lines.push(
+      `  v0.2 mode: global=${graduation.global_mode}, effective(cwd)=${effective}, scopes=${graduation.scopes.length}`,
+    );
+  } catch {
+    /* graduation.json not present (pre-migration); skip silently */
+  }
+
+  // Surface proposal counts (v0.2).
+  try {
+    const cache = await store.read<ProposalCache>('proposal-cache.json');
+    if (cache) {
+      let queued = 0,
+        surfaced = 0,
+        ignored = 0;
+      for (const e of cache.entries) {
+        if (e.state === 'queued') queued += 1;
+        else if (e.state === 'surfaced') surfaced += 1;
+        else if (e.state === 'ignored') ignored += 1;
+      }
+      lines.push(
+        `  proposals: ${queued} queued, ${surfaced} surfaced, ${ignored} ignored`,
+      );
+    }
+  } catch {
+    /* fall through */
+  }
   lines.push('');
 
   // Capabilities

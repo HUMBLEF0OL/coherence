@@ -1,6 +1,6 @@
 /**
  * SessionStart hook — full implementation.
- * TS-4 §4.2 steps 1-9
+ * TS-4 §4.2 steps 1-9 (v0.1) + v0.2 wiring (D1 fix).
  */
 import type { HookResult } from './exceptionGuard.js';
 import { withExceptionGuard } from './exceptionGuard.js';
@@ -12,11 +12,22 @@ import { runFinalizeSweep } from '../state/finalizeSweep.js';
 import { detectReverts } from '../detection/revertDetect.js';
 import { recordRevert } from '../buffer/velocity.js';
 import type { VelocityState } from '../types/index.js';
+import { runExpirySweep } from '../proposals/expirySweep.js';
+import { ProposalStore } from '../proposals/store.js';
+import { flush, markDirty } from '../state/snapshotWriter.js';
+import { readGraduation } from '../state/graduation.js';
+import { resolveMode } from '../modes/resolver.js';
+import { clearResponseCorrelation } from '../signal/telemetry.js';
+import { nowIsoUtc } from '../util/time.js';
 
 const SUCCESS: HookResult = { success: true };
 
+interface SessionStartEvent {
+  session_id?: string;
+}
+
 export async function sessionStartHook(
-  _event: unknown,
+  event: unknown,
   projectRoot: string,
 ): Promise<HookResult> {
   const coherenceDir = getCoherenceDir(projectRoot);
@@ -54,8 +65,40 @@ export async function sessionStartHook(
       }
     }
 
-    // Step 8: additionalContext injection (DD-012 Mechanism 1 — M9 will render full UX)
-    // Step 9: reset compaction caches (M5 will add last_refreshed_section_set)
+    // ----- v0.2 wiring (D1 fix) -----
+    const sessionId = (event as SessionStartEvent | undefined)?.session_id ?? `session-${Date.now()}`;
+
+    // FR-OBS-N2: clear cross-session correlation cache.
+    clearResponseCorrelation();
+
+    // Reset per-session proposal cap counter (D5).
+    ProposalStore.resetSessionCount(sessionId);
+
+    // Run proposal expiry sweep (DD-075).
+    try {
+      await runExpirySweep(store, sessionId);
+    } catch {
+      /* expiry sweep failure is non-fatal */
+    }
+
+    // Bootstrap initial state-snapshot (FR-STATUSLINE-10 — first-snapshot bootstrap exempt from debounce).
+    try {
+      const graduation = await readGraduation(store);
+      const effective = resolveMode({ graduation, targetPath: '.' });
+      const pstore = new ProposalStore(store);
+      const c = await pstore.counts();
+      markDirty({
+        schema_version: 2,
+        written_at: nowIsoUtc(),
+        buffer_count: 0,
+        proposal_counts: c,
+        mode: effective,
+        degraded: sentinels.isAutoDisabled(),
+      });
+      await flush(store, { bootstrap: true });
+    } catch {
+      /* snapshot bootstrap is non-fatal */
+    }
 
     return SUCCESS;
   });

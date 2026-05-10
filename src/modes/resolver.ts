@@ -22,8 +22,13 @@ function normalise(p: string): string {
   return p.replace(/\\/g, '/').replace(/\/+$/, '');
 }
 
+/**
+ * E1 fix: a scope is a directory iff it ends in `/` (explicit). Anything
+ * else — including extensionless filenames like `README` or `Makefile` —
+ * is treated as a per-doc exact-path scope.
+ */
 function isDirScope(scopePath: string): boolean {
-  return scopePath.endsWith('/') || !scopePath.includes('.');
+  return scopePath.endsWith('/');
 }
 
 /**

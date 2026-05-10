@@ -29,32 +29,86 @@ export interface EnqueueArgs {
   signalKind?: SignalKind;
   artifact: { filename: string; content: string };
   sessionId: string;
+  /** Required for `kind: 'annotate'`; the source doc to overwrite on accept (D2). */
+  targetPath?: string;
 }
 
 export interface EnqueueResult {
   manifest: ProposalManifest;
   entry: ProposalCacheEntry;
-  /** false if collision pre-check refused (signal already has a non-terminal entry). */
+  /** false if collision or session-cap refused. */
   enqueued: boolean;
-  reason?: 'collision';
+  reason?: 'collision' | 'session_cap';
 }
 
 const NON_TERMINAL: ProposalState[] = ['queued', 'surfaced', 'ignored'];
+
+/** D5 fix: FR-AUTHOR-3 hard cap. */
+export const PROPOSALS_PER_SESSION_CAP = 3;
+
+/**
+ * Per-session counter for proposals enqueued in this Node process.
+ * Reset by `ProposalStore.resetSessionCount(sessionId)` at SessionStart.
+ */
+const sessionCounts = new Map<string, number>();
 
 export class ProposalStore {
   constructor(private readonly store: StateStore) {}
 
   async enqueue(args: EnqueueArgs): Promise<EnqueueResult> {
-    const cache = await readCache(this.store);
+    // D5 fix: FR-AUTHOR-3 cap — at most 3 proposals enqueued per session.
+    const used = sessionCounts.get(args.sessionId) ?? 0;
+    if (used >= PROPOSALS_PER_SESSION_CAP) {
+      const stub: ProposalManifest = {
+        proposal_id: '',
+        kind: args.kind,
+        signal_hash: args.signalHash,
+        generated_at: new Date().toISOString(),
+        expires_at: new Date().toISOString(),
+        state: 'queued',
+        ignored_count: 0,
+        schema_version: 2,
+      };
+      await emitMetric(this.store, {
+        event: 'proposal_skipped_budget',
+        session_id: args.sessionId,
+        kind: args.kind,
+        signal_hash: args.signalHash,
+      });
+      return {
+        manifest: stub,
+        entry: {
+          ...stub,
+          consecutive_ignored: 0,
+          state_history: [],
+        },
+        enqueued: false,
+        reason: 'session_cap',
+      };
+    }
+
+    let cache = await readCache(this.store);
 
     // DD-collision pre-check: refuse if any non-terminal entry shares the
     // proposal_id (which is derived from `kind + signal_hash`).
-    const manifest = newManifest(args.kind, args.signalHash);
-    const collision = cache.entries.find(
-      (e) => e.proposal_id === manifest.proposal_id && NON_TERMINAL.includes(e.state),
+    const manifest = newManifest(
+      args.kind,
+      args.signalHash,
+      undefined,
+      args.targetPath ? { targetPath: args.targetPath } : {},
     );
-    if (collision) {
-      return { manifest, entry: collision, enqueued: false, reason: 'collision' };
+    const existing = cache.entries.find((e) => e.proposal_id === manifest.proposal_id);
+    if (existing && NON_TERMINAL.includes(existing.state)) {
+      return { manifest, entry: existing, enqueued: false, reason: 'collision' };
+    }
+    // D3 fix: a prior terminal-state entry (rejected/expired/reverted)
+    // must not block re-enqueue of the same kind+signal_hash. Evict it
+    // from the cache so enqueueEntry's id-uniqueness invariant holds.
+    if (existing) {
+      cache = {
+        ...cache,
+        entries: cache.entries.filter((e) => e.proposal_id !== manifest.proposal_id),
+      };
     }
 
     // Write artifact + manifest under quarantine.
@@ -80,6 +134,7 @@ export class ProposalStore {
     const updated = enqueueEntry(cache, enqueueArg);
     await writeCache(this.store, updated);
     const entry = updated.entries.find((e) => e.proposal_id === manifest.proposal_id)!;
+    sessionCounts.set(args.sessionId, used + 1);
 
     await emitMetric(this.store, {
       event: 'proposal_proposed',
@@ -116,6 +171,18 @@ export class ProposalStore {
       ...(reason ? { reason } : {}),
     });
     return result;
+  }
+
+  /**
+   * D5: reset the per-session enqueue counter. Called by SessionStart.
+   */
+  static resetSessionCount(sessionId: string): void {
+    sessionCounts.delete(sessionId);
+  }
+
+  /** Test/diagnostic accessor for the per-session counter. */
+  static peekSessionCount(sessionId: string): number {
+    return sessionCounts.get(sessionId) ?? 0;
   }
 
   async list(): Promise<ProposalCache> {

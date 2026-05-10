@@ -31,16 +31,38 @@ interface SnapshotState {
   pending: StateSnapshot | null;
 }
 
-const state: SnapshotState = { dirty: false, lastFlushAt: 0, pending: null };
+/**
+ * E2 fix: snapshot state is per-StateStore (WeakMap). The legacy module-
+ * level `defaultState` survives for the markDirty()/flush() convenience
+ * pair; the StateStore-keyed map provides isolation when multiple stores
+ * exist in the same process (test fixtures, multi-project hosts).
+ */
+const defaultState: SnapshotState = { dirty: false, lastFlushAt: 0, pending: null };
+const perStore = new WeakMap<StateStore, SnapshotState>();
 
-/** PostToolUse-side: mark the snapshot dirty without touching disk. */
-export function markDirty(snapshot: StateSnapshot): void {
-  state.dirty = true;
-  state.pending = snapshot;
+function stateFor(store: StateStore | null): SnapshotState {
+  if (!store) return defaultState;
+  let s = perStore.get(store);
+  if (!s) {
+    s = { dirty: false, lastFlushAt: 0, pending: null };
+    perStore.set(store, s);
+  }
+  return s;
 }
 
-export function isDirty(): boolean {
-  return state.dirty;
+/**
+ * PostToolUse-side: mark the snapshot dirty without touching disk.
+ * If `store` is provided, the dirty bit is stored per-store; otherwise
+ * the legacy module-level state is updated (kept for v0.1 compatibility).
+ */
+export function markDirty(snapshot: StateSnapshot, store?: StateStore): void {
+  const s = stateFor(store ?? null);
+  s.dirty = true;
+  s.pending = snapshot;
+}
+
+export function isDirty(store?: StateStore): boolean {
+  return stateFor(store ?? null).dirty;
 }
 
 /**
@@ -53,15 +75,21 @@ export async function flush(
   store: StateStore,
   options: { force?: boolean; bootstrap?: boolean; now?: number } = {},
 ): Promise<boolean> {
-  if (!state.dirty || !state.pending) {
+  // Look up per-store first; fall through to default for callers that
+  // markDirty() without a store reference.
+  let s = perStore.get(store);
+  if (!s || (!s.dirty && !s.pending)) {
+    s = defaultState;
+  }
+  if (!s.dirty || !s.pending) {
     if (!options.bootstrap) return false;
   }
   const now = options.now ?? Date.now();
-  const sinceLast = now - state.lastFlushAt;
+  const sinceLast = now - s.lastFlushAt;
   if (!options.force && !options.bootstrap && sinceLast < MIN_FLUSH_INTERVAL_MS) {
     return false;
   }
-  const snapshot: StateSnapshot = state.pending ?? {
+  const snapshot: StateSnapshot = s.pending ?? {
     schema_version: 2,
     written_at: nowIsoUtc(),
     buffer_count: 0,
@@ -69,18 +97,18 @@ export async function flush(
     mode: 'observe',
   };
   await store.write('state-snapshot.json', { ...snapshot, written_at: nowIsoUtc() });
-  state.dirty = false;
-  state.lastFlushAt = now;
+  s.dirty = false;
+  s.lastFlushAt = now;
   return true;
 }
 
-/** Reset (used by tests). */
+/** Reset (used by tests). Resets both default and per-store state. */
 export function reset(): void {
-  state.dirty = false;
-  state.lastFlushAt = 0;
-  state.pending = null;
+  defaultState.dirty = false;
+  defaultState.lastFlushAt = 0;
+  defaultState.pending = null;
 }
 
-export function _peekState(): SnapshotState {
-  return state;
+export function _peekState(store?: StateStore): SnapshotState {
+  return stateFor(store ?? null);
 }

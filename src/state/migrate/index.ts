@@ -53,7 +53,7 @@ export async function runMigrations(
   }
 
   if (schemaVersion < 2) {
-    const result = migrateV1ToV2(coherenceDir, quarantineDir);
+    const result = await migrateV1ToV2(coherenceDir, quarantineDir);
     results.push({ from: 1, to: 2, ...result });
   }
 

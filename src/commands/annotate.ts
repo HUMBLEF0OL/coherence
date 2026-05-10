@@ -68,6 +68,8 @@ export async function runAnnotate(args: AnnotateCmdArgs): Promise<AnnotateCmdRes
     signalKind: 'anchor_less_doc',
     artifact: { filename: 'PROPOSAL.md', content: proposal.body_md },
     sessionId: args.sessionId ?? 'session',
+    // D2 fix: record the source doc so propose-accept overwrites it.
+    targetPath: rel,
   });
   await emitMetric(args.store, {
     event: 'annotation_proposed',

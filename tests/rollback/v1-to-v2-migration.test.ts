@@ -45,7 +45,7 @@ describe('migrateV1ToV2 (R-v0.2-03)', () => {
     quarantineDir = dirs.quarantineDir;
   });
 
-  it('migrates a clean v1 install to v2', () => {
+  it('migrates a clean v1 install to v2', async () => {
     writeJson(path.join(coherenceDir, 'version.json'), {
       schema_version: 1,
       plugin_version: '0.1.1',
@@ -61,7 +61,7 @@ describe('migrateV1ToV2 (R-v0.2-03)', () => {
       entries: [],
     });
 
-    const result = migrateV1ToV2(coherenceDir, quarantineDir);
+    const result = await migrateV1ToV2(coherenceDir, quarantineDir);
     expect(result.migrated).toBe(true);
     expect(result.error).toBeUndefined();
     expect(result.duration_ms).toBeGreaterThanOrEqual(0);
@@ -95,7 +95,7 @@ describe('migrateV1ToV2 (R-v0.2-03)', () => {
     expect(signalCache.buckets.agent_correction.maxItems).toBe(200);
   });
 
-  it('quarantines corrupt drift-buffer.json and continues', () => {
+  it('quarantines corrupt drift-buffer.json and continues', async () => {
     writeJson(path.join(coherenceDir, 'version.json'), {
       schema_version: 1,
       plugin_version: '0.1.1',
@@ -104,7 +104,7 @@ describe('migrateV1ToV2 (R-v0.2-03)', () => {
     });
     writeFileSync(path.join(coherenceDir, 'drift-buffer.json'), '{ NOT JSON');
 
-    const result = migrateV1ToV2(coherenceDir, quarantineDir);
+    const result = await migrateV1ToV2(coherenceDir, quarantineDir);
     expect(result.migrated).toBe(true);
     expect(result.files_quarantined).toContain('drift-buffer.json');
 
@@ -118,30 +118,30 @@ describe('migrateV1ToV2 (R-v0.2-03)', () => {
     expect(existsSync(path.join(coherenceDir, 'graduation.json'))).toBe(true);
   });
 
-  it('is idempotent — second invocation is a no-op', () => {
+  it('is idempotent — second invocation is a no-op', async () => {
     writeJson(path.join(coherenceDir, 'version.json'), {
       schema_version: 1,
       plugin_version: '0.1.1',
       installed_at: '2026-04-01T00:00:00.000Z',
       prior_versions: [],
     });
-    const first = migrateV1ToV2(coherenceDir, quarantineDir);
+    const first = await migrateV1ToV2(coherenceDir, quarantineDir);
     expect(first.migrated).toBe(true);
 
-    const second = migrateV1ToV2(coherenceDir, quarantineDir);
+    const second = await migrateV1ToV2(coherenceDir, quarantineDir);
     expect(second.migrated).toBe(false);
     expect(second.files_created).toEqual([]);
   });
 
-  it('refuses to run when version.json is missing', () => {
-    const result = migrateV1ToV2(coherenceDir, quarantineDir);
+  it('refuses to run when version.json is missing', async () => {
+    const result = await migrateV1ToV2(coherenceDir, quarantineDir);
     expect(result.migrated).toBe(false);
   });
 
-  it('quarantines corrupt version.json and refuses to migrate', () => {
+  it('quarantines corrupt version.json and refuses to migrate', async () => {
     writeFileSync(path.join(coherenceDir, 'version.json'), '{ NOT JSON');
 
-    const result = migrateV1ToV2(coherenceDir, quarantineDir);
+    const result = await migrateV1ToV2(coherenceDir, quarantineDir);
     expect(result.migrated).toBe(false);
     expect(result.error).toBeTruthy();
     expect(result.files_quarantined).toContain('version.json');

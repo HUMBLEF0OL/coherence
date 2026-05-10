@@ -21,6 +21,7 @@ import {
   copyFileSync,
   unlinkSync,
   readdirSync,
+  readFileSync,
 } from 'fs';
 import path from 'path';
 import type { StateStore } from '../state/stateStore.js';
@@ -31,6 +32,8 @@ import {
 } from '../permissions/proposeAccept.js';
 import { getProposalDir, type ProposalKind } from '../proposals/quarantine.js';
 import { emitMetric } from '../state/metrics.js';
+import { lockManager } from '../state/locks.js';
+import { getCoherenceDir } from '../state/init.js';
 
 export interface ProposeAcceptCmdArgs {
   store: StateStore;
@@ -66,28 +69,111 @@ function defaultTargetFor(
   kind: ProposalKind,
   proposalId: string,
   filename: string,
+  manifestTargetPath?: string,
 ): string {
+  // D2 fix: annotate kind overwrites the source doc the manifest points at,
+  // not a sibling directory.
+  if (kind === 'annotate') {
+    if (manifestTargetPath) {
+      return path.join(projectRoot, manifestTargetPath);
+    }
+    // Fallback (legacy / corrupt manifest): refuse by routing to a sentinel
+    // path that propose-accept will reject as a path_escape via no manifest.
+    return path.join(projectRoot, '.claude', 'annotations', proposalId, filename);
+  }
   const sub =
     kind === 'skill'
       ? path.join('.claude', 'skills', proposalId, filename)
       : kind === 'agent'
       ? path.join('.claude', 'agents', proposalId, filename)
-      : kind === 'slash_command'
-      ? path.join('.claude', 'commands', filename)
-      : path.join('.claude', 'annotations', proposalId, filename);
+      : path.join('.claude', 'commands', filename);
   return path.join(projectRoot, sub);
 }
+
+/** E8: bound the suffix scan so a pathological dir cannot stall accept. */
+const SUFFIX_SCAN_CAP = 128;
 
 function suffixed(targetPath: string): string {
   const dir = path.dirname(targetPath);
   const ext = path.extname(targetPath);
   const base = path.basename(targetPath, ext);
   let i = 2;
-  while (existsSync(path.join(dir, `${base}-${i}${ext}`))) i += 1;
+  while (i < SUFFIX_SCAN_CAP && existsSync(path.join(dir, `${base}-${i}${ext}`))) i += 1;
   return path.join(dir, `${base}-${i}${ext}`);
 }
 
+interface PluginJson {
+  slashCommands?: Array<{ name: string; description?: string; handler?: string }>;
+  [key: string]: unknown;
+}
+
+/**
+ * D7: register an accepted slash_command proposal in plugin.json.
+ * The proposed artifact is `.claude/commands/<name>.md`. The slash command
+ * `name` is derived from the markdown filename without the `.md` extension,
+ * prefixed `coherence:` to match the v0.1 namespace.
+ */
+function registerSlashCommand(
+  projectRoot: string,
+  writtenPath: string,
+  proposalId: string,
+): void {
+  const pluginJsonPath = path.join(projectRoot, 'plugin.json');
+  if (!existsSync(pluginJsonPath)) {
+    throw new Error(`plugin.json not found at ${pluginJsonPath}`);
+  }
+  const raw = readFileSync(pluginJsonPath, 'utf8');
+  const plugin = JSON.parse(raw) as PluginJson;
+  const commands = Array.isArray(plugin.slashCommands) ? plugin.slashCommands : [];
+
+  const baseName = path.basename(writtenPath, path.extname(writtenPath));
+  const cmdName = baseName.startsWith('coherence:') ? baseName : `coherence:${baseName}`;
+  if (commands.some((c) => c.name === cmdName)) {
+    return; // already registered
+  }
+  commands.push({
+    name: cmdName,
+    description: `Accepted proposal ${proposalId}`,
+    handler: `commands/${baseName}`,
+  });
+  plugin.slashCommands = commands;
+
+  // Atomic temp+rename — same contract as stateStore.write.
+  const tmp = `${pluginJsonPath}.${process.pid}.${Date.now()}.tmp`;
+  writeFileSync(tmp, JSON.stringify(plugin, null, 2) + '\n', 'utf8');
+  try {
+    renameSync(tmp, pluginJsonPath);
+  } finally {
+    try {
+      if (existsSync(tmp)) unlinkSync(tmp);
+    } catch {
+      /* best-effort */
+    }
+  }
+}
+
 export async function runProposeAccept(
+  args: ProposeAcceptCmdArgs,
+): Promise<ProposeAcceptCmdResult> {
+  // E9: serialise concurrent accepts on the same coherence dir to avoid
+  // race conditions on proposal-cache.json read-mutate-write.
+  const lockTarget = path.join(getCoherenceDir(args.projectRoot), '.propose-accept.target');
+  const acquired = await lockManager.acquire(lockTarget, 'propose-accept');
+  if (!acquired) {
+    return {
+      accepted: false,
+      reason: 'illegal_state',
+      rendered: `[coherence] propose-accept: lock unavailable (another accept in progress)`,
+    };
+  }
+  try {
+    return await runProposeAcceptLocked(args);
+  } finally {
+    lockManager.release(lockTarget);
+  }
+}
+
+async function runProposeAcceptLocked(
   args: ProposeAcceptCmdArgs,
 ): Promise<ProposeAcceptCmdResult> {
   const pstore = new ProposalStore(args.store);
@@ -144,8 +230,22 @@ export async function runProposeAccept(
     targetPath: '',
   });
 
-  const targetPath = (args.targetPathFor ?? ((k: ProposalKind, id: string, f: string): string =>
-    defaultTargetFor(args.projectRoot, k, id, f)))(kind, args.proposalId, filename);
+  // D2 fix: read the manifest's target_path; for kind=annotate it points at
+  // the source doc that must be overwritten.
+  let manifestTargetPath: string | undefined;
+  try {
+    const manifestRaw = readFileSync(path.join(proposalDir, 'manifest.json'), 'utf8');
+    const m = JSON.parse(manifestRaw) as { target_path?: string };
+    if (typeof m.target_path === 'string' && m.target_path.length > 0) {
+      manifestTargetPath = m.target_path;
+    }
+  } catch {
+    /* manifest unreadable — fall through to default mapping */
+  }
+
+  const computeTarget = args.targetPathFor ?? ((k: ProposalKind, id: string, f: string): string =>
+    defaultTargetFor(args.projectRoot, k, id, f, manifestTargetPath));
+  const targetPath = computeTarget(kind, args.proposalId, filename);
 
   // Defence-in-depth: target path must remain inside projectRoot.
   const rel = path.relative(args.projectRoot, targetPath);
@@ -158,7 +258,16 @@ export async function runProposeAccept(
   }
 
   let writePath = targetPath;
-  if (existsSync(targetPath)) {
+  // D2: annotate-kind accepts always overwrite the source doc named in the
+  // manifest. The "collision" is intentional — the proposal's purpose is to
+  // replace the file with an anchored version. Quarantine the original first
+  // for safety (mirrors --overwrite path).
+  if (kind === 'annotate' && manifestTargetPath && existsSync(targetPath)) {
+    const quarantineDir = path.join(args.projectRoot, '.claude', 'coherence', 'quarantine');
+    mkdirSync(quarantineDir, { recursive: true });
+    const bak = path.join(quarantineDir, `${path.basename(targetPath)}.${Date.now()}.bak`);
+    copyFileSync(targetPath, bak);
+  } else if (existsSync(targetPath)) {
     if (args.rename) {
       writePath = suffixed(targetPath);
     } else if (args.overwriteRetypedPath !== undefined) {
@@ -218,6 +327,25 @@ export async function runProposeAccept(
       if (existsSync(tmp)) unlinkSync(tmp);
     } catch {
       /* best-effort */
+    }
+  }
+
+  // D7 fix: slash_command accept must register the new command in
+  // plugin.json so Claude Code surfaces it. The plugin.json edit lands
+  // through the same atomic temp+rename contract.
+  if (kind === 'slash_command') {
+    try {
+      registerSlashCommand(args.projectRoot, writePath, args.proposalId);
+    } catch (err) {
+      // If registration fails, the markdown file still landed but the
+      // command is invisible. Surface this via a metric for ops visibility.
+      await emitMetric(args.store, {
+        event: 'proposal_acceptance_blocked',
+        session_id: args.sessionId ?? 'session',
+        proposal_id: args.proposalId,
+        reason: 'plugin_json_registration_failed',
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 

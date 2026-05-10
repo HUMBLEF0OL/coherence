@@ -6,7 +6,10 @@
  *   (2) signal-recurrence fence: signal_hash absent from metrics last 7 days → expired
  *   (3) consecutive-ignored counter: ≥ 5 → expired (default per FR-PROPOSE-11)
  */
+import { existsSync, readFileSync } from 'fs';
+import path from 'path';
 import type { StateStore } from '../state/stateStore.js';
+import { getCoherenceDir } from '../state/init.js';
 import {
   readCache,
   writeCache,
@@ -19,8 +22,48 @@ export interface ExpirySweepConfig {
   expiryDays?: number;
   signalRecurrenceDays?: number;
   consecutiveIgnoreThreshold?: number;
-  /** Optional set of signal hashes seen in the last N days; if undefined, sweep ignores fence (2). */
+  /** Optional set of signal hashes seen in the last N days; if undefined,
+   *  the sweep loads `metrics.jsonl` and constructs the set from
+   *  `proposal_signal_observed` events automatically (E7 fix). */
   recentSignalHashes?: Set<string>;
+  /** Project root (required when `recentSignalHashes` is auto-loaded). */
+  projectRoot?: string;
+}
+
+/** E7: load recent signal hashes from metrics.jsonl (last N days). */
+function loadRecentSignalHashes(
+  projectRoot: string,
+  windowDays: number,
+  now: Date,
+): Set<string> {
+  const jsonlPath = path.join(getCoherenceDir(projectRoot), 'metrics.jsonl');
+  const out = new Set<string>();
+  if (!existsSync(jsonlPath)) return out;
+  const cutoff = now.getTime() - windowDays * 24 * 3600 * 1000;
+  let raw: string;
+  try {
+    raw = readFileSync(jsonlPath, 'utf8');
+  } catch {
+    return out;
+  }
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    try {
+      const ev = JSON.parse(line) as {
+        event?: string;
+        signal_hash?: string;
+        _ts?: string;
+      };
+      if (ev.event !== 'proposal_signal_observed') continue;
+      if (typeof ev.signal_hash !== 'string') continue;
+      const ts = ev._ts ? Date.parse(ev._ts) : Number.NaN;
+      if (Number.isNaN(ts) || ts < cutoff) continue;
+      out.add(ev.signal_hash);
+    } catch {
+      /* skip malformed line */
+    }
+  }
+  return out;
 }
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -40,6 +83,12 @@ export async function runExpirySweep(
   const recurrenceDays = cfg.signalRecurrenceDays ?? 7;
   const consecutiveIgnoreThreshold = cfg.consecutiveIgnoreThreshold ?? 5;
 
+  // E7: auto-load recent signal hashes if a project root is supplied.
+  let recentHashes = cfg.recentSignalHashes;
+  if (recentHashes === undefined && cfg.projectRoot !== undefined) {
+    recentHashes = loadRecentSignalHashes(cfg.projectRoot, recurrenceDays, now);
+  }
+
   const cache = await readCache(store);
   let working: ProposalCache = cache;
   const expired: string[] = [];
@@ -53,8 +102,8 @@ export async function runExpirySweep(
     let reason: ExpirySweepResult['reasons'][string] | null = null;
     if (ageMs >= expiryDays * DAY_MS) reason = 'time_fence';
     else if (
-      cfg.recentSignalHashes !== undefined &&
-      !cfg.recentSignalHashes.has(entry.signal_hash) &&
+      recentHashes !== undefined &&
+      !recentHashes.has(entry.signal_hash) &&
       ageMs >= recurrenceDays * DAY_MS
     )
       reason = 'signal_recurrence_fence';

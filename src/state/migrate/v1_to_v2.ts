@@ -17,6 +17,7 @@
 import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync } from 'fs';
 import path from 'path';
 import { quarantineFile } from '../quarantine.js';
+import { lockManager } from '../locks.js';
 import { nowIsoUtc } from '../../util/time.js';
 
 export interface V1ToV2Result {
@@ -44,10 +45,10 @@ function atomicWriteJson(filePath: string, data: unknown): void {
   renameSync(tmp, filePath);
 }
 
-export function migrateV1ToV2(
+export async function migrateV1ToV2(
   coherenceDir: string,
   quarantineDir: string,
-): V1ToV2Result {
+): Promise<V1ToV2Result> {
   const t0 = Date.now();
   const created: string[] = [];
   const quarantined: string[] = [];
@@ -61,6 +62,38 @@ export function migrateV1ToV2(
       files_quarantined: [],
     };
   }
+
+  // D8 fix: serialize concurrent migrations on the same coherence dir.
+  // The lock target is `<coherenceDir>/migrate-v1-v2` — distinct from
+  // version.json's lock so we don't deadlock with stateStore writes.
+  const migrateLockPath = path.join(coherenceDir, '.migrate-v1-v2.target');
+  const acquired = await lockManager.acquire(migrateLockPath, 'migrate');
+  if (!acquired) {
+    // Another process already holds the lock — assume it's running the
+    // migration and short-circuit with migrated:false (idempotent).
+    return {
+      migrated: false,
+      error: 'migration_lock_unavailable',
+      duration_ms: Date.now() - t0,
+      files_created: [],
+      files_quarantined: [],
+    };
+  }
+  try {
+    return await migrateV1ToV2Locked(coherenceDir, quarantineDir, versionPath, t0, created, quarantined);
+  } finally {
+    lockManager.release(migrateLockPath);
+  }
+}
+
+async function migrateV1ToV2Locked(
+  coherenceDir: string,
+  quarantineDir: string,
+  versionPath: string,
+  t0: number,
+  created: string[],
+  quarantined: string[],
+): Promise<V1ToV2Result> {
 
   let parsed: VersionFile;
   try {

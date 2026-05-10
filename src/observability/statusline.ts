@@ -42,7 +42,7 @@ export interface HostCapabilitiesV02 {
 
 export async function computeStatusline(
   store: StateStore,
-  mode: CoherenceMode,
+  mode: CoherenceMode | V02Mode,
   degraded: boolean,
 ): Promise<StatuslineBadge> {
   if (degraded) {
@@ -50,14 +50,42 @@ export async function computeStatusline(
   }
 
   const buf = await store.read<{ entries: unknown[] }>('drift-buffer.json');
-  const count = buf?.entries.length ?? 0;
+  const bufCount = buf?.entries.length ?? 0;
 
-  if (count === 0) {
+  // G8 fix: surface v0.2 surfaced-proposal counts when present.
+  const cache = await store.read<{
+    entries: Array<{ state: string }>;
+  }>('proposal-cache.json');
+  let surfaced = 0;
+  let queued = 0;
+  for (const e of cache?.entries ?? []) {
+    if (e.state === 'surfaced') surfaced += 1;
+    else if (e.state === 'queued') queued += 1;
+  }
+
+  if (bufCount === 0 && surfaced === 0 && queued === 0) {
     return { text: '', degraded: false };
   }
 
-  const modeIndicator = mode === 'graduated' ? 'G' : 'O';
-  return { text: `[🧭 ${count}${modeIndicator}]`, degraded: false };
+  const modeIndicator =
+    mode === 'author'
+      ? 'A'
+      : mode === 'annotate'
+      ? 'N'
+      : mode === 'graduated'
+      ? 'G'
+      : 'O';
+
+  if (surfaced > 0) {
+    return {
+      text: `[🧭 ${surfaced}${modeIndicator} → /coherence:propose-list]`,
+      degraded: false,
+    };
+  }
+  if (queued > 0) {
+    return { text: `[🧭 ${queued}q${modeIndicator}]`, degraded: false };
+  }
+  return { text: `[🧭 ${bufCount}${modeIndicator}]`, degraded: false };
 }
 
 export function formatStatusline(badge: StatuslineBadge): string {

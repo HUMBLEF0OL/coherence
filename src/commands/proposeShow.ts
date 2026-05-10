@@ -8,6 +8,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import path from 'path';
 import { getProposalDir, type ProposalKind } from '../proposals/quarantine.js';
+import { validateManifest } from '../proposals/manifest.js';
 import {
   validateAuthorPayload,
 } from '../validation/proposalValidator.js';
@@ -64,27 +65,47 @@ export async function runProposeShow(
   const artifactPath = path.join(dir, files[0]);
   const artifactBody = readFileSync(artifactPath, 'utf8');
 
-  // Re-validate at read time. We accept either: a fully-rendered markdown
-  // (for already-rendered Author proposals) OR a JSON payload.
+  // G2: read-time manifest validation against proposal.schema.json (DD-087).
   let validationOk = true;
+  let manifestReason: string | undefined;
   try {
-    const parsed = JSON.parse(artifactBody) as unknown;
-    const v = validateAuthorPayload(parsed);
-    if (!v.ok) validationOk = false;
-  } catch {
-    // Not JSON; assume rendered markdown — accept.
+    const manifestRaw = readFileSync(path.join(dir, 'manifest.json'), 'utf8');
+    const m = JSON.parse(manifestRaw) as unknown;
+    const r = validateManifest(m);
+    if (!r.ok) {
+      validationOk = false;
+      manifestReason = r.reason;
+    }
+  } catch (err) {
+    validationOk = false;
+    manifestReason = err instanceof Error ? err.message : String(err);
+  }
+
+  // Re-validate the artifact body at read time. Accept either fully-rendered
+  // markdown OR a JSON payload that satisfies the Author payload schema.
+  if (validationOk) {
+    try {
+      const parsed = JSON.parse(artifactBody) as unknown;
+      const v = validateAuthorPayload(parsed);
+      if (!v.ok) {
+        validationOk = false;
+        manifestReason = v.reason ?? 'invalid_author_payload';
+      }
+    } catch {
+      // Not JSON; assume rendered markdown — accept.
+    }
   }
   if (!validationOk) {
     await emitMetric(store, {
       event: 'proposal_validation_failed',
       session_id: sessionId,
       proposal_id: proposalId,
-      reason: 'read_time_validation',
+      reason: manifestReason ?? 'read_time_validation',
     });
     return {
       found: false,
       reason: 'manifest_corrupt',
-      rendered: `[coherence] propose-show: ${proposalId} fails read-time validation; dropped`,
+      rendered: `[coherence] propose-show: ${proposalId} fails read-time validation (${manifestReason ?? 'unknown'}); dropped`,
     };
   }
 

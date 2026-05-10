@@ -12,6 +12,8 @@
       "additionalProperties": { "type": "string" }
     },
     "token_count_in_posttooluse": { "type": "boolean" },
-    "host_version": { "type": "string" }
+    "host_version": { "type": "string" },
+    "terminal_hyperlink": { "type": "string", "enum": ["osc8", "osc52", "plain"] },
+    "claude_url_scheme_supported": { "type": "boolean" }
   }
 }
