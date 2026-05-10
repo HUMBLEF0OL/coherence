@@ -94,7 +94,7 @@ export async function runExportMetrics(
   }
 
   const raw = readBoundedJsonl(jsonlPath);
-  const events: Array<Record<string, unknown>> = [];
+  const events: unknown[] = [];
   for (const line of raw) {
     let parsed: Record<string, unknown>;
     try {
@@ -176,37 +176,70 @@ function readBoundedJsonl(filePath: string): string[] {
   if (st.size <= METRICS_TAIL_BYTES) {
     return readFileSync(filePath, 'utf8').split('\n').filter((l) => l.trim() !== '');
   }
-  // Tail-read last METRICS_TAIL_BYTES bytes; drop a partial first line.
+  // Tail-read last METRICS_TAIL_BYTES bytes. Audit-fix B5: only drop the
+  // first line when we're certain it was truncated mid-line. We detect that
+  // by reading ONE extra byte before the tail boundary; if that byte is `\n`,
+  // the boundary fell on a record edge and the first line of the tail is
+  // intact. Otherwise we drop it to avoid emitting a partial record.
   const fd = openSync(filePath, 'r');
   try {
+    const tailStart = st.size - METRICS_TAIL_BYTES;
+    let firstLineMaybePartial = true;
+    if (tailStart > 0) {
+      const probe = Buffer.alloc(1);
+      readSync(fd, probe, 0, 1, tailStart - 1);
+      if (probe[0] === 0x0a /* \n */) firstLineMaybePartial = false;
+    } else {
+      firstLineMaybePartial = false;
+    }
     const buf = Buffer.alloc(METRICS_TAIL_BYTES);
-    readSync(fd, buf, 0, METRICS_TAIL_BYTES, st.size - METRICS_TAIL_BYTES);
+    readSync(fd, buf, 0, METRICS_TAIL_BYTES, tailStart);
     const text = buf.toString('utf8');
     const lines = text.split('\n');
-    lines.shift(); // drop possibly-truncated first line
+    if (firstLineMaybePartial) lines.shift();
     return lines.filter((l) => l.trim() !== '');
   } finally {
     closeSync(fd);
   }
 }
 
-function redact(event: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(event)) {
-    if (REDACT_FIELDS.has(k)) continue;
-    out[k] = v;
+/**
+ * Recursive redaction (audit-fix B6). Strips every key in `REDACT_FIELDS`
+ * at any depth — DD-068's matrix is a defense-in-depth strip and a future
+ * payload extension nesting raw data inside an object must not bypass it.
+ */
+function redact(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redact);
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (REDACT_FIELDS.has(k)) continue;
+      out[k] = redact(v);
+    }
+    return out;
   }
-  return out;
+  return value;
 }
 
-function anonymise(event: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = { ...event };
-  for (const f of ANONYMIZE_FIELDS) {
-    if (typeof out[f] === 'string') {
-      out[f] = createHash('sha256').update(String(out[f])).digest('hex').slice(0, 12);
+/**
+ * Recursive anonymisation (audit-fix B6). Hashes every string value found
+ * under any of `ANONYMIZE_FIELDS` keys at any depth. Strings under other
+ * keys pass through unchanged.
+ */
+function anonymise(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(anonymise);
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (ANONYMIZE_FIELDS.includes(k) && typeof v === 'string') {
+        out[k] = createHash('sha256').update(v).digest('hex').slice(0, 12);
+      } else {
+        out[k] = anonymise(v);
+      }
     }
+    return out;
   }
-  return out;
+  return value;
 }
 
 function bucketCount(n: number): ExportMetricsResult['countBucket'] {

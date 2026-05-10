@@ -23,11 +23,17 @@ const ROOT = path.resolve(__dirname, '..', '..');
 function npmPackDryRun(): { stdout: string; stderr: string } {
   // `--json` makes parsing trivial. Older npm versions also emit the
   // file list as plain stdout; we tolerate both.
+  //
+  // Audit-fix E10: `shell: true` on every platform. On Linux/macOS, `npm`
+  // is often a shell-script shim (nvm, n, volta) that `execFileSync`
+  // without `shell: true` cannot launch — it ENOENTs in CI cells with
+  // managed Node toolchains. Going through a shell on every platform is
+  // safe here because the args are fixed literals, not user input.
   const stdout = execFileSync('npm', ['pack', '--dry-run', '--json'], {
     cwd: ROOT,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-    shell: process.platform === 'win32',
+    shell: true,
   });
   return { stdout, stderr: '' };
 }

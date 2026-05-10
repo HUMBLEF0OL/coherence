@@ -122,13 +122,55 @@ describe('acceptPlan / rejectPlan (DD-115; M3 acceptance)', () => {
 
   it('reject reasons are restricted to the documented enum', async () => {
     // Type-level only: the function signature requires RejectReason.
-    // This test exists to keep the enum visible to grep when the audit
-    // checklist re-runs.
     const allowedReasons: ['stale', 'superseded', 'rejected_explicit'] = [
       'stale',
       'superseded',
       'rejected_explicit',
     ];
     expect(allowedReasons.length).toBe(3);
+  });
+
+  // ── audit-fix E6 / T9: friendly errors for missing + malformed plans ────
+
+  it('acceptPlan throws PlanNotFoundError when the plan file is missing', async () => {
+    await initCoherenceDir(dir);
+    const store = makeStateStore(dir);
+    const { PlanNotFoundError } = await import(
+      '../../../../src/state/plans/lifecycle.js'
+    );
+    await expect(
+      acceptPlan({
+        store,
+        projectRoot: dir,
+        branchSha: 'aaaaaaaaaaaa',
+        planId: 'b'.repeat(32),
+        sessionId: 's',
+      }),
+    ).rejects.toBeInstanceOf(PlanNotFoundError);
+  });
+
+  it('rejectPlan throws MalformedPlanError when the plan file is invalid JSON', async () => {
+    await initCoherenceDir(dir);
+    const store = makeStateStore(dir);
+    const { MalformedPlanError } = await import(
+      '../../../../src/state/plans/lifecycle.js'
+    );
+    const { mkdirSync, writeFileSync } = await import('fs');
+    const branchSha = 'cccccccccccc';
+    const planId = 'c'.repeat(32);
+    const fp = path.join(dir, 'coherence', 'plans', branchSha, `${planId}.json`);
+    mkdirSync(path.dirname(fp), { recursive: true });
+    writeFileSync(fp, '{not json');
+
+    await expect(
+      rejectPlan({
+        store,
+        projectRoot: dir,
+        branchSha,
+        planId,
+        sessionId: 's',
+        reason: 'stale',
+      }),
+    ).rejects.toBeInstanceOf(MalformedPlanError);
   });
 });

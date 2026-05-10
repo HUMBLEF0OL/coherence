@@ -302,3 +302,77 @@ don't accidentally re-introduce them.
 | `/coherence:recover` cross-major-version rollback | DD-118 — within-major-version only | DD-095 amended |
 | `coherence/ignore` migration path for v0.2 users | DD-118 — fresh state on install | DD-111 retired |
 | Multi-channel publishing (npm registry as primary distribution) | DD-093 — Anthropic registry only; npm name optional squat-prevention only | BRD-5 |
+
+## Post-M8 audit closures (deep code-quality pass)
+
+A second audit (focused on edge cases + correctness, not spec coverage)
+flagged 6 bugs and 9 test gaps. Closures:
+
+**Bugs fixed:**
+- **B1** `refuseLegacy` now distinguishes legacy refusal (`schema_version < 3`,
+  message: "does not migrate from earlier major versions") from
+  future-major refusal (`schema_version > 3`, message: "found state from a
+  NEWER major version on disk; upgrade the plugin"). Coerces JSON-string
+  versions (`"3"`) to integer.
+- **B4** `findStalePlans` now parses both timestamps via `Date.parse` so
+  timezone-offset ISO strings (`...+05:30`) compare correctly against UTC.
+  Plans with unparseable `created_at` are surfaced as stale (worst case)
+  rather than silently misclassified.
+- **B5** `readBoundedJsonl` only drops the first line of the tail-read when
+  it's actually mid-line. Detected by reading one byte before the tail
+  boundary; a `\n` there means the boundary fell on a record edge and the
+  first line is intact.
+- **B6** `redact` and `anonymise` are now recursive — DD-068 redaction
+  applies to nested objects and arrays at any depth, defending against
+  future event-payload extensions that nest raw data.
+- **B7** `ANNOTATE_BLOCK_RE` tolerates CRLF line endings on Windows
+  checkouts (`\r?\n` between the section line and `auto-annotated:`).
+- **N8** `readBranchShaShort` no-git fallback bumped from `'unknown00000'`
+  (non-hex `u`/`n`) to `NO_GIT_SENTINEL_BRANCH_SHA = '00000000000a'` so it
+  satisfies `team-plan.schema.json` `^[0-9a-f]{12}$`.
+
+**Edge cases hardened:**
+- **E1** `firstRun.patchGitignore` and `ignoreSplit.runIgnoreSplit` strip a
+  UTF-8 BOM before parsing. A BOM-prefixed `.gitignore` no longer causes
+  re-append.
+- **E6** `lifecycle.acceptPlan` and `rejectPlan` throw new
+  `PlanNotFoundError` / `MalformedPlanError` instead of raw `ENOENT`/
+  `SyntaxError`, with the offending file path attached.
+- **E10** `tarball-shape.test.ts` now uses `shell: true` on every platform.
+  Linux/macOS CI cells with shell-script `npm` shims (nvm, n, volta) no
+  longer ENOENT.
+
+**Test coverage added (+20 tests, 745 → 765):**
+- T1: future-major / string version / missing schema_version (5 cases) →
+  `tests/unit/state/refuse-legacy.test.ts`
+- T3: timezone-offset ISO + unparseable timestamp (5 cases) →
+  `tests/unit/state/plans/reader.test.ts`
+- T4: recursive redaction + recursive anonymisation (2 cases) →
+  `tests/integration/export-metrics.test.ts`
+- T6: CRLF anchor + multi-anchor + graduated-anchor no-op (3 cases) →
+  `tests/integration/de-annotate.test.ts`
+- T7: BOM-prefixed .gitignore idempotency (1 case) →
+  `tests/integration/first-run-consent.test.ts`
+- T8: `withCacheLock` releases lock when `fn` throws (1 case) →
+  `tests/integration/cross-team-plan.test.ts`
+- T9: `acceptPlan`/`rejectPlan` raise typed errors for missing/malformed
+  plan files (2 cases) → `tests/unit/state/plans/lifecycle.test.ts`
+
+**Items accepted as documented limitations:**
+- **B2** `parseMajor` formula `major*1000 + minor` is correct for 0.x.y
+  pre-1.0 plugins (where `major.minor` is the breaking-change key) but
+  conflates within-major minor bumps once the project reaches 1.0+. Not
+  blocking v0.3; flag for revision when a v1.0.0 cut is planned.
+- **E5** Two plans with the same `branch_sha + author_hash + title +
+  created_at` (millisecond resolution) produce identical `plan_id` and the
+  second write overwrites the first. Deterministic by design (M3 spec);
+  documented in [docs/v0.3/state-files.md](state-files.md). Caller
+  responsibility to vary title or wait ≥1 ms between rapid creations.
+- **E9** `consent.promptInteractive` is a placeholder — Claude Code hooks
+  run with stdout NOT being a TTY, so the interactive Y/n prompt is never
+  reached. Defaults always apply (local ON, upload OFF). Future work:
+  surface the prompt as a slash-command output rather than spawning a TTY
+  question. Tracked as future v0.4 deliverable; not blocking v0.3.
+- **N4** `/coherence:export-metrics --out <path>` accepts an absolute path
+  outside the project root. Intentional — user-supplied. Worth flagging
+  for the security review, not blocking.

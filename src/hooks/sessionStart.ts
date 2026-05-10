@@ -41,9 +41,11 @@ export async function sessionStartHook(
 
     // Step 2: v0.3 NFR-COMPAT-N4 — refuse pre-v3 state, fresh-install otherwise.
     // DD-118 retired the cross-major-version migration chain; SessionStart now
-    // consults `refuseLegacy()` before laying down v3 state.
+    // consults `refuseLegacy()` before laying down v3 state. A future-major
+    // (e.g. v4) install seen on disk gets a distinct message so the operator
+    // does not delete state thinking it's legacy.
     const decision = refuseLegacy(coherenceDir);
-    if (decision.status === 'refuse') {
+    if (decision.status === 'refuse' || decision.status === 'refuse_future') {
       console.error(`[coherence] ${decision.message}`);
       return { success: true, refusedLegacy: true };
     }

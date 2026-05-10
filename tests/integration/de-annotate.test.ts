@@ -114,6 +114,58 @@ describe('/coherence:de-annotate (DD-102/DD-110)', () => {
     expect(resolveDeAnnotate(g, 'README.md')?.scope).toBe('global');
   });
 
+  // ── audit-fix B7 / T6: CRLF + multi-anchor + graduated-anchor coverage ──
+
+  it('strips auto-annotated blocks with CRLF line endings (B7)', async () => {
+    await initCoherenceDir(dir);
+    const docs = path.join(dir, 'docs');
+    mkdirSync(docs, { recursive: true });
+    const target = path.join(docs, 'crlf.md');
+    const body =
+      '<!-- coherence:section a\r\nauto-annotated: true -->\r\n# CRLF Doc\r\nbody\r\n';
+    writeFileSync(target, body);
+    const store = makeStateStore(dir);
+    const r = await runDeAnnotate({ store, projectRoot: dir, target });
+    expect(r.filesAffected).toContain(target);
+    const after = readFileSync(target, 'utf8');
+    expect(after).not.toMatch(/auto-annotated:\s*true/);
+  });
+
+  it('strips ALL auto-annotated blocks when a doc has multiple', async () => {
+    await initCoherenceDir(dir);
+    const docs = path.join(dir, 'docs');
+    mkdirSync(docs, { recursive: true });
+    const target = path.join(docs, 'multi.md');
+    const body =
+      '<!-- coherence:section a\nauto-annotated: true -->\n# A\n\n' +
+      '<!-- coherence:section b\nauto-annotated: true -->\n# B\n\n' +
+      '<!-- coherence:section c\nauto-annotated: true -->\n# C\n';
+    writeFileSync(target, body);
+    const store = makeStateStore(dir);
+    const r = await runDeAnnotate({ store, projectRoot: dir, target });
+    expect(r.filesAffected).toContain(target);
+    const after = readFileSync(target, 'utf8');
+    const trueMatches = after.match(/auto-annotated:\s*true/g) ?? [];
+    expect(trueMatches.length).toBe(0);
+  });
+
+  it('strip is a no-op on a graduated (auto-annotated: false) anchor — user-owned territory', async () => {
+    await initCoherenceDir(dir);
+    const docs = path.join(dir, 'docs');
+    mkdirSync(docs, { recursive: true });
+    const target = path.join(docs, 'graduated.md');
+    writeFileSync(
+      target,
+      '<!-- coherence:section a\nauto-annotated: false -->\n# user-owned\n',
+    );
+    const store = makeStateStore(dir);
+    const r = await runDeAnnotate({ store, projectRoot: dir, target });
+    expect(r.filesAffected.length).toBe(0);
+    // File contents preserved.
+    const after = readFileSync(target, 'utf8');
+    expect(after).toMatch(/auto-annotated:\s*false/);
+  });
+
   it('emits the user-edit hint when the doc is large and recently modified', async () => {
     await initCoherenceDir(dir);
     const docs = path.join(dir, 'docs');

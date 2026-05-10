@@ -53,6 +53,25 @@ describe('cross-team plan store (DD-099 amended; DD-100; DD-108)', () => {
     expect(ids.size).toBe(2);
   });
 
+  // ── audit-fix T8: withCacheLock releases the lock when fn throws ────────
+
+  it('withCacheLock releases the lock if the wrapped fn throws', async () => {
+    const planFile = path.join(dir, 'coherence', 'plans', 'aaaaaaaaaaaa', 'unlock.json');
+    await expect(
+      withCacheLock(planFile, 'team-plan-store', async () => {
+        await new Promise((r) => setTimeout(r, 5));
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
+    // The lock file must NOT linger after the throw — a follow-up acquire
+    // must succeed immediately, not wait for the BUFFER_FENCE_MS age fence.
+    const t0 = Date.now();
+    const ran = await withCacheLock(planFile, 'team-plan-store', async () => {
+      return Date.now() - t0;
+    });
+    expect(ran).toBeLessThan(1_000);
+  });
+
   it('withCacheLock serialises concurrent writers to the same plan path', async () => {
     const planFile = path.join(dir, 'coherence', 'plans', 'aaaaaaaaaaaa', 'shared.json');
     const events: string[] = [];

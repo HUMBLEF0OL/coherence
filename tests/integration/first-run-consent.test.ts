@@ -83,4 +83,24 @@ describe('first-run consent (DD-115)', () => {
     const consent = await readTelemetryConsent(store);
     expect(consent!.local_collection).toBe(false);
   });
+
+  // ── audit-fix E1 / T7: BOM-prefixed .gitignore is parsed correctly ──────
+
+  it('idempotent against a UTF-8 BOM-prefixed .gitignore (E1)', async () => {
+    // Pre-seed .gitignore WITH a BOM and the per-developer entries already
+    // present. firstRun must NOT re-append.
+    const bom = '﻿';
+    const seeded =
+      bom +
+      '# cohrence — per-developer state (do not commit)\n' +
+      '.claude/coherence/signal-cache.json\n' +
+      '.claude/coherence/session-map.json\n';
+    writeFileSync(path.join(dir, '.gitignore'), seeded, 'utf8');
+    await runFreshInstall(dir, { silent: true });
+    const after = readFileSync(path.join(dir, '.gitignore'), 'utf8');
+    const sigMatches = after.match(/signal-cache\.json/g) ?? [];
+    const sessMatches = after.match(/session-map\.json/g) ?? [];
+    expect(sigMatches.length).toBe(1);
+    expect(sessMatches.length).toBe(1);
+  });
 });

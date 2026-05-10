@@ -93,3 +93,58 @@ describe('plan reader', () => {
     expect(listPlansForBranch(dir, 'aaaaaaaaaaaa')).toEqual([]);
   });
 });
+
+// ── audit-fix B4 / T3 coverage ─────────────────────────────────────────────
+
+describe('findStalePlans — timezone-offset ISO timestamps (B4)', () => {
+  function basePlan(createdAt: string): Parameters<typeof findStalePlans>[0][number] {
+    return {
+      schema_version: 1,
+      plan_id: 'a'.repeat(32),
+      branch_sha: 'a'.repeat(12),
+      kind: 'proposal',
+      title: 't',
+      created_at: createdAt,
+      author_hash: '000000000001',
+    };
+  }
+
+  it('parses Z-suffixed timestamps', () => {
+    const stale = findStalePlans(
+      [basePlan('2026-04-01T10:00:00Z'), basePlan('2026-05-09T10:00:00Z')],
+      '2026-05-01T00:00:00Z',
+    );
+    expect(stale.length).toBe(1);
+    expect(stale[0].created_at).toBe('2026-04-01T10:00:00Z');
+  });
+
+  it('parses positive-offset timestamps and treats them as UTC-equivalent', () => {
+    // 2026-05-10T10:00:00+05:30 == 2026-05-10T04:30:00Z (earlier in UTC).
+    // Cutoff is 2026-05-10T05:00:00Z. The offset-tagged plan is older in
+    // wall time and MUST be classified stale; the simple string compare in
+    // the pre-fix would have ranked '+' before 'Z' lexically — wrong.
+    const stale = findStalePlans(
+      [basePlan('2026-05-10T10:00:00+05:30')],
+      '2026-05-10T05:00:00Z',
+    );
+    expect(stale.length).toBe(1);
+  });
+
+  it('parses negative-offset timestamps', () => {
+    // 2026-05-10T00:00:00-05:00 == 2026-05-10T05:00:00Z (later in UTC).
+    const stale = findStalePlans(
+      [basePlan('2026-05-10T00:00:00-05:00')],
+      '2026-05-10T04:00:00Z',
+    );
+    expect(stale.length).toBe(0);
+  });
+
+  it('treats a plan with unparseable created_at as stale', () => {
+    const stale = findStalePlans([basePlan('not-a-date')], '2026-05-10T00:00:00Z');
+    expect(stale.length).toBe(1);
+  });
+
+  it('throws when cutoff itself is unparseable', () => {
+    expect(() => findStalePlans([], 'not-a-date')).toThrow(/parseable/);
+  });
+});

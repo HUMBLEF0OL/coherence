@@ -45,7 +45,18 @@ export interface DeAnnotateResult {
   hint?: string;
 }
 
-const ANNOTATE_BLOCK_RE = /<!--\s*coherence:section\s+([a-z0-9_-]+)\s*\nauto-annotated:\s*true\s*-->/gi;
+/**
+ * Audit-fix B7: tolerate CRLF + LF line endings on Windows checkouts.
+ *
+ * The regex matches only `auto-annotated: true` because that is the
+ * machine-owned state. Once a user runs `--keep-as-user-anchor` the block
+ * becomes `auto-annotated: false` (graduated to user-owned); subsequent
+ * runs are intentional no-ops — the anchor is no longer the plugin's to
+ * strip.
+ */
+const ANNOTATE_BLOCK_RE =
+  /<!--\s*coherence:section\s+([a-z0-9_-]+)\s*\r?\nauto-annotated:\s*true\s*-->/gi;
+
 const KEEP_REPLACEMENT = (id: string): string =>
   `<!-- coherence:section ${id}\nauto-annotated: false -->`;
 

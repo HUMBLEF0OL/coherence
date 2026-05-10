@@ -163,6 +163,74 @@ describe('runExportMetrics (DD-117 + DD-068 redaction matrix)', () => {
     expect(event!.event_count_bucket).toBe('1-9');
   });
 
+  // ── audit-fix B6 / T4: recursive redaction + anonymisation ──────────────
+
+  it('redaction recurses into nested objects and arrays (B6)', async () => {
+    await initCoherenceDir(dir);
+    seedJsonl([
+      {
+        event: 'patch_proposed',
+        session_id: 's',
+        nested: {
+          ok_field: 1,
+          raw_path: '/secret/path',
+          deeper: { content: 'leak', body: 'also-leak' },
+        },
+        list: [{ raw_command: 'rm -rf /' }, { ok_field: 'visible' }],
+      },
+    ]);
+    const store = makeStateStore(dir);
+    const r = await runExportMetrics({
+      store,
+      projectRoot: dir,
+      sessionId: 's',
+      out: path.join(dir, 'nested.jsonl'),
+    });
+    const out = JSON.parse(readFileSync(r.outPath, 'utf8').trim()) as Record<
+      string,
+      unknown
+    >;
+    const nested = out.nested as Record<string, unknown>;
+    expect(nested.raw_path).toBeUndefined();
+    expect(nested.ok_field).toBe(1);
+    const deeper = nested.deeper as Record<string, unknown>;
+    expect(deeper.content).toBeUndefined();
+    expect(deeper.body).toBeUndefined();
+    const list = out.list as Array<Record<string, unknown>>;
+    expect(list[0].raw_command).toBeUndefined();
+    expect(list[1].ok_field).toBe('visible');
+  });
+
+  it('--anonymized recurses for proposal_id/signal_hash/session_id at any depth (B6)', async () => {
+    await initCoherenceDir(dir);
+    seedJsonl([
+      {
+        event: 'proposal_proposed',
+        session_id: 'plain',
+        nested: { proposal_id: 'a'.repeat(32), signal_hash: 'visible-sig' },
+        list: [{ session_id: 'plain-2' }],
+      },
+    ]);
+    const store = makeStateStore(dir);
+    const r = await runExportMetrics({
+      store,
+      projectRoot: dir,
+      sessionId: 's',
+      anonymized: true,
+      out: path.join(dir, 'nested-anon.jsonl'),
+    });
+    const out = JSON.parse(readFileSync(r.outPath, 'utf8').trim()) as Record<
+      string,
+      unknown
+    >;
+    expect(out.session_id).toMatch(/^[0-9a-f]{12}$/);
+    const nested = out.nested as Record<string, string>;
+    expect(nested.proposal_id).toMatch(/^[0-9a-f]{12}$/);
+    expect(nested.signal_hash).toMatch(/^[0-9a-f]{12}$/);
+    const list = out.list as Array<Record<string, string>>;
+    expect(list[0].session_id).toMatch(/^[0-9a-f]{12}$/);
+  });
+
   it('writes audit entry to coherence-log/exports.jsonl', async () => {
     await initCoherenceDir(dir);
     seedJsonl([{ event: 'a', session_id: 's' }]);

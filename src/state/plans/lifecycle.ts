@@ -133,6 +133,24 @@ export async function rejectPlan(args: RejectPlanArgs): Promise<AcceptPlanResult
   });
 }
 
+/** Audit-fix E6: friendly error when the plan file is missing or malformed. */
+export class PlanNotFoundError extends Error {
+  constructor(public readonly filePath: string) {
+    super(`team plan not found: ${filePath}`);
+    this.name = 'PlanNotFoundError';
+  }
+}
+
+export class MalformedPlanError extends Error {
+  constructor(
+    public readonly filePath: string,
+    public readonly cause: Error,
+  ) {
+    super(`team plan file is malformed JSON: ${filePath} (${cause.message})`);
+    this.name = 'MalformedPlanError';
+  }
+}
+
 async function mutate<T>(
   _store: StateStore,
   projectRoot: string,
@@ -142,7 +160,20 @@ async function mutate<T>(
 ): Promise<T> {
   const filePath = planFilePath(projectRoot, branchSha, planId);
   return withCacheLock(filePath, 'team-plan-store', async () => {
-    const plan = JSON.parse(readFileSync(filePath, 'utf8')) as TeamPlan;
+    let raw: string;
+    try {
+      raw = readFileSync(filePath, 'utf8');
+    } catch (err) {
+      const e = err as NodeJS.ErrnoException;
+      if (e.code === 'ENOENT') throw new PlanNotFoundError(filePath);
+      throw err;
+    }
+    let plan: TeamPlan;
+    try {
+      plan = JSON.parse(raw) as TeamPlan;
+    } catch (err) {
+      throw new MalformedPlanError(filePath, err as Error);
+    }
     return fn(plan);
   });
 }

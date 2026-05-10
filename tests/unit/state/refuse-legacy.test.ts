@@ -14,6 +14,7 @@ import path from 'path';
 import {
   refuseLegacy,
   REFUSE_LEGACY_MESSAGE,
+  REFUSE_FUTURE_MESSAGE,
 } from '../../../src/state/refuseLegacy.js';
 
 let tmp: string;
@@ -76,5 +77,69 @@ describe('refuseLegacy (v0.3 NFR-COMPAT-N4, DD-118)', () => {
     writeFileSync(path.join(coherenceDir, 'version.json'), '{not json');
     const r = refuseLegacy(coherenceDir);
     expect(r.status).toBe('refuse');
+  });
+
+  // ── audit-fix B1 coverage ────────────────────────────────────────────
+
+  it('future-major schema_version: 4 is refused with the FUTURE message (not the legacy one)', () => {
+    writeFileSync(
+      path.join(coherenceDir, 'version.json'),
+      JSON.stringify({ schema_version: 4, plugin_version: '0.4.0' }),
+    );
+    const r = refuseLegacy(coherenceDir);
+    expect(r.status).toBe('refuse_future');
+    if (r.status === 'refuse_future') {
+      expect(r.foundSchemaVersion).toBe(4);
+      expect(r.message).toBe(REFUSE_FUTURE_MESSAGE);
+      expect(r.message).not.toBe(REFUSE_LEGACY_MESSAGE);
+    }
+  });
+
+  it('schema_version as a JSON string ("3") is coerced and proceeds', () => {
+    writeFileSync(
+      path.join(coherenceDir, 'version.json'),
+      '{"schema_version":"3","plugin_version":"0.3.0"}',
+    );
+    const r = refuseLegacy(coherenceDir);
+    expect(r.status).toBe('proceed');
+  });
+
+  it('schema_version as a JSON string ("2") is refused (legacy)', () => {
+    writeFileSync(
+      path.join(coherenceDir, 'version.json'),
+      '{"schema_version":"2","plugin_version":"0.2.0"}',
+    );
+    const r = refuseLegacy(coherenceDir);
+    expect(r.status).toBe('refuse');
+  });
+
+  it('missing schema_version field is treated as legacy refusal', () => {
+    writeFileSync(
+      path.join(coherenceDir, 'version.json'),
+      JSON.stringify({ plugin_version: 'x' }),
+    );
+    const r = refuseLegacy(coherenceDir);
+    expect(r.status).toBe('refuse');
+    if (r.status === 'refuse') {
+      expect(r.foundSchemaVersion).toBe(0);
+    }
+  });
+
+  it('non-numeric schema_version ("???") falls back to legacy refusal', () => {
+    writeFileSync(
+      path.join(coherenceDir, 'version.json'),
+      '{"schema_version":"???"}',
+    );
+    const r = refuseLegacy(coherenceDir);
+    expect(r.status).toBe('refuse');
+  });
+
+  it('schema_version: 100 (far-future) is refused with FUTURE message', () => {
+    writeFileSync(
+      path.join(coherenceDir, 'version.json'),
+      JSON.stringify({ schema_version: 100 }),
+    );
+    const r = refuseLegacy(coherenceDir);
+    expect(r.status).toBe('refuse_future');
   });
 });

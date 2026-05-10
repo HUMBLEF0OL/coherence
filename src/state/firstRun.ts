@@ -54,9 +54,15 @@ export async function runFreshInstall(
   });
 }
 
+/** Audit-fix E1: strip a UTF-8 BOM if the file starts with one. */
+function stripBom(text: string): string {
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+}
+
 function patchGitignore(projectRoot: string): void {
   const gitignore = path.join(projectRoot, '.gitignore');
-  const text = existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '';
+  const raw = existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '';
+  const text = stripBom(raw);
   const present = new Set(
     text
       .split(/\r?\n/)

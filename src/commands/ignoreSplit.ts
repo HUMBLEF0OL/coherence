@@ -49,7 +49,9 @@ export function runIgnoreSplit(projectRoot: string): IgnoreSplitResult {
     actions.push('Created empty coherence/ignore.local (personal)');
   }
 
-  const gitignoreText = existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '';
+  const gitignoreRaw = existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '';
+  // Audit-fix E1: strip UTF-8 BOM so a BOM-prefixed .gitignore is parsed correctly.
+  const gitignoreText = gitignoreRaw.charCodeAt(0) === 0xfeff ? gitignoreRaw.slice(1) : gitignoreRaw;
   if (!hasGitignoreEntry(gitignoreText)) {
     const appended =
       (gitignoreText.endsWith('\n') || gitignoreText.length === 0 ? '' : '\n') +

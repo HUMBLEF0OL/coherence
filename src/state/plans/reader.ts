@@ -50,7 +50,23 @@ export function listAllPlans(projectRoot: string): ListPlansResult {
   return { plans, branches };
 }
 
-/** Returns plans whose `created_at` is older than the supplied cutoff. */
+/**
+ * Returns plans whose `created_at` is older than the supplied cutoff.
+ *
+ * Audit-fix B4: parses both timestamps via `Date` so timezone-offset ISO
+ * strings (`...+05:30`) compare correctly against UTC (`...Z`). String-sort
+ * on ISO would mis-order offset variants because lex-sort treats `+` < `Z`.
+ * A plan with an unparseable `created_at` is treated as stale (worst case)
+ * so a corrupt fixture surfaces in doctor's stale-plan list.
+ */
 export function findStalePlans(plans: TeamPlan[], cutoffIso: string): TeamPlan[] {
-  return plans.filter((p) => p.created_at < cutoffIso);
+  const cutoffMs = Date.parse(cutoffIso);
+  if (!Number.isFinite(cutoffMs)) {
+    throw new Error(`findStalePlans: cutoffIso is not a parseable date: ${cutoffIso}`);
+  }
+  return plans.filter((p) => {
+    const createdMs = Date.parse(p.created_at);
+    if (!Number.isFinite(createdMs)) return true;
+    return createdMs < cutoffMs;
+  });
 }
