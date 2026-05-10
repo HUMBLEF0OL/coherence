@@ -15,7 +15,35 @@ export type MetricEventType =
   | 'compaction_detected'
   | 'degraded_mode_entered'
   | 'kill_switch_seen'
-  | 'subagent_classification';
+  | 'subagent_classification'
+  // DD-068 v0.1.1 privacy-safe Author-signal events (substrate for v0.2 detectors).
+  | 'tool_invocation_signature'
+  | 'user_prompt_signature'
+  | 'agent_response_id'
+  // v0.2 telemetry catalogue (FR-OBS-N4) — emitted by M5/M6/M7 entry points.
+  | 'proposal_proposed'
+  | 'proposal_surfaced'
+  | 'proposal_accepted'
+  | 'proposal_rejected'
+  | 'proposal_expired'
+  | 'proposal_state_transition'
+  | 'proposal_validation_failed'
+  | 'proposal_acceptance_blocked'
+  | 'proposal_signal_observed'
+  | 'proposal_listed'
+  | 'proposal_shown'
+  | 'proposal_reverted'
+  | 'proposal_skipped_budget'
+  | 'annotation_proposed'
+  | 'annotate_invocation'
+  | 'annotate_blocked'
+  | 'statusline_install'
+  | 'statusline_uninstall'
+  | 'trickle_scan_pass'
+  | 'signal_cache_pruned'
+  | 'migration_completed'
+  | 'cost_ceiling_hit'
+  | 'state_history_truncated';
 
 export interface PromptVersion {
   stage1?: string;
@@ -90,6 +118,17 @@ export interface SubagentClassificationEvent extends BaseMetricEvent {
   prompt_version: PromptVersion;
 }
 
+/**
+ * Generic v0.2 telemetry event. Used for DD-068 signature events and the
+ * full v0.2 metrics catalogue. Payload shapes are documented per event in
+ * `docs/v0.2/CHANGELOG.md`; we keep the type permissive at the writer so
+ * the schema is enforced where the event is constructed.
+ */
+export interface GenericV02Event extends BaseMetricEvent {
+  event: MetricEventType;
+  [key: string]: unknown;
+}
+
 export type MetricEvent =
   | PatchProposedEvent
   | PatchAppliedEvent
@@ -100,7 +139,8 @@ export type MetricEvent =
   | CompactionDetectedEvent
   | DegradedModeEnteredEvent
   | KillSwitchSeenEvent
-  | SubagentClassificationEvent;
+  | SubagentClassificationEvent
+  | GenericV02Event;
 
 export async function emitMetric(store: StateStore, event: MetricEvent): Promise<void> {
   await store.appendJsonl('metrics.jsonl', event);
