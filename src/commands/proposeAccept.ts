@@ -310,13 +310,21 @@ async function runProposeAcceptLocked(
         }
       : {}),
   });
+  // R1 fix: surface the documentation-only nature of slash_command accepts
+  // in the rendered string, not just in telemetry.
+  const writtenRel = path.relative(args.projectRoot, writePath);
+  let rendered = `[coherence] propose-accept: ${args.proposalId} → ${writtenRel}`;
+  if (kind === 'slash_command') {
+    rendered +=
+      '\n[coherence] note: slash_command kind ships as DOCUMENTATION ONLY in v0.2.\n' +
+      '              The markdown above describes what the command should do; the\n' +
+      '              command is NOT yet runnable. To activate, write a JS handler\n' +
+      '              and add a slashCommands[] entry in plugin.json.';
+  }
   return {
     accepted: true,
     written_path: writePath,
-    rendered: `[coherence] propose-accept: ${args.proposalId} → ${path.relative(
-      args.projectRoot,
-      writePath,
-    )}`,
+    rendered,
   };
 }
 

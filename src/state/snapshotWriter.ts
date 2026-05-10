@@ -52,10 +52,24 @@ function stateFor(store: StateStore | null): SnapshotState {
 
 /**
  * PostToolUse-side: mark the snapshot dirty without touching disk.
- * If `store` is provided, the dirty bit is stored per-store; otherwise
- * the legacy module-level state is updated (kept for v0.1 compatibility).
+ *
+ * R5 fix: `store` is now required. Previously calling `markDirty(snap)`
+ * without a store wrote to a module-level `defaultState` that nothing
+ * reads (Q1 removed the flush fall-through). The legacy form became a
+ * silent no-op — a footgun for new contributors. We now console.warn
+ * so the bug surfaces during development.
  */
 export function markDirty(snapshot: StateSnapshot, store?: StateStore): void {
+  if (!store) {
+    // Hot-path-light warning. Tests that genuinely want to test the
+    // module-level path can pass `null` explicitly via the test helper
+    // (we keep the underlying machinery intact for `_peekState(null)`).
+    console.warn(
+      '[coherence] snapshotWriter.markDirty called without a StateStore — ' +
+        'this is a no-op since flush() reads only per-store state. ' +
+        'Pass `store` as the second argument.',
+    );
+  }
   const s = stateFor(store ?? null);
   s.dirty = true;
   s.pending = snapshot;

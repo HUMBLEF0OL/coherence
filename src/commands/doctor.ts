@@ -32,7 +32,9 @@ export interface DoctorResult {
  *    otherwise defaults to false. (Real detection requires host APIs that
  *    aren't exposed; this is a conservative default.)
  */
-function probeTerminalHyperlink(env: NodeJS.ProcessEnv): 'osc8' | 'osc52' | 'plain' {
+// R9: exported for tests so each detection branch can be exercised
+// without bringing up the full /coherence:doctor command.
+export function probeTerminalHyperlink(env: NodeJS.ProcessEnv): 'osc8' | 'osc52' | 'plain' {
   if (env['FORCE_HYPERLINK'] === '1') return 'osc8';
 
   // Q6: env-var sentinels for terminals that don't always set TERM_PROGRAM.

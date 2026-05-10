@@ -244,11 +244,28 @@ async function runSessionEndAuthorTail(
     (i) => i.occurrences >= 3 && i.line_ratio >= 0.2,
   );
   if (candidates.length === 0) return;
+
+  // R11 fix: pre-filter candidates whose signal_hash already has a
+  // non-terminal proposal-cache entry. Stop's tail (A6) walks the same
+  // bucket; without this filter, SessionEnd re-iterates and the
+  // collision pre-check refuses each one (correct but noisy + lock-thrashy).
+  const proposalCacheRaw = await store.read<{ entries: Array<{ signal_hash?: string; state?: string }> }>(
+    'proposal-cache.json',
+  );
+  const NON_TERMINAL = new Set(['queued', 'surfaced', 'ignored']);
+  const alreadyAuthored = new Set<string>();
+  for (const e of proposalCacheRaw?.entries ?? []) {
+    if (e.signal_hash && e.state && NON_TERMINAL.has(e.state)) {
+      alreadyAuthored.add(e.signal_hash);
+    }
+  }
+
   const transport = pickAuthorTransport();
   const pstore = new ProposalStore(store);
   for (const item of candidates) {
     if (ProposalStore.peekSessionCount(sessionId) >= 3) break;
     const sigHash = signatureHash('agent_correction', item.agent_id);
+    if (alreadyAuthored.has(sigHash)) continue; // R11
     let out;
     try {
       out = await runAuthorPipeline(

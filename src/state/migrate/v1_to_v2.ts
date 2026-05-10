@@ -215,7 +215,7 @@ async function migrateV1ToV2Locked(
   if (!existsSync(scanCachePath)) {
     atomicWriteJson(scanCachePath, {
       schema_version: 2,
-      last_pass_at: '',
+      last_pass_at: now, // R2 fix: schema requires date-time format
       entries_this_session: 0,
       per_session_cap: 20,
       idle_threshold_ms: 30000,

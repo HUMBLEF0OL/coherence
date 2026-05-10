@@ -22,6 +22,8 @@ import { signatureHash } from '../signal/signatureHash.js';
 import { emitAgentResponseId } from '../signal/telemetry.js';
 import type { SignalKind } from '../state/proposalCache.js';
 import { nowIsoUtc } from '../util/time.js';
+import { readGraduation } from '../state/graduation.js';
+import { resolveMode } from '../modes/resolver.js';
 
 /**
  * N1 fix: pick the Author transport at hook-invocation time.
@@ -94,18 +96,21 @@ export async function stopHook(
     }
     // After Author tail (which may have enqueued proposals), refresh the
     // pending snapshot so the flush below captures the new proposal_counts.
+    // R4 fix: resolve the snapshot mode from graduation.json (matching
+    // postToolUse + sessionEnd) instead of the coarse legacy v0.1 mapping.
     try {
       const pstoreSnap = new ProposalStore(store);
       const counts = await pstoreSnap.counts();
       const buf = await store.read<{ entries: unknown[] }>('drift-buffer.json');
-      const modeForSnapshot = mode === 'graduated' ? 'annotate' : 'observe';
+      const graduation = await readGraduation(store);
+      const effective = resolveMode({ graduation, targetPath: '.' });
       markDirty(
         {
           schema_version: 2,
           written_at: nowIsoUtc(),
           buffer_count: buf?.entries.length ?? 0,
           proposal_counts: counts,
-          mode: modeForSnapshot,
+          mode: effective,
         },
         store,
       );

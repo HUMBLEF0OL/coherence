@@ -51,7 +51,9 @@ export async function readScanCacheState(store: StateStore): Promise<ScanCacheSt
   return (
     f ?? {
       schema_version: 2,
-      last_pass_at: '',
+      // R2 fix: schema requires date-time format. Use a sentinel epoch
+      // for "never scanned" rather than empty string.
+      last_pass_at: '1970-01-01T00:00:00.000Z',
       entries_this_session: 0,
       per_session_cap: DEFAULT_PER_SESSION_CAP,
       idle_threshold_ms: DEFAULT_IDLE_THRESHOLD_MS,

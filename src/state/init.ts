@@ -54,12 +54,15 @@ export async function initCoherenceDir(projectRoot: string): Promise<void> {
   mkdirSync(scanCacheDir, { recursive: true });
   const scanCacheStatePath = path.join(scanCacheDir, 'state.json');
   if (!existsSync(scanCacheStatePath)) {
+    // R2 fix: schema requires `last_pass_at` to be a valid date-time.
+    // Initialise with the install-time timestamp; trickle treats this as
+    // "no scans yet" since `entries_this_session = 0`.
     writeFileSync(
       scanCacheStatePath,
       JSON.stringify(
         {
           schema_version: 2,
-          last_pass_at: '',
+          last_pass_at: nowIsoUtc(),
           entries_this_session: 0,
           per_session_cap: 20,
           idle_threshold_ms: 30000,

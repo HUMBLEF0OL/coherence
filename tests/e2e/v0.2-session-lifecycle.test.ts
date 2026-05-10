@@ -103,6 +103,8 @@ describe('v0.2 full session lifecycle', () => {
     const proposed = events.filter((e) => e.event === 'proposal_proposed');
     expect(proposed.length).toBeGreaterThanOrEqual(1);
     expect(proposed[0].kind).toBe('slash_command');
+    const proposalId = proposed[0].proposal_id as string;
+    expect(proposalId).toMatch(/^[0-9a-f]{32}$/);
 
     // 6. SG-3 boundary check: only .claude/coherence/ exists under .claude/.
     const dotClaude = path.join(dir, '.claude');
@@ -113,7 +115,29 @@ describe('v0.2 full session lifecycle', () => {
       }
     }
 
-    // 7. The state-snapshot reflects queued proposals.
+    // 7. R10: the materialised quarantine artifact + manifest exist on disk.
+    const proposalDir = path.join(
+      dir,
+      '.claude',
+      'coherence',
+      'proposals',
+      'slash_command',
+      proposalId,
+    );
+    expect(existsSync(proposalDir)).toBe(true);
+    const manifestPath = path.join(proposalDir, 'manifest.json');
+    expect(existsSync(manifestPath)).toBe(true);
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    expect(manifest.proposal_id).toBe(proposalId);
+    expect(manifest.kind).toBe('slash_command');
+    expect(manifest.state).toBe('queued');
+    // The artifact body file (kebab-name).md or similar must exist alongside.
+    const artifactFiles = readdirSync(proposalDir).filter((f) => f !== 'manifest.json');
+    expect(artifactFiles.length).toBe(1);
+    const body = readFileSync(path.join(proposalDir, artifactFiles[0]), 'utf8');
+    expect(body.length).toBeGreaterThan(0);
+
+    // 8. The state-snapshot reflects queued proposals.
     const snapshot = JSON.parse(
       readFileSync(path.join(dir, '.claude', 'coherence', 'state-snapshot.json'), 'utf8'),
     );
