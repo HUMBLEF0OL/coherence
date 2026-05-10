@@ -1,5 +1,5 @@
 {
-  "name": "coherence",
+  "name": "cohrence",
   "version": "0.2.0-alpha.1",
   "description": "Detects documentation-vs-code drift and proposes surgical patches",
   "min_claude_code_version": "2.0.0",
