@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-10T15:51:32.882Z",
+  "corpus_path": "tests/fixtures/signal-corpora",
+  "case_count": 72,
+  "acceptance_floor": {
+    "precision_wilson_lower": 0.7,
+    "recall": 0.6
+  },
+  "detectors": {
+    "bash_repetition": {
+      "kind": "bash_repetition",
+      "case_count": 32,
+      "positive_cases": 20,
+      "negative_cases": 12,
+      "default_config": {
+        "count": 3,
+        "windowMinutes": 30
+      },
+      "recommended_config": {
+        "count": 3,
+        "windowMinutes": 30
+      },
+      "recommended_metrics": {
+        "precision": 1,
+        "precision_wilson_lower": 0.8388748398148705,
+        "precision_wilson_upper": 1,
+        "recall": 1,
+        "tp": 20,
+        "fp": 0,
+        "tn": 12,
+        "fn": 0
+      },
+      "gate_passes": true,
+      "sweep_top_5": [
+        {
+          "config": {
+            "count": 3,
+            "windowMinutes": 30
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.8388748398148705,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 3,
+            "windowMinutes": 15
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7719046248681998,
+          "recall": 0.65
+        },
+        {
+          "config": {
+            "count": 3,
+            "windowMinutes": 45
+          },
+          "precision": 0.9090909090909091,
+          "precision_wilson_lower": 0.721850529721749,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 3,
+            "windowMinutes": 60
+          },
+          "precision": 0.8695652173913043,
+          "precision_wilson_lower": 0.6787251755146014,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 2,
+            "windowMinutes": 15
+          },
+          "precision": 0.8333333333333334,
+          "precision_wilson_lower": 0.6414692917870997,
+          "recall": 1
+        }
+      ]
+    },
+    "agent_correction": {
+      "kind": "agent_correction",
+      "case_count": 25,
+      "positive_cases": 13,
+      "negative_cases": 12,
+      "default_config": {
+        "occurrenceCount": 3,
+        "lineRatio": 0.2,
+        "windowMinutes": 5,
+        "windowDays": 7
+      },
+      "recommended_config": {
+        "occurrenceCount": 3,
+        "lineRatio": 0.2,
+        "windowMinutes": 5
+      },
+      "recommended_metrics": {
+        "precision": 1,
+        "precision_wilson_lower": 0.7719046248681998,
+        "precision_wilson_upper": 1,
+        "recall": 1,
+        "tp": 13,
+        "fp": 0,
+        "tn": 12,
+        "fn": 0
+      },
+      "gate_passes": true,
+      "sweep_top_5": [
+        {
+          "config": {
+            "occurrenceCount": 3,
+            "lineRatio": 0.2,
+            "windowMinutes": 5
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7719046248681998,
+          "recall": 1
+        },
+        {
+          "config": {
+            "occurrenceCount": 3,
+            "lineRatio": 0.2,
+            "windowMinutes": 3
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7575059904469021,
+          "recall": 0.9230769230769231
+        },
+        {
+          "config": {
+            "occurrenceCount": 3,
+            "lineRatio": 0.25,
+            "windowMinutes": 5
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7224671969739421,
+          "recall": 0.7692307692307693
+        },
+        {
+          "config": {
+            "occurrenceCount": 3,
+            "lineRatio": 0.3,
+            "windowMinutes": 5
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7224671969739421,
+          "recall": 0.7692307692307693
+        },
+        {
+          "config": {
+            "occurrenceCount": 3,
+            "lineRatio": 0.25,
+            "windowMinutes": 3
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.700854948272956,
+          "recall": 0.6923076923076923
+        }
+      ]
+    },
+    "file_creation": {
+      "kind": "file_creation",
+      "case_count": 15,
+      "positive_cases": 11,
+      "negative_cases": 4,
+      "default_config": {
+        "count": 3,
+        "jaccard": 0.8
+      },
+      "recommended_config": {
+        "count": 3,
+        "jaccard": 0.7
+      },
+      "recommended_metrics": {
+        "precision": 1,
+        "precision_wilson_lower": 0.7411670300055737,
+        "precision_wilson_upper": 1,
+        "recall": 1,
+        "tp": 11,
+        "fp": 0,
+        "tn": 4,
+        "fn": 0
+      },
+      "gate_passes": true,
+      "sweep_top_5": [
+        {
+          "config": {
+            "count": 3,
+            "jaccard": 0.7
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7411670300055737,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 3,
+            "jaccard": 0.75
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7411670300055737,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 3,
+            "jaccard": 0.8
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7411670300055737,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 3,
+            "jaccard": 0.85
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.7411670300055737,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 2,
+            "jaccard": 0.7
+          },
+          "precision": 0.9166666666666666,
+          "precision_wilson_lower": 0.6461200862787544,
+          "recall": 1
+        }
+      ]
+    }
+  },
+  "overall_pass": true
+}

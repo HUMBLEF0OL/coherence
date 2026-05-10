@@ -1,0 +1,19 @@
+{
+  "kind": "bash_repetition",
+  "description": "Boundary case for normaliser + window edges.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "command": "ls    -la",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "ls -la",
+      "at": "2026-05-10T10:10:00.000Z"
+    },
+    {
+      "command": "ls  -la",
+      "at": "2026-05-10T10:20:00.000Z"
+    }
+  ]
+}

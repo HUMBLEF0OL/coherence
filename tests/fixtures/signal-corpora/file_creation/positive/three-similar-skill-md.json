@@ -1,0 +1,22 @@
+{
+  "kind": "file_creation",
+  "description": "Same-dir structurally similar files — must fire.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "filePath": "docs/v0.3/cmd/foo.md",
+      "content": "# Command\n## Synopsis\n## Behaviour\n## Errors\n## Examples\n\nbody-0\n",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "filePath": "docs/v0.3/cmd/bar.md",
+      "content": "# Command\n## Synopsis\n## Behaviour\n## Errors\n## Examples\n\nbody-1\n",
+      "at": "2026-05-10T10:01:00.000Z"
+    },
+    {
+      "filePath": "docs/v0.3/cmd/baz.md",
+      "content": "# Command\n## Synopsis\n## Behaviour\n## Errors\n## Examples\n\nbody-2\n",
+      "at": "2026-05-10T10:02:00.000Z"
+    }
+  ]
+}

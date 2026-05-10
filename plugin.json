@@ -1,6 +1,6 @@
 {
   "name": "cohrence",
-  "version": "0.3.0-pre.0",
+  "version": "0.3.0",
   "description": "Detects documentation-vs-code drift and proposes surgical patches",
   "min_claude_code_version": "2.0.0",
   "main": "./dist/index.js",
@@ -107,6 +107,26 @@
       "name": "coherence:annotate",
       "description": "Generate an annotation proposal for an anchor-less doc (DD-069)",
       "handler": "commands/annotate"
+    },
+    {
+      "name": "coherence:scope-debug",
+      "description": "Print walked CLAUDE.md/coherence/scope.json ancestors and resolved scope for a path (DD-097)",
+      "handler": "commands/scopeDebug"
+    },
+    {
+      "name": "coherence:ignore-split",
+      "description": "Set up the two-file additive ignore model: coherence/ignore (committed) + coherence/ignore.local (gitignored) (DD-096)",
+      "handler": "commands/ignoreSplit"
+    },
+    {
+      "name": "coherence:export-metrics",
+      "description": "Write redacted metrics.jsonl to a user-supplied path; prints copy-paste curl only with upload consent (DD-115)",
+      "handler": "commands/exportMetrics"
+    },
+    {
+      "name": "coherence:de-annotate",
+      "description": "Strip auto-annotations or graduate them to user-owned anchors (DD-102/DD-110)",
+      "handler": "commands/deAnnotate"
     }
   ]
 }

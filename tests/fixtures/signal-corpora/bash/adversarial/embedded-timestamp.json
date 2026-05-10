@@ -1,0 +1,19 @@
+{
+  "kind": "bash_repetition",
+  "description": "Adversarial: tests normaliser robustness.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "command": "log /tmp/run-2026-05-10T10:00:00.log",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "log /tmp/run-2026-05-10T10:05:00.log",
+      "at": "2026-05-10T10:05:00.000Z"
+    },
+    {
+      "command": "log /tmp/run-2026-05-10T10:10:00.log",
+      "at": "2026-05-10T10:10:00.000Z"
+    }
+  ]
+}

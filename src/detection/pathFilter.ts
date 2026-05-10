@@ -29,11 +29,16 @@ export class PathFilter {
   private ignorePatterns: RegExp[] = [];
 
   constructor(projectRoot: string) {
-    const coherenceIgnore = path.join(projectRoot, '.claude', 'coherence', 'ignore');
+    // v0.3 DD-096: two-file additive ignore at user-owned `coherence/` root.
+    // Committed `coherence/ignore` is the team-shared file; per-developer rules
+    // live in `coherence/ignore.local` (gitignored). Reader merges both.
+    const coherenceIgnoreCommitted = path.join(projectRoot, 'coherence', 'ignore');
+    const coherenceIgnoreLocal = path.join(projectRoot, 'coherence', 'ignore.local');
     const gitIgnore = path.join(projectRoot, '.gitignore');
 
     const patterns = [
-      ...readIgnoreLines(coherenceIgnore),
+      ...readIgnoreLines(coherenceIgnoreCommitted),
+      ...readIgnoreLines(coherenceIgnoreLocal),
       ...readIgnoreLines(gitIgnore),
       '.env', '.env.*', '*.lock', 'node_modules/**',
       // G10 fix: never scan our own quarantine + cache files.
@@ -42,6 +47,8 @@ export class PathFilter {
       '.claude/coherence/signal-cache.json',
       '.claude/coherence/state-snapshot.json',
       '.claude/coherence/scan-cache/**',
+      // v0.3 M1: scope-cache is plugin-managed, never user-edited.
+      '.claude/coherence/scope-cache.json',
     ];
 
     this.ignorePatterns = patterns.map(globToRegex);

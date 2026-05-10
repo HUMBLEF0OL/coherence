@@ -1,0 +1,19 @@
+{
+  "kind": "bash_repetition",
+  "description": "Three or more identical \"tsc --noEmit\" within window — must fire.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "command": "tsc --noEmit",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "tsc --noEmit",
+      "at": "2026-05-10T10:10:00.000Z"
+    },
+    {
+      "command": "tsc --noEmit",
+      "at": "2026-05-10T10:20:00.000Z"
+    }
+  ]
+}

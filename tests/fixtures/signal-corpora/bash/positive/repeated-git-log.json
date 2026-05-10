@@ -1,0 +1,19 @@
+{
+  "kind": "bash_repetition",
+  "description": "Three or more identical \"git log --oneline\" within window — must fire.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "command": "git log --oneline",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "git log --oneline",
+      "at": "2026-05-10T10:06:00.000Z"
+    },
+    {
+      "command": "git log --oneline",
+      "at": "2026-05-10T10:12:00.000Z"
+    }
+  ]
+}

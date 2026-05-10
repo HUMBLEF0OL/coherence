@@ -1,0 +1,17 @@
+{
+  "kind": "file_creation",
+  "description": "Negative — must NOT fire.",
+  "expected_fired": false,
+  "samples": [
+    {
+      "filePath": "src/util/x.ts",
+      "content": "import path from 'path';\nimport { readFileSync } from 'fs';\nimport { z } from 'zod';\n\nexport function run() {\n  return path.join('a');\n}\n",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "filePath": "src/util/y.ts",
+      "content": "import path from 'path';\nimport { readFileSync } from 'fs';\nimport { z } from 'zod';\n\nexport function run() {\n  return path.join('a');\n}\n",
+      "at": "2026-05-10T10:01:00.000Z"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * v0.2.1 corpus calibration (DD-116, DD-092 amendment 2026-05-10).
+ * v0.3 corpus calibration (DD-116, DD-092 amendment 2026-05-10).
  *
  * Reads every JSON fixture under tests/fixtures/signal-corpora/{bash,
  * correction,file_creation}/{positive,negative,boundary,adversarial}/, runs
@@ -10,7 +10,7 @@
  * >= ACCEPTANCE_RECALL.
  *
  * Output:
- *   release-artifacts/v0.2.1-corpus-calibration-<ts>.json
+ *   release-artifacts/v0.3-corpus-calibration-<ts>.json
  *
  * Acceptance (DD-092 amendment 2026-05-10):
  *   - per-detector precision_wilson_lower >= 0.7
@@ -342,7 +342,7 @@ function main() {
 
     const outDir = path.join(projectRoot, 'release-artifacts');
     mkdirSync(outDir, { recursive: true });
-    const outPath = path.join(outDir, `v0.2.1-corpus-calibration-${Date.now()}.json`);
+    const outPath = path.join(outDir, `v0.3-corpus-calibration-${Date.now()}.json`);
     writeFileSync(outPath, JSON.stringify(summary, null, 2) + '\n', 'utf8');
     console.log(`[corpus-calibrate] wrote ${path.relative(projectRoot, outPath).replace(/\\/g, '/')}`);
 
@@ -371,7 +371,7 @@ function main() {
                 ACCEPTANCE_RECALL,
         );
         console.error(
-            '[corpus-calibrate] Path forward: expand tests/fixtures/signal-corpora/ to >= ~30 cases per detector before v0.2.1 ships.',
+            '[corpus-calibrate] Path forward: expand tests/fixtures/signal-corpora/ to >= ~30 cases per detector before v0.3 ships.',
         );
         if (enforceGates) {
             process.exit(1);

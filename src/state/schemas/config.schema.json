@@ -114,6 +114,19 @@
       "type": "boolean",
       "default": true,
       "description": "DD-078 amended: gate firing on burst_count ≥ count. Set false for replay/calibration."
+    },
+    "telemetry": {
+      "type": "object",
+      "required": ["local_collection", "upload_consent", "recorded_at", "plugin_version"],
+      "additionalProperties": false,
+      "description": "v0.3 first-run telemetry consent (DD-115).",
+      "properties": {
+        "local_collection": { "type": "boolean" },
+        "upload_consent": { "type": "boolean" },
+        "recorded_at": { "type": "string", "format": "date-time" },
+        "plugin_version": { "type": "string", "minLength": 1 },
+        "non_interactive_default": { "type": "boolean" }
+      }
     }
   }
 }

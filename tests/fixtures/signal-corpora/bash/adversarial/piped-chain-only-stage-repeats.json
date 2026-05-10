@@ -1,0 +1,19 @@
+{
+  "kind": "bash_repetition",
+  "description": "Adversarial: tests normaliser robustness.",
+  "expected_fired": false,
+  "samples": [
+    {
+      "command": "cat foo.json | jq .",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "cat bar.json | jq .",
+      "at": "2026-05-10T10:05:00.000Z"
+    },
+    {
+      "command": "cat baz.json | jq .",
+      "at": "2026-05-10T10:10:00.000Z"
+    }
+  ]
+}

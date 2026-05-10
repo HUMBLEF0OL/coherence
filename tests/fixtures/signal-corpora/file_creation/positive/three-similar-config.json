@@ -1,0 +1,22 @@
+{
+  "kind": "file_creation",
+  "description": "Same-dir structurally similar files — must fire.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "filePath": "configs/x/options.yaml",
+      "content": "name: shared\nversion: 1\nshared: yes\nstable: true\nidx_marker: marker\n# distinct: 0\n",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "filePath": "configs/x/options-prod.yaml",
+      "content": "name: shared\nversion: 1\nshared: yes\nstable: true\nidx_marker: marker\n# distinct: 1\n",
+      "at": "2026-05-10T10:01:00.000Z"
+    },
+    {
+      "filePath": "configs/x/options-dev.yaml",
+      "content": "name: shared\nversion: 1\nshared: yes\nstable: true\nidx_marker: marker\n# distinct: 2\n",
+      "at": "2026-05-10T10:02:00.000Z"
+    }
+  ]
+}

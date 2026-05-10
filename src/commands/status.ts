@@ -73,6 +73,22 @@ export async function runStatus(
   }
   lines.push('');
 
+  // v0.3 M4: telemetry consent line.
+  try {
+    const { readTelemetryConsent } = await import('../state/consent.js');
+    const consent = await readTelemetryConsent(store);
+    if (consent) {
+      lines.push(
+        `  Telemetry: local=${consent.local_collection ? 'on' : 'off'}, upload=${consent.upload_consent ? 'on' : 'off'}` +
+          (consent.non_interactive_default ? ' (defaults; will re-prompt next interactive session)' : ''),
+      );
+    } else {
+      lines.push('  Telemetry: not yet recorded (will prompt at next SessionStart)');
+    }
+  } catch {
+    /* consent module non-fatal */
+  }
+
   // Capabilities
   const caps = await store.read<HostCapabilities>('host-capabilities.json');
   if (caps) {

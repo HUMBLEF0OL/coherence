@@ -25,7 +25,10 @@ export type ProposalState =
   | 'accepted'
   | 'rejected'
   | 'reverted'
-  | 'expired';
+  | 'expired'
+  // v0.3 DD-088 amendment: terminal state when a teammate's commit to
+  // `coherence/ignore` matches the proposal's anchor.
+  | 'ignored_by_team';
 
 export interface ProposalManifest {
   proposal_id: string;

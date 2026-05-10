@@ -140,3 +140,26 @@ function sleep(ms: number): Promise<void> {
 
 /** Module-level singleton used by stateStore */
 export const lockManager = new LockManager();
+
+/**
+ * v0.3 DD-100 — convenience wrapper for proposal-cache + plan-store writes.
+ *
+ * Both surfaces are read-mutate-write JSON workflows that can race when two
+ * sessions land at the same SHA. Wrap mutating writes in `withCacheLock()`
+ * so the singleton LockManager serialises them under a stable namespace.
+ */
+export async function withCacheLock<T>(
+  filePath: string,
+  namespace: 'proposal-cache' | 'team-plan-store',
+  fn: () => Promise<T>,
+): Promise<T> {
+  const acquired = await lockManager.acquire(filePath, namespace);
+  if (!acquired) {
+    throw new Error(`withCacheLock: failed to acquire ${namespace} lock for ${filePath}`);
+  }
+  try {
+    return await fn();
+  } finally {
+    lockManager.release(filePath);
+  }
+}

@@ -31,6 +31,10 @@ const SCHEMA_NAMES = [
   'signal-cache.schema.json',
   'state-snapshot.schema.json',
   'scan-cache-state.schema.json',
+  // v0.3 additions
+  'scope-cache.schema.json',
+  'scope-config.schema.json',
+  'team-plan.schema.json',
 ] as const;
 
 const FILE_TO_SCHEMA: Record<string, string> = {
@@ -50,6 +54,8 @@ const FILE_TO_SCHEMA: Record<string, string> = {
   'signal-cache.json': 'signal-cache.schema.json',
   'state-snapshot.json': 'state-snapshot.schema.json',
   'scan-cache/state.json': 'scan-cache-state.schema.json',
+  // v0.3 additions
+  'scope-cache.json': 'scope-cache.schema.json',
 };
 
 let schemasLoaded = false;

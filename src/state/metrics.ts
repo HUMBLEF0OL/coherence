@@ -43,7 +43,14 @@ export type MetricEventType =
   | 'signal_cache_pruned'
   | 'migration_completed'
   | 'cost_ceiling_hit'
-  | 'state_history_truncated';
+  | 'state_history_truncated'
+  // v0.3 telemetry catalogue (round-1 G5 + round-2 C3 finalised roster).
+  | 'scope_cache_miss'
+  | 'proposal_ignored_by_team'
+  | 'plan_created'
+  | 'plan_accepted'
+  | 'plan_rejected'
+  | 'metrics_export_started';
 
 export interface PromptVersion {
   stage1?: string;

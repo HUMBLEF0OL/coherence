@@ -18,6 +18,21 @@
           "mode": { "type": "string", "enum": ["observe", "annotate", "author"] }
         }
       }
+    },
+    "de_annotate": {
+      "type": "array",
+      "description": "v0.3 M5: per-scope de-annotate decisions (DD-102/DD-110).",
+      "items": {
+        "type": "object",
+        "required": ["path", "scope", "action", "recorded_at"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "scope": { "type": "string", "enum": ["per-doc", "per-directory", "global"] },
+          "action": { "type": "string", "enum": ["strip", "keep-as-user-anchor"] },
+          "recorded_at": { "type": "string", "format": "date-time" }
+        }
+      }
     }
   }
 }

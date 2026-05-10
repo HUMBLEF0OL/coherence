@@ -8,10 +8,19 @@
 import type { StateStore } from '../state/stateStore.js';
 import type { HostCapabilities } from '../types/index.js';
 import type { HostCapabilitiesV02 } from '../observability/statusline.js';
+import { listAllPlans, findStalePlans } from '../state/plans/reader.js';
 
 export interface DoctorOptions {
   initialProbe?: boolean;
   hostVersion?: string;
+  /**
+   * v0.3 M3: when set, doctor scans `coherence/plans/<branch-sha>/*.json` and
+   * surfaces any plan whose `created_at` is older than 7 days. Caller passes
+   * the project root since doctor itself only knows its store.
+   */
+  projectRoot?: string;
+  /** Override "now" for stale-plan threshold tests. */
+  now?: Date;
 }
 
 export interface DoctorResult {
@@ -19,7 +28,12 @@ export interface DoctorResult {
   fromCache: boolean;
   nudgeReprobe: boolean;
   actions: string[];
+  /** v0.3 M3: plan files older than 7 days. */
+  stalePlans?: Array<{ planId: string; branchSha: string; ageDays: number }>;
 }
+
+/** v0.3 DD-099: doctor surfaces plans older than this threshold. */
+export const STALE_PLAN_THRESHOLD_DAYS = 7;
 
 /**
  * A7 fix: probe v0.2 host capabilities.
@@ -134,7 +148,34 @@ export async function runDoctor(
     actions.push('  ⚠ Host strips unknown frontmatter keys — run /coherence:enable-sidecars');
   }
 
-  return { capabilities: caps, fromCache, nudgeReprobe, actions };
+  // v0.3 M3: surface stale plans (created_at > 7 days old).
+  let stalePlans: DoctorResult['stalePlans'];
+  if (opts.projectRoot) {
+    const now = opts.now ?? new Date();
+    const cutoff = new Date(now.getTime() - STALE_PLAN_THRESHOLD_DAYS * 24 * 3600 * 1000);
+    const { plans } = listAllPlans(opts.projectRoot);
+    const stale = findStalePlans(plans, cutoff.toISOString());
+    if (stale.length > 0) {
+      stalePlans = stale.map((p) => ({
+        planId: p.plan_id,
+        branchSha: p.branch_sha,
+        ageDays: Math.floor(
+          (now.getTime() - new Date(p.created_at).getTime()) / (24 * 3600 * 1000),
+        ),
+      }));
+      actions.push(
+        `  ⚠ ${stale.length} cross-team plan(s) older than ${STALE_PLAN_THRESHOLD_DAYS} days; consider amending or marking superseded`,
+      );
+    }
+  }
+
+  return {
+    capabilities: caps,
+    fromCache,
+    nudgeReprobe,
+    actions,
+    ...(stalePlans ? { stalePlans } : {}),
+  };
 }
 
 export function formatDoctor(result: DoctorResult): string {

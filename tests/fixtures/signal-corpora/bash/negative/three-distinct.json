@@ -1,0 +1,19 @@
+{
+  "kind": "bash_repetition",
+  "description": "Negative case — must NOT fire.",
+  "expected_fired": false,
+  "samples": [
+    {
+      "command": "ls",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "cd src",
+      "at": "2026-05-10T10:01:00.000Z"
+    },
+    {
+      "command": "vim foo.ts",
+      "at": "2026-05-10T10:02:00.000Z"
+    }
+  ]
+}

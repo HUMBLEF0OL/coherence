@@ -1,5 +1,17 @@
 # Corpus calibration plan (originally v0.2.1; folded into v0.3 ship-time)
 
+> ⚠️ **SUPERSEDED BY v0.3** (2026-05-10)
+> 
+> The corpus-calibration framework described here shipped with v0.3 directly.
+> The acceptance gate (M-CALIB-1: per-detector Wilson 95% lower bound ≥ 0.7,
+> recall ≥ 0.6) is now wired into `scripts/release-ga.mjs` preflight, and the
+> v0.3 corpus (72 fixtures across bash/correction/file_creation) cleared the
+> floor on first run. See [docs/v0.3/CHANGELOG.md § M7](../v0.3/CHANGELOG.md)
+> for the calibration table.
+> 
+> This document is preserved for historical context only. Field calibration
+> remains v0.4+ work.
+
 > **2026-05-10 reframing:** Per Notion DD-118 (no legacy support) + the
 > "no audience yet" reality, v0.2.1 is no longer cut as a separate
 > release. The corpus-calibration framework described here ships with

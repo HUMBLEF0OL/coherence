@@ -1,0 +1,22 @@
+{
+  "kind": "file_creation",
+  "description": "Boundary case.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "filePath": "src/api/a.ts",
+      "content": "import path from 'path';\nimport { readFileSync } from 'fs';\nimport { z } from 'zod';\n\nexport function run() {\n  return path.join('a');\n}\n",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "filePath": "src/api/b.ts",
+      "content": "import path from 'path';\nimport { readFileSync } from 'fs';\nimport { z } from 'zod';\n\nexport function run() {\n  return path.join('a');\n}\n",
+      "at": "2026-05-10T10:01:00.000Z"
+    },
+    {
+      "filePath": "src/api/c.ts",
+      "content": "import path from 'path';\nimport { readFileSync } from 'fs';\nimport { z } from 'zod';\n\nexport function run() {\n  return path.join('a');\n}\n",
+      "at": "2026-05-10T10:02:00.000Z"
+    }
+  ]
+}

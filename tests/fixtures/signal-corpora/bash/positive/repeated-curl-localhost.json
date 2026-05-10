@@ -1,0 +1,19 @@
+{
+  "kind": "bash_repetition",
+  "description": "Three or more identical \"curl http://localhost:3000/health\" within window — must fire.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "command": "curl http://localhost:3000/health",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "curl http://localhost:3000/health",
+      "at": "2026-05-10T10:04:00.000Z"
+    },
+    {
+      "command": "curl http://localhost:3000/health",
+      "at": "2026-05-10T10:08:00.000Z"
+    }
+  ]
+}

@@ -21,6 +21,7 @@ import { readGraduation } from '../state/graduation.js';
 import { resolveMode } from '../modes/resolver.js';
 import { clearResponseCorrelation } from '../signal/telemetry.js';
 import { resetFileLocalityCache } from '../signal/fileLocalityCache.js';
+import { resetScopeCacheMissCounter } from '../state/scope/cache.js';
 import { readScanCacheState, writeScanCacheState } from '../scanner/trickleScanner.js';
 import { nowIsoUtc } from '../util/time.js';
 import { normaliseHookEvent } from './eventShape.js';
@@ -88,6 +89,10 @@ export async function sessionStartHook(
 
     // P2: reset session-scoped file-locality cache.
     resetFileLocalityCache();
+
+    // v0.3 M1: reset per-process scope-cache miss sampling counter so the
+    // 1:100 telemetry rate is genuinely per-session.
+    resetScopeCacheMissCounter();
 
     // Reset per-session proposal cap counter (D5).
     ProposalStore.resetSessionCount(sessionId);

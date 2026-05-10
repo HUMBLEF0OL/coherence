@@ -42,6 +42,26 @@ const ALLOW_LIST = new Set<string>([
   'src/state/metricsRetention.ts',
   'src/state/finalizeSweep.ts',
   'src/state/migrate/v0_to_v1.ts',
+  // v0.3 M1 scope-cache writers — target only .claude/coherence/scope-cache.json.
+  'src/state/scope/cache.ts',
+  // v0.3 M2 ignore-split — writes coherence/ignore + coherence/ignore.local
+  // and patches .gitignore. The user-owned `coherence/` root is a v0.3
+  // architectural addition (DD-096); .gitignore is patched to exclude
+  // per-developer state (NFR-PRIVACY-N5).
+  'src/commands/ignoreSplit.ts',
+  // v0.3 M3 firstRun — patches .gitignore for per-developer state files
+  // (signal-cache.json, session-map.json) under DD-117 file-only model.
+  'src/state/firstRun.ts',
+  // v0.3 M3 cross-team plan store — writes coherence/plans/<branch>/<id>.json
+  // under the user-owned `coherence/` root (DD-099 amended; DD-117 file-only).
+  'src/state/plans/writer.ts',
+  // v0.3 M4 metrics export — user-chosen output path (file-only per DD-117);
+  // also appends a one-line audit entry under .claude/coherence/coherence-log/.
+  'src/commands/exportMetrics.ts',
+  // v0.3 M5 de-annotate — overwrites the targeted source doc to strip or
+  // graduate the auto-annotated block (DD-110). The source doc IS outside
+  // .claude/coherence/ by design — that's what de-annotation means.
+  'src/commands/deAnnotate.ts',
   // v0.2 writers that target only quarantine (.claude/coherence/proposals/).
   'src/proposals/quarantine.ts',
   'src/proposals/manifest.ts',

@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/team-plan",
+  "type": "object",
+  "required": ["schema_version", "plan_id", "branch_sha", "kind", "created_at", "author_hash", "title"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "plan_id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "branch_sha": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+    "kind": {
+      "type": "string",
+      "enum": ["proposal", "decision", "directive", "alignment", "ad_hoc"]
+    },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "body": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "author_hash": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+    "audit_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["actor_hash", "action", "at"],
+        "additionalProperties": false,
+        "properties": {
+          "actor_hash": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+          "action": {
+            "type": "string",
+            "enum": ["created", "accepted", "rejected", "superseded", "amended"]
+          },
+          "at": { "type": "string", "format": "date-time" },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

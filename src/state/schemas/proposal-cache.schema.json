@@ -28,7 +28,7 @@
           "signal_kind": { "type": "string", "enum": ["bash_repetition", "file_creation", "agent_correction", "anchor_less_doc"] },
           "state": {
             "type": "string",
-            "enum": ["queued", "surfaced", "ignored", "accepted", "rejected", "reverted", "expired"]
+            "enum": ["queued", "surfaced", "ignored", "accepted", "rejected", "reverted", "expired", "ignored_by_team"]
           },
           "generated_at": { "type": "string", "format": "date-time" },
           "expires_at": { "type": "string", "format": "date-time" },
@@ -50,7 +50,8 @@
                     "accepted",
                     "rejected",
                     "reverted",
-                    "expired"
+                    "expired",
+                    "ignored_by_team"
                   ]
                 },
                 "at": { "type": "string", "format": "date-time" },

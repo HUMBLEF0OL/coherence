@@ -1,0 +1,15 @@
+{
+  "kind": "bash_repetition",
+  "description": "Negative case — must NOT fire.",
+  "expected_fired": false,
+  "samples": [
+    {
+      "command": "npm test",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "npm test",
+      "at": "2026-05-10T10:05:00.000Z"
+    }
+  ]
+}

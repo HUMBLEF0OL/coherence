@@ -1,0 +1,22 @@
+{
+  "kind": "file_creation",
+  "description": "Adversarial — tests boundary robustness.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "filePath": "src/lib/a.ts",
+      "content": "// auto-generated\n// do not edit\n// see scripts/gen.mjs\n// fixture\n// here\n\nexport const x = 1;\n",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "filePath": "src/lib/b.ts",
+      "content": "// auto-generated\n// do not edit\n// see scripts/gen.mjs\n// fixture\n// here\n\nexport const x = 1;\n",
+      "at": "2026-05-10T10:01:00.000Z"
+    },
+    {
+      "filePath": "src/lib/c.ts",
+      "content": "// auto-generated\n// do not edit\n// see scripts/gen.mjs\n// fixture\n// here\n\nexport const x = 1;\n",
+      "at": "2026-05-10T10:02:00.000Z"
+    }
+  ]
+}

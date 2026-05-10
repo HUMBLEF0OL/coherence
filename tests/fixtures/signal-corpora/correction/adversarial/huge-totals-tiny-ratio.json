@@ -1,0 +1,27 @@
+{
+  "kind": "agent_correction",
+  "description": "Adversarial — robustness check.",
+  "expected_fired": false,
+  "agent_id": "agent-BB",
+  "now": "2026-05-10T10:00:00Z",
+  "samples": [
+    {
+      "agent_id": "agent-BB",
+      "at": "2026-05-09T10:00:00.000Z",
+      "lines_changed": 9,
+      "total_lines": 10000
+    },
+    {
+      "agent_id": "agent-BB",
+      "at": "2026-05-09T10:01:00.000Z",
+      "lines_changed": 9,
+      "total_lines": 10000
+    },
+    {
+      "agent_id": "agent-BB",
+      "at": "2026-05-09T10:03:00.000Z",
+      "lines_changed": 9,
+      "total_lines": 10000
+    }
+  ]
+}

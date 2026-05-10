@@ -1,6 +1,6 @@
 {
   "name": "cohrence",
-  "version": "0.3.0-pre.0",
+  "version": "0.3.0",
   "description": "Claude Code plugin that detects documentation-vs-code drift and proposes surgical patches",
   "type": "module",
   "engines": {
@@ -29,6 +29,7 @@
     "typecheck": "tsc --noEmit",
     "audit": "npm audit --audit-level=high",
     "calibrate": "npm run build --silent && node scripts/corpus-calibrate.mjs",
+    "gates": "vitest run --project static-analysis --project ship",
     "prepare": "husky install",
     "pack:size": "npm pack --dry-run 2>&1 | tail -5"
   },

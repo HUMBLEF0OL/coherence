@@ -53,13 +53,17 @@ export class ProposalStateError extends Error {
 }
 
 const ALLOWED_TRANSITIONS: Record<ProposalState, ProposalState[]> = {
-  queued: ['surfaced', 'expired'],
-  surfaced: ['ignored', 'accepted', 'rejected', 'expired'],
-  ignored: ['surfaced', 'expired'],
+  // v0.3 DD-088 amendment: any non-terminal state can fall to
+  // `ignored_by_team` when a teammate commits a matching path to
+  // `coherence/ignore`.
+  queued: ['surfaced', 'expired', 'ignored_by_team'],
+  surfaced: ['ignored', 'accepted', 'rejected', 'expired', 'ignored_by_team'],
+  ignored: ['surfaced', 'expired', 'ignored_by_team'],
   accepted: ['reverted'],
   rejected: [],
   reverted: [],
   expired: [],
+  ignored_by_team: [],
 };
 
 export function defaultCache(): ProposalCache {

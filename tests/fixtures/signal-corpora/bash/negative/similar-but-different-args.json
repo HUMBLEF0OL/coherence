@@ -1,0 +1,19 @@
+{
+  "kind": "bash_repetition",
+  "description": "Negative case — must NOT fire.",
+  "expected_fired": false,
+  "samples": [
+    {
+      "command": "git diff foo.ts",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "git diff bar.ts",
+      "at": "2026-05-10T10:05:00.000Z"
+    },
+    {
+      "command": "git diff baz.ts",
+      "at": "2026-05-10T10:10:00.000Z"
+    }
+  ]
+}

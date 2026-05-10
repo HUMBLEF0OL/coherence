@@ -1,0 +1,27 @@
+{
+  "kind": "agent_correction",
+  "description": "Positive — must fire.",
+  "expected_fired": true,
+  "agent_id": "agent-A",
+  "now": "2026-05-10T10:00:00Z",
+  "samples": [
+    {
+      "agent_id": "agent-A",
+      "at": "2026-05-09T10:00:00.000Z",
+      "lines_changed": 5,
+      "total_lines": 10
+    },
+    {
+      "agent_id": "agent-A",
+      "at": "2026-05-09T10:01:00.000Z",
+      "lines_changed": 5,
+      "total_lines": 10
+    },
+    {
+      "agent_id": "agent-A",
+      "at": "2026-05-09T10:03:00.000Z",
+      "lines_changed": 5,
+      "total_lines": 10
+    }
+  ]
+}

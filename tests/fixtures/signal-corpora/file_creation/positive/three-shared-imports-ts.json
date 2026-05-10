@@ -1,0 +1,22 @@
+{
+  "kind": "file_creation",
+  "description": "Same-dir structurally similar files — must fire.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "filePath": "src/handlers/a.ts",
+      "content": "import path from 'path';\nimport { readFileSync } from 'fs';\nimport { z } from 'zod';\n\nexport function run() {\n  return path.join('a');\n}\n",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "filePath": "src/handlers/b.ts",
+      "content": "import path from 'path';\nimport { readFileSync } from 'fs';\nimport { z } from 'zod';\n\nexport function run() {\n  return path.join('a');\n}\n",
+      "at": "2026-05-10T10:01:00.000Z"
+    },
+    {
+      "filePath": "src/handlers/c.ts",
+      "content": "import path from 'path';\nimport { readFileSync } from 'fs';\nimport { z } from 'zod';\n\nexport function run() {\n  return path.join('a');\n}\n",
+      "at": "2026-05-10T10:02:00.000Z"
+    }
+  ]
+}

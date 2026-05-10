@@ -9,9 +9,11 @@ without updating its docs) and proposes surgical patches via a two-stage
 LLM pipeline. v0.2 extends the plugin with proactive detection: it watches
 for recurring user behaviour, anchor-less docs, and idle-window drift, and
 surfaces proposals on demand through a sandboxed quarantine boundary.
-v0.3 extends to team workflows (shared ignore rules, monorepo scope,
-cross-team plan visibility, marketplace distribution) — see
-[Architectural commitments](#architectural-commitments-v03) below.
+**v0.3** extends to team workflows: monorepo scope-cache, two-file additive
+ignore (committed + personal), cross-team plan store rooted at `coherence/`,
+file-only metrics export with first-run consent, de-annotate + tombstone
+ergonomics, and ship-time gates that enforce the **no-backend / no-legacy**
+architectural commitments — see [Architectural commitments](#architectural-commitments-v03) below.
 
 ## Install
 
@@ -171,8 +173,96 @@ version accumulates ≥ 50 sessions × ≥ 30 days observation.
 
 ```
 npm run typecheck
-npm test          # 575 tests across unit / integration / e2e / security / perf / preconditions / rollback / schema
+npm test          # full suite across unit / integration / e2e / security / perf / preconditions / rollback / schema / cost / static-analysis / ship
 npm run lint
 npm run build
 npm run calibrate # corpus-calibration sweep (DD-116, DD-092 amended)
+npm run gates     # v0.3 ship-time gates (M-ARCH-1, M-PRIVACY-1, M-LEGACY-1)
 ```
+
+## v0.3 walkthrough — Team workflows
+
+v0.3 adds team-distributable surfaces on top of the v0.2 lifecycle. The new
+slash commands are read-only or idempotent so they're safe to chain into any
+session.
+
+### Monorepo scope-cache (G-3)
+
+```
+/coherence:scope-debug src/handlers/x.ts
+```
+
+Walks ancestor `CLAUDE.md` and `coherence/scope.json` files (depth cap 8),
+prints the resolved scope chain, and reports cache hit/miss + age. Powered by
+`src/state/scope/{walker,resolver,cache}.ts`. Cold-start budget ≤ 200 ms p95
+on a 100-package monorepo (NFR-PERF-N4); telemetry sampled 1:100 via
+`scope_cache_miss`.
+
+### Two-file additive ignore (G-2)
+
+```
+/coherence:ignore-split   # idempotent — creates coherence/ignore + coherence/ignore.local + .gitignore line
+```
+
+`coherence/ignore` is committed (team-shared); `coherence/ignore.local` is
+gitignored (personal). Both are merged additively at scan time. When a
+teammate's commit to `coherence/ignore` matches a queued proposal's anchor,
+the FSM transitions to `ignored_by_team` and emits the
+`proposal_ignored_by_team` telemetry event (DD-088 amended).
+
+### Cross-team plan store (G-4)
+
+`coherence/plans/<branch-sha-12>/<plan-id>.json` files capture team plans —
+proposals, decisions, directives — as committed artifacts. Plan ids derive
+deterministically from `branch_sha + author_hash + title + created_at` so two
+parallel branches never collide (DD-099 amended; DD-107; DD-108). Author
+identity is hashed (12-hex SHA-256 of `git config user.email`) and never
+serialised in clear text. `/coherence:doctor` flags any plan older than 7
+days.
+
+### Metrics export + first-run consent (G-5)
+
+```
+/coherence:export-metrics                              # writes redacted metrics-export-<ts>.jsonl in cwd
+/coherence:export-metrics --since 2026-05-01           # filter by ISO timestamp
+/coherence:export-metrics --anonymized                 # also hash proposal_id / signal_hash / session_id
+```
+
+Consent is two-tier (DD-115): **local collection** is opt-OUT (default ON),
+**upload** is opt-IN (default OFF). The first-run prompt persists the choices
+in `.claude/coherence/config.json#telemetry`; non-interactive shells take
+defaults and re-prompt next interactive session. Per DD-117, v0.3 NEVER
+initiates a network request — `/coherence:export-metrics` only writes a file
+and prints a copy-paste curl line iff upload consent is granted.
+
+### De-annotate + tombstone (G-6/G-8)
+
+```
+/coherence:de-annotate docs/intro.md                            # strip auto-annotated blocks
+/coherence:de-annotate docs/intro.md --keep-as-user-anchor      # graduate to user-owned
+/coherence:de-annotate docs/ --scope per-directory              # apply to a directory
+/coherence:de-annotate '*' --scope global                       # apply project-wide
+```
+
+The decision persists in `graduation.json#de_annotate` so future trickle scans
+honour it. The companion **tombstone** (DD-103) is a per-file scan-cache
+entry keyed by normalised path; mtime advancement evicts entries; LRU at 5,000.
+Composes with the v0.2 P7 doc-content memo so a tombstone hit + memo match
+skips the disk re-read.
+
+### Ship-time gates (M6)
+
+`npm run gates` runs three static-analysis checks:
+
+- **M-ARCH-1** (NFR-ARCH-1, DD-117) — no production module imports a network
+  API, references global network constructors, or embeds non-Anthropic HTTPS URLs.
+- **M-PRIVACY-1** (NFR-PRIVACY-N5, DD-109) — no codepath writes
+  `signal-cache.json` or `session-map.json` under the committed `coherence/`
+  root; the `.gitignore` patcher emits both lines.
+- **M-LEGACY-1** (NFR-ARCH-2, DD-118) — `npm pack --dry-run` excludes any
+  path under `prompts/v1/` and `src/state/migrate/v1_to_v2.ts`; tarball ≤
+  10 MB; `dist/state/schemas/` is non-empty post-build.
+
+A round-2 P7 meta-test (`tests/static-analysis/meta-gates-trip.test.ts`)
+re-runs each gate against synthetic regressions to ensure the gate logic
+itself isn't silently broken.

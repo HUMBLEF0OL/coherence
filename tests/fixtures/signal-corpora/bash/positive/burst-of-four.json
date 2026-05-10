@@ -1,0 +1,23 @@
+{
+  "kind": "bash_repetition",
+  "description": "Three or more identical \"gofmt -l .\" within window — must fire.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "command": "gofmt -l .",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "gofmt -l .",
+      "at": "2026-05-10T10:03:00.000Z"
+    },
+    {
+      "command": "gofmt -l .",
+      "at": "2026-05-10T10:06:00.000Z"
+    },
+    {
+      "command": "gofmt -l .",
+      "at": "2026-05-10T10:09:00.000Z"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "bash_repetition",
+  "description": "Three or more identical \"go build ./...\" within window — must fire.",
+  "expected_fired": true,
+  "samples": [
+    {
+      "command": "go build ./...",
+      "at": "2026-05-10T10:00:00.000Z"
+    },
+    {
+      "command": "go build ./...",
+      "at": "2026-05-10T10:02:00.000Z"
+    },
+    {
+      "command": "go build ./...",
+      "at": "2026-05-10T10:04:00.000Z"
+    },
+    {
+      "command": "go build ./...",
+      "at": "2026-05-10T10:06:00.000Z"
+    },
+    {
+      "command": "go build ./...",
+      "at": "2026-05-10T10:08:00.000Z"
+    }
+  ]
+}
