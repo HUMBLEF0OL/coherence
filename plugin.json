@@ -67,6 +67,46 @@
       "name": "coherence:share-metrics",
       "description": "Write anonymized metrics to a user-chosen file path",
       "handler": "commands/shareMetrics"
+    },
+    {
+      "name": "coherence:propose-list",
+      "description": "List queued and surfaced v0.2 proposals (DD-081)",
+      "handler": "commands/proposeList"
+    },
+    {
+      "name": "coherence:propose-show",
+      "description": "Show a single proposal by id (DD-081)",
+      "handler": "commands/proposeShow"
+    },
+    {
+      "name": "coherence:propose-accept",
+      "description": "Accept a proposal and materialise it under .claude/ (DD-082)",
+      "handler": "commands/proposeAccept"
+    },
+    {
+      "name": "coherence:propose-reject",
+      "description": "Reject a surfaced proposal (DD-088)",
+      "handler": "commands/proposeReject"
+    },
+    {
+      "name": "coherence:propose-revert-acceptance",
+      "description": "Revert an accepted proposal (DD-083)",
+      "handler": "commands/proposeRevertAcceptance"
+    },
+    {
+      "name": "coherence:install-statusline",
+      "description": "Install the coherence statusline into ~/.claude/settings.json (FR-STATUSLINE-2)",
+      "handler": "commands/installStatusline"
+    },
+    {
+      "name": "coherence:uninstall-statusline",
+      "description": "Restore the statusline backup created by install-statusline (FR-STATUSLINE-3)",
+      "handler": "commands/uninstallStatusline"
+    },
+    {
+      "name": "coherence:annotate",
+      "description": "Generate an annotation proposal for an anchor-less doc (DD-069)",
+      "handler": "commands/annotate"
     }
   ]
 }
