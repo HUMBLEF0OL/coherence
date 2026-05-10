@@ -1,0 +1,10 @@
+{
+    "kind": "bash_repetition",
+    "description": "Three identical grep invocations spread over 30 min — must fire at default count=3, windowMin=30.",
+    "expected_fired": true,
+    "samples": [
+        { "command": "grep -r 'TODO' src/", "at": "2026-05-10T11:00:00Z" },
+        { "command": "grep -r 'TODO' src/", "at": "2026-05-10T11:14:00Z" },
+        { "command": "grep -r 'TODO' src/", "at": "2026-05-10T11:28:00Z" }
+    ]
+}

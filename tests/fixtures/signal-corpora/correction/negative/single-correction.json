@@ -1,0 +1,15 @@
+{
+    "kind": "agent_correction",
+    "description": "One correction sample — must NOT fire (occurrenceCount default is 3).",
+    "expected_fired": false,
+    "agent_id": "bar",
+    "now": "2026-05-10T14:00:00Z",
+    "samples": [
+        {
+            "agent_id": "bar",
+            "at": "2026-05-09T14:00:00Z",
+            "lines_changed": 5,
+            "total_lines": 10
+        }
+    ]
+}

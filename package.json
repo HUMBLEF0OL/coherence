@@ -28,6 +28,7 @@
     "lint:fix": "eslint src tests --ext .ts --fix",
     "typecheck": "tsc --noEmit",
     "audit": "npm audit --audit-level=high",
+    "calibrate": "npm run build --silent && node scripts/corpus-calibrate.mjs",
     "prepare": "husky install",
     "pack:size": "npm pack --dry-run 2>&1 | tail -5"
   },

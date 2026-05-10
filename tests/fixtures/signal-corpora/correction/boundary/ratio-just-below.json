@@ -1,0 +1,27 @@
+{
+    "kind": "agent_correction",
+    "description": "Three corrections within the 5-min burst window but invocation-aggregate ratio = 0.15 (below default 0.2 line-ratio floor). Must NOT fire.",
+    "expected_fired": false,
+    "agent_id": "baz",
+    "now": "2026-05-10T15:00:00Z",
+    "samples": [
+        {
+            "agent_id": "baz",
+            "at": "2026-05-09T15:00:00Z",
+            "lines_changed": 3,
+            "total_lines": 20
+        },
+        {
+            "agent_id": "baz",
+            "at": "2026-05-09T15:01:30Z",
+            "lines_changed": 3,
+            "total_lines": 20
+        },
+        {
+            "agent_id": "baz",
+            "at": "2026-05-09T15:03:00Z",
+            "lines_changed": 3,
+            "total_lines": 20
+        }
+    ]
+}

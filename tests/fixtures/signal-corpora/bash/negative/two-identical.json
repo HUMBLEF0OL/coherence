@@ -1,0 +1,9 @@
+{
+    "kind": "bash_repetition",
+    "description": "Two identical commands — must NOT fire at default count=3.",
+    "expected_fired": false,
+    "samples": [
+        { "command": "ls -la", "at": "2026-05-10T12:00:00Z" },
+        { "command": "ls -la", "at": "2026-05-10T12:01:00Z" }
+    ]
+}

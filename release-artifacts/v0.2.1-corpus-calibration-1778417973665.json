@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-10T12:59:33.665Z",
+  "corpus_path": "tests/fixtures/signal-corpora",
+  "case_count": 13,
+  "acceptance_floor": {
+    "precision_wilson_lower": 0.7,
+    "recall": 0.6
+  },
+  "detectors": {
+    "bash_repetition": {
+      "kind": "bash_repetition",
+      "case_count": 7,
+      "positive_cases": 4,
+      "negative_cases": 3,
+      "default_config": {
+        "count": 3,
+        "windowMinutes": 30
+      },
+      "recommended_config": {
+        "count": 3,
+        "windowMinutes": 30
+      },
+      "recommended_metrics": {
+        "precision": 1,
+        "precision_wilson_lower": 0.5101091596030786,
+        "precision_wilson_upper": 0.9999999999999999,
+        "recall": 1,
+        "tp": 4,
+        "fp": 0,
+        "tn": 3,
+        "fn": 0
+      },
+      "gate_passes": false,
+      "sweep_top_5": [
+        {
+          "config": {
+            "count": 3,
+            "windowMinutes": 30
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.5101091596030786,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 2,
+            "windowMinutes": 15
+          },
+          "precision": 0.8,
+          "precision_wilson_lower": 0.375534627029995,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 3,
+            "windowMinutes": 45
+          },
+          "precision": 0.8,
+          "precision_wilson_lower": 0.375534627029995,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 3,
+            "windowMinutes": 60
+          },
+          "precision": 0.8,
+          "precision_wilson_lower": 0.375534627029995,
+          "recall": 1
+        },
+        {
+          "config": {
+            "count": 3,
+            "windowMinutes": 15
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.3423802239546494,
+          "recall": 0.5
+        }
+      ]
+    },
+    "agent_correction": {
+      "kind": "agent_correction",
+      "case_count": 6,
+      "positive_cases": 2,
+      "negative_cases": 4,
+      "default_config": {
+        "occurrenceCount": 3,
+        "lineRatio": 0.2,
+        "windowMinutes": 5,
+        "windowDays": 7
+      },
+      "recommended_config": {
+        "occurrenceCount": 2,
+        "lineRatio": 0.2,
+        "windowMinutes": 3
+      },
+      "recommended_metrics": {
+        "precision": 1,
+        "precision_wilson_lower": 0.3423802239546494,
+        "precision_wilson_upper": 1,
+        "recall": 1,
+        "tp": 2,
+        "fp": 0,
+        "tn": 4,
+        "fn": 0
+      },
+      "gate_passes": false,
+      "sweep_top_5": [
+        {
+          "config": {
+            "occurrenceCount": 2,
+            "lineRatio": 0.2,
+            "windowMinutes": 3
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.3423802239546494,
+          "recall": 1
+        },
+        {
+          "config": {
+            "occurrenceCount": 2,
+            "lineRatio": 0.2,
+            "windowMinutes": 5
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.3423802239546494,
+          "recall": 1
+        },
+        {
+          "config": {
+            "occurrenceCount": 2,
+            "lineRatio": 0.2,
+            "windowMinutes": 7
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.3423802239546494,
+          "recall": 1
+        },
+        {
+          "config": {
+            "occurrenceCount": 2,
+            "lineRatio": 0.2,
+            "windowMinutes": 10
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.3423802239546494,
+          "recall": 1
+        },
+        {
+          "config": {
+            "occurrenceCount": 3,
+            "lineRatio": 0.2,
+            "windowMinutes": 3
+          },
+          "precision": 1,
+          "precision_wilson_lower": 0.3423802239546494,
+          "recall": 1
+        }
+      ]
+    },
+    "file_creation": {
+      "kind": "file_creation",
+      "case_count": 0,
+      "skipped": true,
+      "reason": "no fixtures",
+      "default_config": {
+        "count": 3,
+        "jaccard": 0.8
+      }
+    }
+  },
+  "overall_pass": false
+}

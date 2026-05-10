@@ -1,0 +1,10 @@
+{
+    "kind": "bash_repetition",
+    "description": "Third invocation at exactly +29:59 from the first — inside the 30-min default window. Must fire.",
+    "expected_fired": true,
+    "samples": [
+        { "command": "node scripts/foo.mjs", "at": "2026-05-10T13:00:00Z" },
+        { "command": "node scripts/foo.mjs", "at": "2026-05-10T13:15:00Z" },
+        { "command": "node scripts/foo.mjs", "at": "2026-05-10T13:29:59Z" }
+    ]
+}
