@@ -33,7 +33,3 @@ typed slash commands and confirmation prompts.
 
 `share-metrics --anonymized` writes a redacted JSONL file to a user-chosen
 path. v0.2 ships **no HTTPS upload** (DD-086 — egress deferred to v0.3).
-
-## Legal review
-
-DG-6 requires a legal review sign-off on this matrix prior to GA.

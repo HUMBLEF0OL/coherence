@@ -1,5 +1,24 @@
 # Coherence v0.2.0 — Changelog
 
+## Process artifacts removed for solo-developer workflow
+
+The following files specified in the v0.2 plan as multi-stakeholder
+governance artifacts were removed as solo-developer overhead:
+`PRECONDITION.md`, `alpha-telemetry-plan.md`,
+`dd-092-calibration-commitment.md`, `risk-register-signoff.md`, and
+the `v0.2-spec-freeze-2026-05-09.md` artifact under
+`docs/superpowers/plans/`. The functional content lives in code and
+shipped tests:
+
+- M0 substrate verification → `tests/preconditions/v0.2-substrate.test.ts`.
+- Alpha telemetry collection → `scripts/alpha-telemetry-close.mjs`.
+- DD-092 calibration logic → `src/util/wilson.ts`
+  (`meetsCalibrationFloor`).
+- Risk-register sign-off → reflected in shipped fixes (every R-v0.2-NN
+  is closed by tests + code, listed in the v0.2 plan itself).
+
+Re-add any of them later if/when this becomes a multi-person project.
+
 ## v0.2.0 (target 2026-05-30, GA tag)
 
 **Goal:** turn coherence from reactive (v0.1) to proactive: detect anchor-less

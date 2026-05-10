@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(claude mcp *)"
+      "Bash(claude mcp *)",
+      "Bash(powershell -Command \"\\(Get-Date\\).ToUniversalTime\\(\\).ToString\\('yyyy-MM-ddTHH:mm:ssZ'\\)\")",
+      "mcp__claude_ai_Notion__notion-search",
+      "mcp__notion__API-post-search",
+      "mcp__notion__API-get-block-children",
+      "Bash(grep -oE '\"id\":\"[a-f0-9-]{36}\",\"parent\":\\\\{\"type\":\"page_id\",\"page_id\":\"35b010d4-6a70-8175-a4f1-d6e4e2c3e614\"\\\\}[^}]*\"type\":\"child_page\"' \"C:\\\\Users\\\\amitr\\\\.claude\\\\projects\\\\e--Projects-and-Learning-coherence\\\\16547ea4-fdab-4790-93d7-90c6178807fd\\\\tool-results\\\\toolu_01KTQ7rKhtKTugTowosvuhH2.json\")",
+      "Bash(grep -oE '\"id\":\"[a-f0-9-]{36}\"[^}]{0,300}child_page[^}]{0,200}' \"C:\\\\Users\\\\amitr\\\\.claude\\\\projects\\\\e--Projects-and-Learning-coherence\\\\16547ea4-fdab-4790-93d7-90c6178807fd\\\\tool-results\\\\toolu_01KTQ7rKhtKTugTowosvuhH2.json\")",
+      "Bash(python3 -c ' *)",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "Bash(python3 -c \"import os; paths = [r'C:\\\\Users\\\\amitr\\\\.claude\\\\projects\\\\e--Projects-and-Learning-coherence\\\\16547ea4-fdab-4790-93d7-90c6178807fd\\\\tool-results\\\\mcp-notion-API-get-block-children-1778345055966.txt', r'C:\\\\Users\\\\amitr\\\\.claude\\\\projects\\\\e--Projects-and-Learning-coherence\\\\16547ea4-fdab-4790-93d7-90c6178807fd\\\\tool-results\\\\mcp-notion-API-get-block-children-1778345057022.txt', r'C:\\\\Users\\\\amitr\\\\.claude\\\\projects\\\\e--Projects-and-Learning-coherence\\\\16547ea4-fdab-4790-93d7-90c6178807fd\\\\tool-results\\\\mcp-notion-API-get-block-children-1778345057655.txt', r'C:\\\\Users\\\\amitr\\\\.claude\\\\projects\\\\e--Projects-and-Learning-coherence\\\\16547ea4-fdab-4790-93d7-90c6178807fd\\\\tool-results\\\\mcp-notion-API-get-block-children-1778345057812.txt', r'C:\\\\Users\\\\amitr\\\\.claude\\\\projects\\\\e--Projects-and-Learning-coherence\\\\16547ea4-fdab-4790-93d7-90c6178807fd\\\\tool-results\\\\toolu_01DrYVL6jbheqVTUSWVN6La8.json']; [print\\(p, os.path.getsize\\(p\\)\\) for p in paths]\")",
+      "Bash(python3)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "notion"
+  ]
 }
