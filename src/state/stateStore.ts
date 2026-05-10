@@ -79,6 +79,12 @@ export class StateStore {
     ensureSchemasLoaded(coherenceDir);
   }
 
+  /** The .claude/coherence/ directory this store reads from / writes to.
+   *  Used by lock-target derivation in proposalStore (Q5). */
+  get coherencePath(): string {
+    return this.coherenceDir;
+  }
+
   /** Read and validate a JSON state file. Returns null if missing or corrupt (quarantined). */
   async read<T>(filename: string): Promise<T | null> {
     const filePath = path.join(this.coherenceDir, filename);

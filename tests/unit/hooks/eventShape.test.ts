@@ -62,4 +62,48 @@ describe('normaliseHookEvent', () => {
     expect(normaliseHookEvent(null)).toEqual({ raw: null });
     expect(normaliseHookEvent(undefined)).toEqual({ raw: undefined });
   });
+
+  it('Q13: array input — fields undefined', () => {
+    const r = normaliseHookEvent([]);
+    expect(r.tool).toBeUndefined();
+    expect(r.command).toBeUndefined();
+  });
+
+  it('Q13: tool_input non-object falls back to legacy command', () => {
+    const r = normaliseHookEvent({
+      tool_name: 'Bash',
+      tool_input: 'not-an-object',
+      command: 'fallback-cmd',
+    });
+    expect(r.tool).toBe('Bash');
+    expect(r.command).toBe('fallback-cmd');
+  });
+
+  it('Q13: only numeric response_lines is honoured', () => {
+    expect(normaliseHookEvent({ response_lines: 42 }).responseLines).toBe(42);
+    expect(normaliseHookEvent({ response_lines: '42' }).responseLines).toBeUndefined();
+    expect(normaliseHookEvent({ response_lines: null }).responseLines).toBeUndefined();
+  });
+
+  it('Q13: tool_input.path wins over top-level path', () => {
+    const r = normaliseHookEvent({
+      tool_name: 'Edit',
+      tool_input: { path: '/tool/input/path' },
+      path: '/legacy/path',
+    });
+    expect(r.filePath).toBe('/tool/input/path');
+  });
+
+  it('Q13: empty-string command preserved', () => {
+    const r = normaliseHookEvent({
+      tool_name: 'Bash',
+      tool_input: { command: '' },
+    });
+    expect(r.command).toBe('');
+  });
+
+  it('Q13: non-object scalar input returns just raw', () => {
+    expect(normaliseHookEvent('hi')).toEqual({ raw: 'hi' });
+    expect(normaliseHookEvent(42)).toEqual({ raw: 42 });
+  });
 });

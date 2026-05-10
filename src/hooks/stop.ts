@@ -17,10 +17,11 @@ import {
 } from '../llm/authorPipeline.js';
 import { ProposalStore } from '../proposals/store.js';
 import { readSignalCache } from '../signal/signalCache.js';
-import { flush } from '../state/snapshotWriter.js';
+import { flush, markDirty } from '../state/snapshotWriter.js';
 import { signatureHash } from '../signal/signatureHash.js';
 import { emitAgentResponseId } from '../signal/telemetry.js';
 import type { SignalKind } from '../state/proposalCache.js';
+import { nowIsoUtc } from '../util/time.js';
 
 /**
  * N1 fix: pick the Author transport at hook-invocation time.
@@ -90,6 +91,26 @@ export async function stopHook(
       await runAuthorPostStopTail(store, projectRoot, sessionId);
     } catch {
       /* Author tail failure must not corrupt v0.1 output (FR-AUTHOR-5) */
+    }
+    // After Author tail (which may have enqueued proposals), refresh the
+    // pending snapshot so the flush below captures the new proposal_counts.
+    try {
+      const pstoreSnap = new ProposalStore(store);
+      const counts = await pstoreSnap.counts();
+      const buf = await store.read<{ entries: unknown[] }>('drift-buffer.json');
+      const modeForSnapshot = mode === 'graduated' ? 'annotate' : 'observe';
+      markDirty(
+        {
+          schema_version: 2,
+          written_at: nowIsoUtc(),
+          buffer_count: buf?.entries.length ?? 0,
+          proposal_counts: counts,
+          mode: modeForSnapshot,
+        },
+        store,
+      );
+    } catch {
+      /* mark-dirty non-fatal */
     }
     // Force snapshot flush off the hot path (FR-STATUSLINE-7).
     try {

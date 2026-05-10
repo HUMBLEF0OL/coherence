@@ -75,19 +75,19 @@ export async function flush(
   store: StateStore,
   options: { force?: boolean; bootstrap?: boolean; now?: number } = {},
 ): Promise<boolean> {
-  // P5 fix: strict per-store lookup with fall-through to defaultState ONLY
-  // when the per-store entry doesn't exist at all (legacy markDirty() with
-  // no store reference). If perStore[store] exists but is clean, that
-  // means there's nothing to flush — return false. Previously the
-  // fall-through allowed a clean store to inherit defaultState's pending
-  // data, leaking snapshots across stores.
+  // Q1 fix: strict per-store lookup. The previous P5 fix retained a fall-
+  // through to `defaultState` when `perStore.get(store)` was undefined,
+  // which still allowed cross-store snapshot leakage when defaultState
+  // was dirty (e.g. test code calling `markDirty(snap)` without a store).
+  // All hook callers now pass `store`, so the legacy fallback is dead
+  // weight. Removing it closes the leak completely.
   let s = perStore.get(store);
   if (!s) {
-    // Honour legacy callers that markDirty() without a store reference.
-    if (!defaultState.dirty && !defaultState.pending && !options.bootstrap) {
-      return false;
-    }
-    s = defaultState;
+    // Bootstrap: synthesise an empty per-store entry so the bootstrap
+    // write goes through. No fall-through to defaultState.
+    if (!options.bootstrap) return false;
+    s = { dirty: false, lastFlushAt: 0, pending: null };
+    perStore.set(store, s);
   } else if (!s.dirty || !s.pending) {
     if (!options.bootstrap) return false;
   }

@@ -5,6 +5,7 @@
  * directories under `.claude/coherence/proposals/<kind>/<id>/`. Wraps the v0.1
  * `stateStore` atomic-write contract; never crosses the DD-065 boundary.
  */
+import path from 'path';
 import type { StateStore } from '../state/stateStore.js';
 import type { ProposalKind } from './quarantine.js';
 import { writeProposalArtifact } from './quarantine.js';
@@ -21,6 +22,7 @@ import {
 } from '../state/proposalCache.js';
 import type { ProposalState } from './manifest.js';
 import { emitMetric } from '../state/metrics.js';
+import { lockManager } from '../state/locks.js';
 
 export interface EnqueueArgs {
   projectRoot: string;
@@ -67,7 +69,32 @@ const sessionCounts = new Map<string, number>();
 export class ProposalStore {
   constructor(private readonly store: StateStore) {}
 
+  /**
+   * Q5: serialise concurrent proposalStore mutations on the same coherence
+   * dir. The cache file's read-mutate-write pattern would otherwise lose
+   * updates when two enqueues / transitions race. Lock target is distinct
+   * from propose-accept's lock so the two operators don't deadlock.
+   */
+  private async withCacheLock<T>(fn: () => Promise<T>): Promise<T> {
+    const lockTarget = path.join(this.store.coherencePath, '.proposal-cache.lock');
+    const acquired = await lockManager.acquire(lockTarget, 'proposal-cache');
+    if (!acquired) {
+      // Lock contention is rare; fall through (degraded mode). The
+      // underlying stateStore.write is still atomic per-file.
+      return fn();
+    }
+    try {
+      return await fn();
+    } finally {
+      lockManager.release(lockTarget);
+    }
+  }
+
   async enqueue(args: EnqueueArgs): Promise<EnqueueResult> {
+    return this.withCacheLock(() => this.enqueueLocked(args));
+  }
+
+  private async enqueueLocked(args: EnqueueArgs): Promise<EnqueueResult> {
     // D5 fix: FR-AUTHOR-3 cap — at most 3 proposals enqueued per session.
     // M1 fix: derive the manifest (with real proposal_id) even at the cap,
     // so callers reading `r.manifest.proposal_id` always see a valid id.
@@ -184,6 +211,17 @@ export class ProposalStore {
   }
 
   async transition(
+    proposalId: string,
+    toState: ProposalState,
+    sessionId: string,
+    reason?: string,
+  ): Promise<{ truncated: boolean; cache: ProposalCache }> {
+    return this.withCacheLock(() =>
+      this.transitionLocked(proposalId, toState, sessionId, reason),
+    );
+  }
+
+  private async transitionLocked(
     proposalId: string,
     toState: ProposalState,
     sessionId: string,

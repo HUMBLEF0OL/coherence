@@ -11,12 +11,16 @@ import { tmpdir } from 'os';
 import path from 'path';
 import { postToolUseHook } from '../../src/hooks/postToolUse.js';
 import { initCoherenceDir } from '../../src/state/init.js';
+import { resetFileLocalityCache } from '../../src/signal/fileLocalityCache.js';
 
 let dir: string;
 
 beforeEach(async () => {
   dir = mkdtempSync(path.join(tmpdir(), 'coherence-pt-shape-'));
   await initCoherenceDir(dir);
+  // Q9: reset the session-scoped fileLocalityCache so prior tests in the
+  // same vitest worker don't bleed state into the current test.
+  resetFileLocalityCache();
 });
 
 afterEach(() => {
@@ -92,10 +96,39 @@ describe('P13: postToolUse handles documented host event shape', () => {
       event: string;
       signal_kind?: string;
       occurrences_in_locality?: number;
+      would_have_fired?: boolean;
     }>;
     const fileEvents = events.filter(
       (e) => e.event === 'proposal_signal_observed' && e.signal_kind === 'file_creation',
     );
     expect(fileEvents.length).toBeGreaterThanOrEqual(2);
+    // Q12: every file_creation observation must carry an explicit
+    // would_have_fired flag (true | false) — the shadow-mode contract.
+    for (const e of fileEvents) {
+      expect(typeof e.would_have_fired).toBe('boolean');
+    }
+    // Two non-similar files in the same dir → fired stays false.
+    expect(fileEvents.every((e) => e.would_have_fired === false)).toBe(true);
+  });
+
+  it('Q12: bash detector emits would_have_fired=true after 3 normalised matches', async () => {
+    for (let i = 0; i < 3; i++) {
+      await postToolUseHook(
+        { tool_name: 'Bash', tool_input: { command: 'ls -la' }, session_id: 's' },
+        dir,
+      );
+    }
+    const events = readMetrics() as Array<{
+      event: string;
+      signal_kind?: string;
+      would_have_fired?: boolean;
+    }>;
+    const obs = events.filter(
+      (e) => e.event === 'proposal_signal_observed' && e.signal_kind === 'bash_repetition',
+    );
+    expect(obs.length).toBe(3);
+    expect(obs[0].would_have_fired).toBe(false);
+    expect(obs[1].would_have_fired).toBe(false);
+    expect(obs[2].would_have_fired).toBe(true);
   });
 });

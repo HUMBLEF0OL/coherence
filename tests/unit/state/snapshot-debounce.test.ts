@@ -32,37 +32,46 @@ afterEach(() => {
 describe('snapshot debounced writer (DD-084)', () => {
   it('1000 markDirty calls produce 0 disk writes', () => {
     for (let i = 0; i < 1000; i++) {
-      markDirty({
-        schema_version: 2,
-        written_at: '2026-05-10T00:00:00Z',
-        buffer_count: i,
-        proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
-        mode: 'observe',
-      });
+      markDirty(
+        {
+          schema_version: 2,
+          written_at: '2026-05-10T00:00:00Z',
+          buffer_count: i,
+          proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
+          mode: 'observe',
+        },
+        store,
+      );
     }
     expect(existsSync(path.join(dir, 'state-snapshot.json'))).toBe(false);
   });
 
   it('flush honours the 5 s minimum interval', async () => {
-    markDirty({
-      schema_version: 2,
-      written_at: '2026-05-10T00:00:00Z',
-      buffer_count: 1,
-      proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
-      mode: 'observe',
-    });
+    markDirty(
+      {
+        schema_version: 2,
+        written_at: '2026-05-10T00:00:00Z',
+        buffer_count: 1,
+        proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
+        mode: 'observe',
+      },
+      store,
+    );
     const t0 = 1_000_000;
     const a = await flush(store, { now: t0 });
     expect(a).toBe(true);
 
     // Within 5 s — no further flush
-    markDirty({
-      schema_version: 2,
-      written_at: '2026-05-10T00:00:01Z',
-      buffer_count: 2,
-      proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
-      mode: 'observe',
-    });
+    markDirty(
+      {
+        schema_version: 2,
+        written_at: '2026-05-10T00:00:01Z',
+        buffer_count: 2,
+        proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
+        mode: 'observe',
+      },
+      store,
+    );
     const b = await flush(store, { now: t0 + 1000 });
     expect(b).toBe(false);
 
@@ -72,34 +81,43 @@ describe('snapshot debounced writer (DD-084)', () => {
   });
 
   it('force=true bypasses the interval (Stop hook flush)', async () => {
-    markDirty({
-      schema_version: 2,
-      written_at: '2026-05-10T00:00:00Z',
-      buffer_count: 1,
-      proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
-      mode: 'observe',
-    });
+    markDirty(
+      {
+        schema_version: 2,
+        written_at: '2026-05-10T00:00:00Z',
+        buffer_count: 1,
+        proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
+        mode: 'observe',
+      },
+      store,
+    );
     const a = await flush(store);
     expect(a).toBe(true);
-    markDirty({
-      schema_version: 2,
-      written_at: '2026-05-10T00:00:01Z',
-      buffer_count: 2,
-      proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
-      mode: 'observe',
-    });
+    markDirty(
+      {
+        schema_version: 2,
+        written_at: '2026-05-10T00:00:01Z',
+        buffer_count: 2,
+        proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
+        mode: 'observe',
+      },
+      store,
+    );
     const b = await flush(store, { force: true });
     expect(b).toBe(true);
   });
 
   it('snapshot file matches schema after flush', async () => {
-    markDirty({
-      schema_version: 2,
-      written_at: '2026-05-10T00:00:00Z',
-      buffer_count: 3,
-      proposal_counts: { queued: 1, surfaced: 0, ignored: 0 },
-      mode: 'annotate',
-    });
+    markDirty(
+      {
+        schema_version: 2,
+        written_at: '2026-05-10T00:00:00Z',
+        buffer_count: 3,
+        proposal_counts: { queued: 1, surfaced: 0, ignored: 0 },
+        mode: 'annotate',
+      },
+      store,
+    );
     await flush(store);
     const written = JSON.parse(
       readFileSync(path.join(dir, 'state-snapshot.json'), 'utf8'),

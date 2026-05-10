@@ -34,9 +34,29 @@ export interface DoctorResult {
  */
 function probeTerminalHyperlink(env: NodeJS.ProcessEnv): 'osc8' | 'osc52' | 'plain' {
   if (env['FORCE_HYPERLINK'] === '1') return 'osc8';
+
+  // Q6: env-var sentinels for terminals that don't always set TERM_PROGRAM.
+  if (env['WT_SESSION']) return 'osc8'; // Windows Terminal
+  if (env['KONSOLE_VERSION']) return 'osc8'; // KDE Konsole
+  if (env['TILIX_ID']) return 'osc8'; // Tilix
+  if (env['VTE_VERSION']) {
+    // GNOME Terminal / xfce4-terminal use VTE; OSC 8 since VTE 0.50 (~2017).
+    const v = parseInt(env['VTE_VERSION'] ?? '0', 10);
+    if (v >= 5000) return 'osc8';
+  }
+
   const tp = (env['TERM_PROGRAM'] ?? '').toLowerCase();
   const term = (env['TERM'] ?? '').toLowerCase();
-  const osc8Hosts = ['iterm.app', 'wezterm', 'kitty', 'alacritty', 'vscode', 'hyper'];
+  const osc8Hosts = [
+    'iterm.app',
+    'wezterm',
+    'kitty',
+    'alacritty',
+    'vscode',
+    'hyper',
+    'gnome-terminal',
+    'xterm-kitty',
+  ];
   for (const h of osc8Hosts) {
     if (tp.includes(h) || term.includes(h)) return 'osc8';
   }

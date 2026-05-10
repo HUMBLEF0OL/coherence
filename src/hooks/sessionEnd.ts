@@ -8,7 +8,8 @@ import { Sentinels } from '../state/sentinels.js';
 import { getCoherenceDir, makeStateStore } from '../state/init.js';
 import { BufferLifecycle } from '../buffer/lifecycle.js';
 import { readSignalCache, writeSignalCache, pruneSignalCache } from '../signal/signalCache.js';
-import { flush } from '../state/snapshotWriter.js';
+import { flush, markDirty } from '../state/snapshotWriter.js';
+import { nowIsoUtc } from '../util/time.js';
 import { clearResponseCorrelation } from '../signal/telemetry.js';
 import { resetFileLocalityCache } from '../signal/fileLocalityCache.js';
 import { normaliseHookEvent } from './eventShape.js';
@@ -23,7 +24,21 @@ import { resolveMode } from '../modes/resolver.js';
 import { ProposalStore } from '../proposals/store.js';
 import { proposeAnnotate } from '../proposers/annotateProposer.js';
 import { signatureHash } from '../signal/signatureHash.js';
-import { existsSync, readFileSync, statSync, readdirSync } from 'fs';
+import {
+  runAuthorPipeline,
+  mockAuthorTransport,
+  liveAuthorTransport,
+  type AuthorTransport,
+} from '../llm/authorPipeline.js';
+import {
+  existsSync,
+  readFileSync,
+  statSync,
+  readdirSync,
+  openSync,
+  readSync,
+  closeSync,
+} from 'fs';
 import path from 'path';
 import type { HostCapabilities } from '../types/index.js';
 
@@ -71,6 +86,19 @@ export async function sessionEndHook(
       /* prune non-fatal */
     }
 
+    // ----- Q4 fix: SessionEnd Author tail for agent_correction -----
+    // The plan (M6) requires a SessionEnd Author entry point so that
+    // agent_correction signals don't age out of the cache without ever
+    // being authored if Stop didn't fire (force-kill, compaction restart).
+    // Stop's tail (A6) covers all 3 signal kinds when it fires, but
+    // SessionEnd is the last guarantee. The proposals_per_session ≤ 3
+    // cap is shared via ProposalStore.peekSessionCount.
+    try {
+      await runSessionEndAuthorTail(store, projectRoot, sessionId);
+    } catch {
+      /* Author tail at SessionEnd is non-fatal */
+    }
+
     // ----- A2 + A3 fix: trickle deep-scan + annotate auto-firing -----
     try {
       const graduation = await readGraduation(store);
@@ -91,9 +119,11 @@ export async function sessionEndHook(
           scanned_count: r.scanned.length,
         });
 
-        // A3 + P7: when graduation mode for a doc's scope is `annotate`
+        // A3: when graduation mode for a doc's scope is `annotate`
         // or `author`, run the annotate proposer over scanned docs.
-        // Memoise content reads so we don't re-read the same doc twice.
+        // The docCache memoises within this loop in case the trickle
+        // scanner ever returns duplicate paths (defensive; today each
+        // path appears once per scan).
         const caps = await store.read<HostCapabilities>('host-capabilities.json');
         const preserves = caps?.frontmatter_preserves_unknown_keys ?? false;
         const pstore = new ProposalStore(store);
@@ -118,7 +148,18 @@ export async function sessionEndHook(
             basename: path.basename(docPath, path.extname(docPath)),
             preservesUnknownFrontmatter: preserves,
           });
-          if (proposal.status !== 'proposal') continue;
+          if (proposal.status !== 'proposal') {
+            // Q7: emit annotate_blocked for parity with the manual
+            // /coherence:annotate command which already does this.
+            await emitMetric(store, {
+              event: 'annotate_blocked',
+              session_id: sessionId,
+              ...(proposal.reason ? { reason: proposal.reason } : {}),
+              source: 'auto',
+              doc_path_hash: signatureHash('file_write_path', rel),
+            });
+            continue;
+          }
           await pstore.enqueue({
             projectRoot,
             kind: 'annotate',
@@ -132,6 +173,28 @@ export async function sessionEndHook(
       }
     } catch {
       /* trickle/auto-annotate non-fatal */
+    }
+
+    // Refresh the pending snapshot to capture trickle/auto-annotate
+    // enqueues + agent_correction proposals before the final flush.
+    try {
+      const graduation = await readGraduation(store);
+      const effective = resolveMode({ graduation, targetPath: '.' });
+      const pstore = new ProposalStore(store);
+      const counts = await pstore.counts();
+      const buf = await store.read<{ entries: unknown[] }>('drift-buffer.json');
+      markDirty(
+        {
+          schema_version: 2,
+          written_at: nowIsoUtc(),
+          buffer_count: buf?.entries.length ?? 0,
+          proposal_counts: counts,
+          mode: effective,
+        },
+        store,
+      );
+    } catch {
+      /* mark-dirty non-fatal */
     }
 
     // Force final snapshot flush + clear cross-session correlation cache.
@@ -148,6 +211,75 @@ export async function sessionEndHook(
 }
 
 /**
+ * Pick the Author transport at hook-invocation time (mirrors stop.ts):
+ *   COHERENCE_AUTHOR_LIVE=1 → live; COHERENCE_AUTHOR_MOCK=1 → mock;
+ *   default: live iff ANTHROPIC_API_KEY is set, mock otherwise.
+ */
+function pickAuthorTransport(): AuthorTransport {
+  const env = process.env;
+  if (env['COHERENCE_AUTHOR_MOCK'] === '1') return mockAuthorTransport;
+  if (env['COHERENCE_AUTHOR_LIVE'] === '1') return liveAuthorTransport;
+  if (env['ANTHROPIC_API_KEY']) return liveAuthorTransport;
+  return mockAuthorTransport;
+}
+
+/**
+ * Q4: SessionEnd Author tail.
+ *
+ * Walks the agent_correction bucket and authors a proposal per agent that
+ * crossed the threshold. The bash + file_creation kinds are handled at
+ * Stop (A6); SessionEnd specifically covers the agent_correction case
+ * which the plan (M6) calls out as SessionEnd-only because the
+ * invocation-aggregate ratio is only computable mid-session.
+ *
+ * Subject to the shared `proposals_per_session ≤ 3` cap (D5).
+ */
+async function runSessionEndAuthorTail(
+  store: ReturnType<typeof makeStateStore>,
+  projectRoot: string,
+  sessionId: string,
+): Promise<void> {
+  const cache = await readSignalCache(store);
+  const candidates = cache.buckets.agent_correction.items.filter(
+    (i) => i.occurrences >= 3 && i.line_ratio >= 0.2,
+  );
+  if (candidates.length === 0) return;
+  const transport = pickAuthorTransport();
+  const pstore = new ProposalStore(store);
+  for (const item of candidates) {
+    if (ProposalStore.peekSessionCount(sessionId) >= 3) break;
+    const sigHash = signatureHash('agent_correction', item.agent_id);
+    let out;
+    try {
+      out = await runAuthorPipeline(
+        {
+          signal_kind: 'agent_correction',
+          signal_hash: sigHash,
+          signal_evidence: {
+            agent_id_hash: sigHash,
+            ratio: item.line_ratio,
+            occurrences_in_window: item.occurrences,
+          },
+        },
+        transport,
+      );
+    } catch {
+      continue;
+    }
+    if (out.status !== 'proposal' || !out.artifact) continue;
+    const r = await pstore.enqueue({
+      projectRoot,
+      kind: out.kind,
+      signalHash: sigHash,
+      signalKind: 'agent_correction',
+      artifact: out.artifact,
+      sessionId,
+    });
+    if (!r.enqueued && r.reason === 'session_cap') break;
+  }
+}
+
+/**
  * Walk the project tree under `projectRoot` and return at most
  * `MARKDOWN_WALK_CAP` `.md` files (lex-sorted, project-relative absolute
  * paths). P6 fix: bounded by file-count and depth so a deep monorepo
@@ -155,6 +287,29 @@ export async function sessionEndHook(
  */
 const MARKDOWN_WALK_CAP = 500;
 const MARKDOWN_WALK_MAX_DEPTH = 8;
+
+/**
+ * Q11: pre-filter helper. Reads the first 4 KB of a doc and returns true
+ * if it already contains a coherence anchor. Called by collectMarkdownDocs
+ * as a coarse filter so the trickle scanner / annotate proposer don't
+ * waste cycles on already-anchored docs.
+ */
+const ANCHOR_PROBE_BYTES = 4096;
+function hasAnchorMarker(filePath: string): boolean {
+  try {
+    const handle = openSync(filePath, 'r');
+    try {
+      const buf = Buffer.alloc(ANCHOR_PROBE_BYTES);
+      const n = readSync(handle, buf, 0, ANCHOR_PROBE_BYTES, 0);
+      const head = buf.subarray(0, n).toString('utf8');
+      return /<!--\s*coherence:section\s+[a-z0-9_-]+\s*-->/i.test(head);
+    } finally {
+      closeSync(handle);
+    }
+  } catch {
+    return false;
+  }
+}
 
 function collectMarkdownDocs(projectRoot: string): string[] {
   const out: string[] = [];
@@ -191,7 +346,12 @@ function collectMarkdownDocs(projectRoot: string): string[] {
         continue;
       }
       if (st.isDirectory()) walk(full, depth + 1);
-      else if (st.isFile() && full.endsWith('.md')) out.push(full);
+      else if (st.isFile() && full.endsWith('.md')) {
+        // Q11: skip docs that already have a coherence anchor — saves the
+        // trickle scanner + annotate proposer from work that will refuse.
+        if (hasAnchorMarker(full)) continue;
+        out.push(full);
+      }
     }
   }
 

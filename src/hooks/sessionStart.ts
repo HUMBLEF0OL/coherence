@@ -19,6 +19,7 @@ import { readGraduation } from '../state/graduation.js';
 import { resolveMode } from '../modes/resolver.js';
 import { clearResponseCorrelation } from '../signal/telemetry.js';
 import { resetFileLocalityCache } from '../signal/fileLocalityCache.js';
+import { readScanCacheState, writeScanCacheState } from '../scanner/trickleScanner.js';
 import { nowIsoUtc } from '../util/time.js';
 import { normaliseHookEvent } from './eventShape.js';
 
@@ -76,6 +77,18 @@ export async function sessionStartHook(
 
     // Reset per-session proposal cap counter (D5).
     ProposalStore.resetSessionCount(sessionId);
+
+    // Q3 fix: reset trickle scanner's per-session counter so the
+    // `per_session_cap` is genuinely a per-session bound, not a one-way
+    // ratchet that dies after ~20 cumulative sessions.
+    try {
+      const scanState = await readScanCacheState(store);
+      if (scanState.entries_this_session !== 0) {
+        await writeScanCacheState(store, { ...scanState, entries_this_session: 0 });
+      }
+    } catch {
+      /* scan-cache reset non-fatal */
+    }
 
     // Run proposal expiry sweep (DD-075). N3 fix: pass projectRoot so the
     // signal-recurrence fence loads recentSignalHashes from metrics.jsonl.

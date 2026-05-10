@@ -52,14 +52,19 @@ export async function subagentStopHook(
     await store.write('subagent-stats.json', updated);
 
     // N2 fix: emit DD-068 agent_response_id telemetry.
+    // Q2 fix: skip emit when responseLines = 0 (otherwise the digest is
+    // agentId-only and repeated invocations of the same agent collide,
+    // polluting the prior_response_id correlation cache).
     const evt = event as { session_id?: string; agent_id?: string; response_lines?: number };
     const sessionId = evt.session_id ?? attribution.session_id ?? `session-${Date.now()}`;
     const agentId = evt.agent_id ?? attribution.invocation_id;
     const responseLines = typeof evt.response_lines === 'number' ? evt.response_lines : 0;
-    try {
-      await emitAgentResponseId(store, sessionId, { agentId, responseLines });
-    } catch {
-      /* telemetry non-fatal */
+    if (responseLines > 0) {
+      try {
+        await emitAgentResponseId(store, sessionId, { agentId, responseLines });
+      } catch {
+        /* telemetry non-fatal */
+      }
     }
 
     // A4 fix: feed agent-correction signal-cache from observed corrections.
