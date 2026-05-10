@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/proposal-cache",
+  "type": "object",
+  "required": ["schema_version", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 2 },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "proposal_id",
+          "kind",
+          "signal_hash",
+          "state",
+          "generated_at",
+          "expires_at",
+          "consecutive_ignored",
+          "state_history"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "proposal_id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+          "kind": { "type": "string", "enum": ["skill", "slash_command", "agent", "annotate"] },
+          "signal_hash": { "type": "string" },
+          "signal_kind": { "type": "string", "enum": ["bash_repetition", "file_creation", "agent_correction", "anchor_less_doc"] },
+          "state": {
+            "type": "string",
+            "enum": ["queued", "surfaced", "ignored", "accepted", "rejected", "reverted", "expired"]
+          },
+          "generated_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "last_signal_at": { "type": "string", "format": "date-time" },
+          "consecutive_ignored": { "type": "integer", "minimum": 0 },
+          "state_history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["state", "at"],
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "queued",
+                    "surfaced",
+                    "ignored",
+                    "accepted",
+                    "rejected",
+                    "reverted",
+                    "expired"
+                  ]
+                },
+                "at": { "type": "string", "format": "date-time" },
+                "reason": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

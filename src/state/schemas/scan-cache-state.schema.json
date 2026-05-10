@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/scan-cache-state",
+  "type": "object",
+  "required": ["schema_version", "last_pass_at", "entries_this_session", "per_session_cap"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 2 },
+    "last_pass_at": { "type": "string" },
+    "entries_this_session": { "type": "integer", "minimum": 0 },
+    "per_session_cap": { "type": "integer", "minimum": 0, "default": 20 },
+    "idle_threshold_ms": { "type": "integer", "minimum": 0, "default": 30000 }
+  }
+}

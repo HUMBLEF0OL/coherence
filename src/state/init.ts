@@ -8,8 +8,8 @@ import { StateStore } from './stateStore.js';
 import type { VersionInfo, CoherenceConfig } from '../types/index.js';
 import { nowIsoUtc } from '../util/time.js';
 
-const CURRENT_SCHEMA_VERSION = 1;
-const PLUGIN_VERSION = '0.1.0';
+const CURRENT_SCHEMA_VERSION = 2;
+const PLUGIN_VERSION = '0.2.0';
 
 export function getCoherenceDir(projectRoot: string): string {
   return path.join(projectRoot, '.claude', 'coherence');
@@ -49,12 +49,68 @@ export async function initCoherenceDir(projectRoot: string): Promise<void> {
     await store.write('config.json', defaultConfig);
   }
 
-  // Create scan-cache reservation dir
+  // Create scan-cache reservation dir + state.json (v0.2)
   const scanCacheDir = path.join(coherenceDir, 'scan-cache');
-  if (!existsSync(scanCacheDir)) {
-    mkdirSync(scanCacheDir, { recursive: true });
-    // Placeholder for v0.2 trickle-scan
-    writeFileSync(path.join(scanCacheDir, '.gitkeep'), '');
+  mkdirSync(scanCacheDir, { recursive: true });
+  const scanCacheStatePath = path.join(scanCacheDir, 'state.json');
+  if (!existsSync(scanCacheStatePath)) {
+    writeFileSync(
+      scanCacheStatePath,
+      JSON.stringify(
+        {
+          schema_version: 2,
+          last_pass_at: '',
+          entries_this_session: 0,
+          per_session_cap: 20,
+          idle_threshold_ms: 30000,
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+  }
+
+  // Lay down v0.2 state files on fresh installs (M2). The v1→v2 migrator
+  // handles upgrade installs.
+  const graduation = await store.read('graduation.json');
+  if (!graduation) {
+    await store.write('graduation.json', {
+      schema_version: 2,
+      global_mode: 'observe',
+      scopes: [],
+    });
+  }
+
+  const proposalCache = await store.read('proposal-cache.json');
+  if (!proposalCache) {
+    await store.write('proposal-cache.json', {
+      schema_version: 2,
+      entries: [],
+    });
+  }
+
+  const signalCache = await store.read('signal-cache.json');
+  if (!signalCache) {
+    await store.write('signal-cache.json', {
+      schema_version: 2,
+      buckets: {
+        bash_repetition: { maxItems: 500, items: [] },
+        file_creation: { maxItems: 500, items: [] },
+        agent_correction: { maxItems: 200, items: [] },
+      },
+    });
+  }
+
+  const snapshot = await store.read('state-snapshot.json');
+  if (!snapshot) {
+    await store.write('state-snapshot.json', {
+      schema_version: 2,
+      written_at: nowIsoUtc(),
+      buffer_count: 0,
+      proposal_counts: { queued: 0, surfaced: 0, ignored: 0 },
+      mode: 'observe',
+      degraded: false,
+    });
   }
 }
 

@@ -18,7 +18,21 @@
           "sectionRef": { "type": "string", "pattern": "^.+#[a-z0-9_-]+$" },
           "contentHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
           "triggeredAt": { "type": "string", "format": "date-time" },
-          "source": { "type": "string", "enum": ["posttooluse", "assertion", "revert", "manual"] }
+          "source": {
+            "type": "string",
+            "enum": [
+              "posttooluse",
+              "assertion",
+              "revert",
+              "manual",
+              "proposer",
+              "annotate",
+              "trickle_deep_scan",
+              "signal_bash",
+              "signal_file",
+              "signal_correction"
+            ]
+          }
         }
       }
     },

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/state-snapshot",
+  "type": "object",
+  "required": ["schema_version", "written_at", "buffer_count", "proposal_counts", "mode"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 2 },
+    "written_at": { "type": "string", "format": "date-time" },
+    "buffer_count": { "type": "integer", "minimum": 0 },
+    "proposal_counts": {
+      "type": "object",
+      "required": ["queued", "surfaced", "ignored"],
+      "additionalProperties": false,
+      "properties": {
+        "queued": { "type": "integer", "minimum": 0 },
+        "surfaced": { "type": "integer", "minimum": 0 },
+        "ignored": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "mode": { "type": "string", "enum": ["observe", "annotate", "author"] },
+    "degraded": { "type": "boolean" }
+  }
+}

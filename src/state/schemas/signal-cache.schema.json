@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/signal-cache",
+  "type": "object",
+  "required": ["schema_version", "buckets"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 2 },
+    "buckets": {
+      "type": "object",
+      "required": ["bash_repetition", "file_creation", "agent_correction"],
+      "additionalProperties": false,
+      "properties": {
+        "bash_repetition": {
+          "type": "object",
+          "required": ["maxItems", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "maxItems": { "type": "integer", "const": 500 },
+            "items": {
+              "type": "array",
+              "maxItems": 500,
+              "items": {
+                "type": "object",
+                "required": ["signature_hash", "first_seen", "last_seen", "occurrences"],
+                "additionalProperties": false,
+                "properties": {
+                  "signature_hash": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+                  "first_seen": { "type": "string", "format": "date-time" },
+                  "last_seen": { "type": "string", "format": "date-time" },
+                  "occurrences": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "file_creation": {
+          "type": "object",
+          "required": ["maxItems", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "maxItems": { "type": "integer", "const": 500 },
+            "items": {
+              "type": "array",
+              "maxItems": 500,
+              "items": {
+                "type": "object",
+                "required": ["signature_hash", "first_seen", "last_seen", "occurrences", "directory_hash"],
+                "additionalProperties": false,
+                "properties": {
+                  "signature_hash": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+                  "first_seen": { "type": "string", "format": "date-time" },
+                  "last_seen": { "type": "string", "format": "date-time" },
+                  "occurrences": { "type": "integer", "minimum": 1 },
+                  "directory_hash": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "agent_correction": {
+          "type": "object",
+          "required": ["maxItems", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "maxItems": { "type": "integer", "const": 200 },
+            "items": {
+              "type": "array",
+              "maxItems": 200,
+              "items": {
+                "type": "object",
+                "required": ["agent_id", "first_seen", "last_seen", "occurrences", "line_ratio"],
+                "additionalProperties": false,
+                "properties": {
+                  "agent_id": { "type": "string" },
+                  "first_seen": { "type": "string", "format": "date-time" },
+                  "last_seen": { "type": "string", "format": "date-time" },
+                  "occurrences": { "type": "integer", "minimum": 1 },
+                  "line_ratio": { "type": "number", "minimum": 0, "maximum": 1 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

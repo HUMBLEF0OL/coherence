@@ -15,7 +15,10 @@
         "properties": {
           "session_id": { "type": "string" },
           "timestamp": { "type": "string", "format": "date-time" },
-          "stage": { "type": "string", "enum": ["stage1", "stage2"] },
+          "stage": {
+            "type": "string",
+            "enum": ["stage1", "stage2", "author", "annotate", "author_planner"]
+          },
           "input_tokens": { "type": "integer", "minimum": 0 },
           "output_tokens": { "type": "integer", "minimum": 0 },
           "cost_usd": { "type": "number", "minimum": 0 },
@@ -24,7 +27,9 @@
             "additionalProperties": false,
             "properties": {
               "stage1": { "type": "string" },
-              "stage2": { "type": "string" }
+              "stage2": { "type": "string" },
+              "author": { "type": "string" },
+              "annotate": { "type": "string" }
             }
           }
         }

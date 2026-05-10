@@ -24,6 +24,12 @@ const SCHEMA_NAMES = [
   'subagent-stats.schema.json',
   'section-index.schema.json',
   'plan.schema.json',
+  // v0.2 additions (M2)
+  'graduation.schema.json',
+  'proposal-cache.schema.json',
+  'signal-cache.schema.json',
+  'state-snapshot.schema.json',
+  'scan-cache-state.schema.json',
 ] as const;
 
 const FILE_TO_SCHEMA: Record<string, string> = {
@@ -37,6 +43,12 @@ const FILE_TO_SCHEMA: Record<string, string> = {
   'subagent-stats.json': 'subagent-stats.schema.json',
   'section-index.json': 'section-index.schema.json',
   'plan.json': 'plan.schema.json',
+  // v0.2 additions (M2)
+  'graduation.json': 'graduation.schema.json',
+  'proposal-cache.json': 'proposal-cache.schema.json',
+  'signal-cache.json': 'signal-cache.schema.json',
+  'state-snapshot.json': 'state-snapshot.schema.json',
+  'scan-cache/state.json': 'scan-cache-state.schema.json',
 };
 
 let schemasLoaded = false;
