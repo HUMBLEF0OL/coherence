@@ -1,0 +1,27 @@
+{
+    "kind": "agent_correction",
+    "description": "Three corrections within the 5-min burst window with ratio ≥ 0.20 — must fire (DD-078 amended hard gate).",
+    "expected_fired": true,
+    "agent_id": "foo",
+    "now": "2026-05-10T10:00:00Z",
+    "samples": [
+        {
+            "agent_id": "foo",
+            "at": "2026-05-09T10:00:00Z",
+            "lines_changed": 5,
+            "total_lines": 10
+        },
+        {
+            "agent_id": "foo",
+            "at": "2026-05-09T10:01:30Z",
+            "lines_changed": 5,
+            "total_lines": 10
+        },
+        {
+            "agent_id": "foo",
+            "at": "2026-05-09T10:03:00Z",
+            "lines_changed": 5,
+            "total_lines": 10
+        }
+    ]
+}

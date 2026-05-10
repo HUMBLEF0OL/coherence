@@ -24,6 +24,13 @@ export interface AgentCorrectionConfig {
   lineRatio?: number;
   occurrenceCount?: number;
   windowDays?: number;
+  /**
+   * DD-078 amended (post-alpha calibration): when true, `burst_count`
+   * must also reach `occurrenceCount` for `fired` to be set. Promoted
+   * from calibration-only to a hard gate so isolated stale corrections
+   * weeks apart can never fire the signal. Default true.
+   */
+  requireBurst?: boolean;
 }
 
 export interface CorrectionDetectionResult {
@@ -111,6 +118,7 @@ export function detectAgentCorrection(
     burstCount = sortedTimes.length;
   }
 
+  const requireBurst = cfg.requireBurst ?? true;
   let fired = true;
   if (occurrencesAboveRatio < occurrenceCount) {
     reasons.push(`occurrences (${occurrencesAboveRatio}) < threshold (${occurrenceCount})`);
@@ -120,13 +128,16 @@ export function detectAgentCorrection(
     reasons.push(`aggregate ratio ${ratio.toFixed(3)} < ${lineRatio}`);
     fired = false;
   }
-  // DD-078: report burst-window stats for telemetry / DD-092 calibration.
-  // Not a hard gate — calibration may promote it to one once the v0.1.1
-  // observation window closes (`proposal_signal_observed { burst_count }`).
+  // DD-078 amended: burst window is now a hard gate (see config
+  // `requireBurst`, default true). Stale corrections weeks apart can
+  // no longer fire the signal even when the 7-day cardinality count
+  // crosses the threshold. Set `requireBurst: false` to fall back to
+  // pre-alpha behaviour for calibration replay.
   if (burstCount < occurrenceCount) {
     reasons.push(
-      `note: burst_count=${burstCount} qualifying samples within ${windowMinutes} min (calibration-only)`,
+      `burst_count=${burstCount} qualifying samples within ${windowMinutes} min < ${occurrenceCount}`,
     );
+    if (requireBurst) fired = false;
   }
 
   return {

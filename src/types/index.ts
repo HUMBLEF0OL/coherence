@@ -27,16 +27,16 @@ export interface BufferEntry {
   // the three signal detectors. The drift-buffer schema already permits
   // these values; the TS type was the lone holdout.
   source:
-    | 'posttooluse'
-    | 'assertion'
-    | 'revert'
-    | 'manual'
-    | 'proposer'
-    | 'annotate'
-    | 'trickle_deep_scan'
-    | 'signal_bash'
-    | 'signal_file'
-    | 'signal_correction';
+  | 'posttooluse'
+  | 'assertion'
+  | 'revert'
+  | 'manual'
+  | 'proposer'
+  | 'annotate'
+  | 'trickle_deep_scan'
+  | 'signal_bash'
+  | 'signal_file'
+  | 'signal_correction';
 }
 
 export interface CoherencePlan {
@@ -76,6 +76,24 @@ export interface CoherenceConfig {
   mode: CoherenceMode;
   watches?: string[];
   ignore?: string[];
+  // v0.2 calibration knobs (config.schema.json). Declared on the type so
+  // user `config.json` overrides survive read+rewrite round-trips. Not all
+  // knobs are wired through to detectors yet — DD-092 calibration patch
+  // (v0.2.1) finishes the plumbing. Detectors fall back to their
+  // `DEFAULT_*` constants when the field is absent.
+  proposal_expiry_days?: number;
+  proposal_signal_recurrence_days?: number;
+  proposal_consecutive_ignore_threshold?: number;
+  bash_repetition_count?: number;
+  bash_repetition_window_min?: number;
+  file_creation_count?: number;
+  file_creation_jaccard?: number;
+  file_creation_locality_window?: number;
+  agent_correction_window_min?: number;
+  agent_correction_line_ratio?: number;
+  agent_correction_count?: number;
+  agent_correction_window_days?: number;
+  agent_correction_require_burst?: boolean;
 }
 
 export interface VersionInfo {

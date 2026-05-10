@@ -1,5 +1,6 @@
 # Coherence statusline (DD-070, M3) — PowerShell.
 # Cancellation-safe single-read. No multi-step computation.
+# Mode indicator: A=author, N=annotate, G=graduated, O=observe (default).
 $snap = ".claude/coherence/state-snapshot.json"
 if (-not (Test-Path -LiteralPath $snap)) { return }
 try {
@@ -7,8 +8,9 @@ try {
 } catch { return }
 if ($j.degraded -eq $true) { Write-Output "[🧭 ⚠]"; return }
 $mode = "O"
-if ($j.mode -eq "author")    { $mode = "A" }
-elseif ($j.mode -eq "annotate") { $mode = "N" }
+if ($j.mode -eq "author")        { $mode = "A" }
+elseif ($j.mode -eq "annotate")  { $mode = "N" }
+elseif ($j.mode -eq "graduated") { $mode = "G" }
 $surfaced = [int]($j.proposal_counts.surfaced)
 $queued   = [int]($j.proposal_counts.queued)
 $buffer   = [int]($j.buffer_count)

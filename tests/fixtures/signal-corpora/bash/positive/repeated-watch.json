@@ -1,0 +1,19 @@
+{
+    "kind": "bash_repetition",
+    "description": "Three identical bash invocations within 30 min — must fire.",
+    "expected_fired": true,
+    "samples": [
+        {
+            "command": "npm test -- --watch",
+            "at": "2026-05-10T10:00:00Z"
+        },
+        {
+            "command": "npm test -- --watch",
+            "at": "2026-05-10T10:05:00Z"
+        },
+        {
+            "command": "npm test -- --watch",
+            "at": "2026-05-10T10:12:00Z"
+        }
+    ]
+}

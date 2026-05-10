@@ -1,0 +1,19 @@
+{
+    "kind": "bash_repetition",
+    "description": "Adversarial: identical command with whitespace variations. The normaliser collapses runs of whitespace, so all three are operationally identical and DD-076 fires correctly.",
+    "expected_fired": true,
+    "samples": [
+        {
+            "command": "npm test --silent",
+            "at": "2026-05-10T10:00:00Z"
+        },
+        {
+            "command": "npm  test --silent",
+            "at": "2026-05-10T10:05:00Z"
+        },
+        {
+            "command": "npm test  --silent",
+            "at": "2026-05-10T10:10:00Z"
+        }
+    ]
+}

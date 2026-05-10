@@ -1,0 +1,19 @@
+{
+    "kind": "bash_repetition",
+    "description": "Three different bash invocations — must NOT fire.",
+    "expected_fired": false,
+    "samples": [
+        {
+            "command": "npm test",
+            "at": "2026-05-10T10:00:00Z"
+        },
+        {
+            "command": "npm run build",
+            "at": "2026-05-10T10:05:00Z"
+        },
+        {
+            "command": "npm run lint",
+            "at": "2026-05-10T10:12:00Z"
+        }
+    ]
+}

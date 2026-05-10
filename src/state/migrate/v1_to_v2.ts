@@ -131,7 +131,11 @@ async function migrateV1ToV2Locked(
 
   const now = nowIsoUtc();
 
-  // Step (a) — bump version
+  // Step (a) — compose v2 version record but DEFER the write until last.
+  // Audit fix: writing version.json schema=2 before steps (b)-(h) succeed
+  // leaves the system claiming v2 with missing or partial files on a
+  // mid-step crash. The on-disk version bump is the migration's commit
+  // marker — write it only after all dependent files exist.
   const v2Version: VersionFile = {
     ...parsed,
     schema_version: 2,
@@ -146,17 +150,6 @@ async function migrateV1ToV2Locked(
     ],
     plugin_version: PLUGIN_VERSION_AT_V2,
   };
-  try {
-    atomicWriteJson(versionPath, v2Version);
-  } catch (e) {
-    return {
-      migrated: false,
-      error: `version.json write error: ${String(e)}`,
-      duration_ms: Date.now() - t0,
-      files_created: created,
-      files_quarantined: quarantined,
-    };
-  }
 
   // Steps (b)+(c) — widening of v1 enums is additive; no file rewrite required.
   // Validate any existing drift-buffer.json / cost-ledger.json against the new
@@ -237,6 +230,22 @@ async function migrateV1ToV2Locked(
       degraded: false,
     });
     created.push('state-snapshot.json');
+  }
+
+  // Step (a-commit) — bump version.json LAST. This is the migration's
+  // commit marker: if any earlier step throws, we never reach this and
+  // the next session re-runs the migrator (idempotent guards on b-h skip
+  // anything already created).
+  try {
+    atomicWriteJson(versionPath, v2Version);
+  } catch (e) {
+    return {
+      migrated: false,
+      error: `version.json write error: ${String(e)}`,
+      duration_ms: Date.now() - t0,
+      files_created: created,
+      files_quarantined: quarantined,
+    };
   }
 
   return {

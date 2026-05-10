@@ -2,17 +2,118 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "coherence/config",
   "type": "object",
-  "required": ["mode"],
+  "required": [
+    "mode"
+  ],
   "additionalProperties": false,
   "properties": {
-    "mode": { "type": "string", "enum": ["observe", "graduated"] },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "observe",
+        "graduated"
+      ]
+    },
     "watches": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
     "ignore": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
+    },
+    "proposal_expiry_days": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 365,
+      "default": 14,
+      "description": "Days a proposed proposal lives before auto-expiring (D7)."
+    },
+    "proposal_signal_recurrence_days": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 90,
+      "default": 7,
+      "description": "Cooldown window before the same signal_hash can be re-proposed."
+    },
+    "proposal_consecutive_ignore_threshold": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20,
+      "default": 3,
+      "description": "Number of consecutive ignores before a signal_hash is auto-suppressed."
+    },
+    "bash_repetition_count": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 50,
+      "default": 3,
+      "description": "Bash-repetition signal: distinct invocations needed to fire (DD-076)."
+    },
+    "bash_repetition_window_min": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1440,
+      "default": 30,
+      "description": "Bash-repetition signal: rolling window minutes (DD-076)."
+    },
+    "file_creation_count": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 20,
+      "default": 3,
+      "description": "File-creation signal: similar files needed in locality (DD-077)."
+    },
+    "file_creation_jaccard": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.8,
+      "description": "File-creation signal: minimum Jaccard overlap (DD-077)."
+    },
+    "file_creation_locality_window": {
+      "type": "integer",
+      "minimum": 16,
+      "maximum": 4096,
+      "default": 256,
+      "description": "File-creation signal: max entries in session-scoped locality cache."
+    },
+    "agent_correction_window_min": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1440,
+      "default": 5,
+      "description": "Agent-correction signal: burst window in minutes (DD-078)."
+    },
+    "agent_correction_line_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.2,
+      "description": "Agent-correction signal: per-invocation line-ratio threshold (DD-078)."
+    },
+    "agent_correction_count": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 50,
+      "default": 3,
+      "description": "Agent-correction signal: occurrences needed to fire (DD-078)."
+    },
+    "agent_correction_window_days": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 60,
+      "default": 7,
+      "description": "Agent-correction signal: cardinality window days (DD-078)."
+    },
+    "agent_correction_require_burst": {
+      "type": "boolean",
+      "default": true,
+      "description": "DD-078 amended: gate firing on burst_count ≥ count. Set false for replay/calibration."
     }
   }
 }

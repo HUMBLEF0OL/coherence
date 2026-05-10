@@ -107,8 +107,16 @@ export async function postToolUseHook(
           if (fileFilter.isAllowed(evt.filePath, projectRoot)) {
             const content = readFileSync(evt.filePath, 'utf8');
             const cache = await readSignalCache(store);
-            const recentTokens = rememberFileContent(evt.filePath, content);
-            const r = detectFileCreation(cache, evt.filePath, content, recentTokens);
+            const recent = rememberFileContent(evt.filePath, content);
+            const r = detectFileCreation(
+              cache,
+              evt.filePath,
+              content,
+              recent.tokens,
+              undefined,
+              recent.imports,
+              recent.headings,
+            );
             const next = appendFile(
               cache,
               r.signature_hash,

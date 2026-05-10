@@ -4,9 +4,11 @@
  * Per-proposal `manifest.json` under
  * `.claude/coherence/proposals/<kind>/<id>/manifest.json`.
  *
- * Proposal IDs are deterministic content-derived UUIDs (DD-072 + OQ-v2-21),
- * computed via `proposalId()` below: a v5-style namespace hash of the signal
- * hash + kind, truncated to a 32-char hex slug suitable for filesystem paths.
+ * Proposal IDs are deterministic content-derived RFC-4122 UUID v5 values
+ * (DD-072 + OQ-v2-21 §5 default), computed via `proposalId()` below in the
+ * `coherence.v0.2.proposal` namespace. The wire form is the 32-character
+ * lowercase hex digest (no dashes) for filesystem-path safety and to keep
+ * the privacy.md `proposal_id (32-hex)` redaction-matrix entry stable.
  */
 import { createHash } from 'crypto';
 import { writeProposalArtifact, type ProposalKind } from './quarantine.js';
@@ -46,14 +48,66 @@ export interface ProposalManifest {
 const FOURTEEN_DAYS_MS = 14 * 24 * 3600 * 1000;
 
 /**
+ * RFC-4122 §4.1.1 nil UUID, used as the parent namespace when deriving the
+ * coherence proposal namespace UUID from the string `coherence.v0.2.proposal`.
+ */
+const NIL_NAMESPACE_UUID = '00000000-0000-0000-0000-000000000000';
+
+/** Parse a dashed UUID into a 16-byte Buffer. */
+function uuidStringToBytes(uuid: string): Buffer {
+  return Buffer.from(uuid.replace(/-/g, ''), 'hex');
+}
+
+/**
+ * RFC-4122 §4.3 — version 5 UUID (SHA-1, name-based) generation.
+ * Returns the 32-character lowercase hex form (no dashes).
+ *
+ * Algorithm:
+ *   1. digest = SHA1(namespace_bytes || name_utf8)
+ *   2. take first 16 bytes
+ *   3. set version: byte 6 high nibble = 0x5
+ *   4. set variant: byte 8 top two bits = 10 (RFC-4122 variant)
+ */
+function uuidV5Hex(namespaceUuid: string, name: string): string {
+  const ns = uuidStringToBytes(namespaceUuid);
+  const hash = createHash('sha1').update(ns).update(name, 'utf8').digest();
+  const out = Buffer.from(hash.subarray(0, 16));
+  out[6] = (out[6]! & 0x0f) | 0x50; // version 5
+  out[8] = (out[8]! & 0x3f) | 0x80; // RFC-4122 variant
+  return out.toString('hex');
+}
+
+/**
+ * Namespace UUID for coherence proposals. Derived once from the nil UUID +
+ * the `coherence.v0.2.proposal` string per RFC-4122 §4.3 so the namespace
+ * itself is a real UUID v5 rather than a free-form string.
+ *
+ * Precomputed at module load — the value is constant across processes.
+ */
+const PROPOSAL_NAMESPACE_UUID: string = (() => {
+  const hex = uuidV5Hex(NIL_NAMESPACE_UUID, PROPOSAL_NAMESPACE);
+  // Format as dashed UUID for the inner uuidV5Hex call.
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+})();
+
+/**
  * Compute a deterministic proposal id from kind + signal hash.
- * Uses sha256 of `<namespace>::<kind>::<signal_hash>` truncated to 32 hex chars.
- * Two proposals with the same kind + signal hash produce the same id, which
- * lets the collision pre-check refuse re-enqueues for already-known signals.
+ *
+ * Returns an RFC-4122 UUID v5 (DD-072, OQ-v2-21 §5 default) under the
+ * `coherence.v0.2.proposal` namespace, formatted as a 32-character
+ * lowercase hex string (no dashes) for filesystem-path safety.
+ *
+ * Two proposals with the same kind + signal hash produce the same id,
+ * which lets the collision pre-check refuse re-enqueues for already-known
+ * signals.
  */
 export function proposalId(kind: ProposalKind, signalHash: string): string {
-  const input = `${PROPOSAL_NAMESPACE}::${kind}::${signalHash}`;
-  return createHash('sha256').update(input).digest('hex').slice(0, 32);
+  return uuidV5Hex(PROPOSAL_NAMESPACE_UUID, `${kind}::${signalHash}`);
+}
+
+/** Convert a 32-hex proposal id to its dashed RFC-4122 form. */
+export function proposalIdDashed(id: string): string {
+  return `${id.slice(0, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}-${id.slice(16, 20)}-${id.slice(20)}`;
 }
 
 /** Compose a manifest record for a brand-new proposal. */

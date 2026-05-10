@@ -25,6 +25,13 @@ import { ProposalStore } from '../proposals/store.js';
 import { proposeAnnotate } from '../proposers/annotateProposer.js';
 import { signatureHash } from '../signal/signatureHash.js';
 import {
+  detectAgentCorrection,
+  DEFAULT_AGENT_CORRECTION_LINE_RATIO,
+  DEFAULT_AGENT_CORRECTION_COUNT,
+  type CorrectionSample,
+} from '../signal/agentCorrection.js';
+import type { CoherenceConfig } from '../types/index.js';
+import {
   runAuthorPipeline,
   mockAuthorTransport,
   liveAuthorTransport,
@@ -260,9 +267,49 @@ async function runSessionEndAuthorTail(
   sessionId: string,
 ): Promise<void> {
   const cache = await readSignalCache(store);
-  const candidates = cache.buckets.agent_correction.items.filter(
-    (i) => i.occurrences >= 3 && i.line_ratio >= 0.2,
-  );
+  // Audit fix: gate proposal firing through the canonical
+  // `detectAgentCorrection` detector rather than the precomputed bucket
+  // aggregate alone. The bucket stores (occurrences, max line_ratio) per
+  // agent — those numbers feed a synthetic CorrectionSample so the
+  // detector applies its full reasons/ratio logic + records the burst-
+  // window calibration field for DD-092 alpha-telemetry. Without this
+  // call, `detectAgentCorrection` was dead code (audit M9-A).
+  //
+  // v0.2 calibration: the user may override detector defaults from
+  // `config.json` (see `config.schema.json`). Fields are optional; when
+  // absent the detector falls back to its `DEFAULT_*` constants.
+  const userConfig = await store.read<CoherenceConfig>('config.json');
+  const lineRatioCfg = userConfig?.agent_correction_line_ratio ?? DEFAULT_AGENT_CORRECTION_LINE_RATIO;
+  const occurrenceCountCfg = userConfig?.agent_correction_count ?? DEFAULT_AGENT_CORRECTION_COUNT;
+  const candidates = cache.buckets.agent_correction.items.filter((i) => {
+    if (i.occurrences < occurrenceCountCfg) return false;
+    if (i.line_ratio < lineRatioCfg) return false;
+    // Build a minimal sample set from the bucket aggregate. The bucket
+    // does not retain per-invocation samples (D5 schema), so we synthesise
+    // `occurrences` samples at `last_seen` carrying the max ratio. This
+    // gives the detector enough to confirm threshold + record burst
+    // calibration; per-sample timestamps will land in v0.2.1 per DD-092.
+    const samples: CorrectionSample[] = Array.from({ length: i.occurrences }, () => ({
+      agent_id: i.agent_id,
+      at: i.last_seen,
+      lines_changed: Math.round(i.line_ratio * 100),
+      total_lines: 100,
+    }));
+    const result = detectAgentCorrection(samples, i.agent_id, new Date(), {
+      lineRatio: lineRatioCfg,
+      occurrenceCount: occurrenceCountCfg,
+      ...(userConfig?.agent_correction_window_min !== undefined
+        ? { windowMinutes: userConfig.agent_correction_window_min }
+        : {}),
+      ...(userConfig?.agent_correction_window_days !== undefined
+        ? { windowDays: userConfig.agent_correction_window_days }
+        : {}),
+      ...(userConfig?.agent_correction_require_burst !== undefined
+        ? { requireBurst: userConfig.agent_correction_require_burst }
+        : {}),
+    });
+    return result.fired;
+  });
   if (candidates.length === 0) return;
 
   // R11 fix: pre-filter candidates whose signal_hash already has a

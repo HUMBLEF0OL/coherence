@@ -96,22 +96,64 @@ function coOccurrenceMatrix(events) {
 
 function main() {
   const argv = process.argv.slice(2);
-  const projectRoot = argv[0] ?? process.cwd();
+  const positional = argv.filter((a) => !a.startsWith('--'));
+  const flags = new Set(argv.filter((a) => a.startsWith('--')));
+  const projectRoot = positional[0] ?? process.cwd();
+  const allowIncomplete = flags.has('--allow-incomplete');
+  const enforceGates = flags.has('--enforce-gates') || !allowIncomplete;
+
   const metricsPath = path.join(projectRoot, '.claude', 'coherence', 'metrics.jsonl');
   const events = readJsonl(metricsPath);
+
+  // DD-092 alpha closeout gate: ≥ 50 unique sessions AND ≥ 30 days of
+  // observation. Without these the per-threshold projections in
+  // detector_precision.wilson_95 are statistically meaningless.
+  const sessionsSeen = new Set(events.map((e) => e.session_id).filter(Boolean)).size;
+  const eventTimestamps = events
+    .map((e) => Date.parse(e._ts ?? ''))
+    .filter((t) => Number.isFinite(t));
+  const firstEventMs = eventTimestamps.length > 0 ? Math.min(...eventTimestamps) : Date.now();
+  const observationDays = (Date.now() - firstEventMs) / (24 * 3600 * 1000);
+  const SESSIONS_FLOOR = 50;
+  const DAYS_FLOOR = 30;
+  const gates = {
+    sessions_seen: sessionsSeen,
+    sessions_floor: SESSIONS_FLOOR,
+    sessions_pass: sessionsSeen >= SESSIONS_FLOOR,
+    observation_days: Number(observationDays.toFixed(2)),
+    days_floor: DAYS_FLOOR,
+    days_pass: observationDays >= DAYS_FLOOR,
+  };
+  const gatesPass = gates.sessions_pass && gates.days_pass;
+
   const summary = {
     schema_version: 1,
     generated_at: new Date().toISOString(),
     counts: bucketByEvent(events),
     detector_precision: detectorPrecision(events),
     co_occurrence: coOccurrenceMatrix(events),
-    sessions_seen: new Set(events.map((e) => e.session_id).filter(Boolean)).size,
+    sessions_seen: sessionsSeen,
+    closeout_gates: gates,
+    closeout_gates_pass: gatesPass,
   };
   const out = path.join(projectRoot, 'release-artifacts');
   mkdirSync(out, { recursive: true });
   const outPath = path.join(out, `v0.2-alpha-telemetry-${Date.now()}.json`);
   writeFileSync(outPath, JSON.stringify(summary, null, 2) + '\n', 'utf8');
   console.log(`[alpha-telemetry-close] wrote ${outPath}`);
+
+  if (!gatesPass) {
+    const msg =
+      `[alpha-telemetry-close] CLOSEOUT GATES FAILED: ` +
+      `sessions_seen=${sessionsSeen}/${SESSIONS_FLOOR}, ` +
+      `observation_days=${observationDays.toFixed(2)}/${DAYS_FLOOR}.`;
+    if (enforceGates && !allowIncomplete) {
+      console.error(msg);
+      console.error('[alpha-telemetry-close] re-run with --allow-incomplete to bypass (calibration replay only).');
+      process.exit(2);
+    }
+    console.warn(msg + ' (--allow-incomplete present, exiting clean)');
+  }
 }
 
 main();

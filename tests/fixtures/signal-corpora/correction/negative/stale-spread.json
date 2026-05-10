@@ -1,0 +1,27 @@
+{
+    "kind": "agent_correction",
+    "description": "Three stale-spread corrections — meet cardinality count but no burst. DD-078 amended must NOT fire (requireBurst=true).",
+    "expected_fired": false,
+    "agent_id": "foo",
+    "now": "2026-05-10T10:00:00Z",
+    "samples": [
+        {
+            "agent_id": "foo",
+            "at": "2026-05-08T10:00:00Z",
+            "lines_changed": 5,
+            "total_lines": 10
+        },
+        {
+            "agent_id": "foo",
+            "at": "2026-05-09T03:00:00Z",
+            "lines_changed": 5,
+            "total_lines": 10
+        },
+        {
+            "agent_id": "foo",
+            "at": "2026-05-09T11:00:00Z",
+            "lines_changed": 5,
+            "total_lines": 10
+        }
+    ]
+}

@@ -11,4 +11,9 @@ if command -v jq >/dev/null 2>&1; then
     elif (.proposal_counts.surfaced // 0) > 0 then "[🧭 sub \(.proposal_counts.surfaced)]"
     else "" end
   ' "$SNAP" 2>/dev/null || true
+else
+  # Audit fix: parity with sibling — provide an awk fallback so missing jq
+  # does not silently produce an empty subagent badge.
+  awk '/"degraded"/{ if ($0 ~ /true/) { print "[🧭 sub ⚠]"; exit } }
+       /"surfaced"/{ gsub(/[",: ]/, ""); split($0,a,/surfaced/); n=a[2]+0; if(n>0) print "[🧭 sub " n "]"; exit }' "$SNAP" 2>/dev/null || true
 fi

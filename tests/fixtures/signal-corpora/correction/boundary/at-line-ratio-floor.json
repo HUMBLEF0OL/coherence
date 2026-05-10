@@ -1,0 +1,27 @@
+{
+    "kind": "agent_correction",
+    "description": "Boundary: ratio exactly at 0.20 threshold + all within burst window — must fire.",
+    "expected_fired": true,
+    "agent_id": "foo",
+    "now": "2026-05-10T10:00:00Z",
+    "samples": [
+        {
+            "agent_id": "foo",
+            "at": "2026-05-09T10:00:00Z",
+            "lines_changed": 2,
+            "total_lines": 10
+        },
+        {
+            "agent_id": "foo",
+            "at": "2026-05-09T10:01:00Z",
+            "lines_changed": 2,
+            "total_lines": 10
+        },
+        {
+            "agent_id": "foo",
+            "at": "2026-05-09T10:02:00Z",
+            "lines_changed": 2,
+            "total_lines": 10
+        }
+    ]
+}

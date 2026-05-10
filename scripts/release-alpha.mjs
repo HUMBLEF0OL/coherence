@@ -7,10 +7,17 @@
  *   - full vitest suite
  *   - build
  *
- * Refuses to tag if any step is red. The actual `git tag` step is left
- * to a manual confirmation since it mutates the user's git state.
+ * Pass `--tag` to actually create the signed tag after gates pass.
+ * Pass `--push` together with `--tag` to push to origin. Default behaviour
+ * (no flags) prints the commands so they can be run manually.
  */
 import { execSync } from 'node:child_process';
+
+const args = new Set(process.argv.slice(2));
+const doTag = args.has('--tag');
+const doPush = args.has('--push');
+const TAG = 'v0.2-alpha';
+const MSG = 'v0.2-alpha';
 
 function run(cmd) {
   console.log(`\n[release-alpha] $ ${cmd}`);
@@ -26,6 +33,19 @@ console.log('[release-alpha] running v0.2 acceptance checklist…');
 run('npx tsc --noEmit');
 run('npx vitest run');
 run('npm run build');
-console.log('\n[release-alpha] all gates green. To cut the tag:');
-console.log('  git tag -s v0.2-alpha -m "v0.2-alpha"');
-console.log('  git push origin v0.2-alpha');
+
+if (doTag) {
+  console.log('\n[release-alpha] all gates green — cutting tag.');
+  run(`git tag -s ${TAG} -m "${MSG}"`);
+  if (doPush) {
+    run(`git push origin ${TAG}`);
+  } else {
+    console.log(`\n[release-alpha] tag created locally. To publish: git push origin ${TAG}`);
+  }
+} else {
+  console.log('\n[release-alpha] all gates green. To cut the tag, re-run with --tag (and optionally --push):');
+  console.log(`  node scripts/release-alpha.mjs --tag --push`);
+  console.log('Manual equivalents:');
+  console.log(`  git tag -s ${TAG} -m "${MSG}"`);
+  console.log(`  git push origin ${TAG}`);
+}
