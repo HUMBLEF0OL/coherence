@@ -1,15 +1,25 @@
 # Coherence
 
+> Package name: `cohrence` · Brand name: Coherence · Slash command namespace:
+> `/coherence:*`. Same project, three labels — see [DD-093](docs/v0.3/) for
+> the rationale.
+
 Claude Code plugin that detects documentation drift (when code changes
 without updating its docs) and proposes surgical patches via a two-stage
 LLM pipeline. v0.2 extends the plugin with proactive detection: it watches
 for recurring user behaviour, anchor-less docs, and idle-window drift, and
 surfaces proposals on demand through a sandboxed quarantine boundary.
+v0.3 extends to team workflows (shared ignore rules, monorepo scope,
+cross-team plan visibility, marketplace distribution) — see
+[Architectural commitments](#architectural-commitments-v03) below.
 
 ## Install
 
+The canonical install path is the Anthropic plugin registry. For local
+development:
+
 ```
-git clone <repo>
+git clone https://github.com/HUMBLEF0OL/coherence.git
 cd coherence
 npm install
 npm run build
@@ -122,19 +132,47 @@ the event redaction matrix.
 - All quarantine state: `rm -rf .claude/coherence/proposals/`
 - Disable plugin entirely: `touch .claude/coherence/DISABLED`
 
-## v0.2.1 calibration commitment
+`/coherence:recover` rolls back **within** the current major version only
+(DD-095 amended under DD-118). Cross-major-version rollback is not
+supported — major-version bumps may break the on-disk format and users
+re-install rather than migrate. See [Architectural commitments](#architectural-commitments-v03).
 
-Per DD-092, the threshold defaults in DD-076/077/078 ship locked. A
-calibration patch re-tunes them against
-`proposal_signal_observed { kind, would_have_fired }` events from the
-v0.2-alpha observation window (≥ 50 sessions OR 30 days, whichever
-first). Acceptance: per-threshold projected precision ≥ 0.7 with
-Wilson 95 % confidence interval reported in the patch CHANGELOG.
+## Architectural commitments (v0.3+)
+
+Two stances govern v0.3 onwards and are permanent (not deferred to a
+future version):
+
+- **No backend, ever (DD-117).** cohrence is a file-only plugin in
+  perpetuity. Cross-team plans live as committed files under
+  `coherence/plans/` (git is the substrate). Telemetry is local JSONL +
+  user-driven `curl` only. There is no project-side server, database,
+  or hosted upload service. Scaling beyond ~50-developer teams is not
+  a project goal.
+- **No legacy version support (DD-118).** Each major version stands
+  alone. v0.3 ships fresh state on install — no v1→v2 / v2→v3 migrator,
+  no `prompts/v1/` in the tarball, no rollback to a prior major version.
+  Major-version bumps may break the on-disk format; re-install rather
+  than migrate. v0.2 codebase remains as historical baseline; v0.3 is
+  the next published version.
+
+## Calibration
+
+Detector thresholds (DD-076/077/078) are calibrated against a synthetic
+corpus under `tests/fixtures/signal-corpora/`. The
+`scripts/corpus-calibrate.mjs` framework (run via `npm run calibrate`)
+sweeps a threshold grid, computes Wilson 95 % CI on the corpus, and
+picks the config maximising `precision_lower_bound` while keeping
+`recall ≥ 0.6`. Acceptance floor (DD-116): per-detector
+`precision_wilson_lower ≥ 0.7`. Field-calibration against real
+`metrics.jsonl` becomes a future-version commitment once a distributed
+version accumulates ≥ 50 sessions × ≥ 30 days observation.
 
 ## Test + build
 
 ```
 npm run typecheck
-npm test          # ~470 tests across unit / integration / e2e / security / perf / preconditions / rollback / schema
+npm test          # 575 tests across unit / integration / e2e / security / perf / preconditions / rollback / schema
+npm run lint
 npm run build
+npm run calibrate # corpus-calibration sweep (DD-116, DD-092 amended)
 ```

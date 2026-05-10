@@ -1,7 +1,13 @@
-# v0.2.1 corpus calibration plan
+# Corpus calibration plan (originally v0.2.1; folded into v0.3 ship-time)
+
+> **2026-05-10 reframing:** Per Notion DD-118 (no legacy support) + the
+> "no audience yet" reality, v0.2.1 is no longer cut as a separate
+> release. The corpus-calibration framework described here ships with
+> v0.3 directly; "Pass M-CALIB-1" is now part of v0.3 ship-time
+> acceptance (BRD-4). The technical content of this doc is unchanged.
 
 **Status:** scaffold landed 2026-05-10. Gate currently FAILS at corpus
-size 13; path forward = corpus expansion.
+size 13; path forward = corpus expansion before v0.3 GA.
 
 ## Why corpus calibration
 
