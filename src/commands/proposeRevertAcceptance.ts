@@ -7,14 +7,17 @@
  * `revertDetect.ts` velocity-counter sweep picks the revert up at the next
  * SessionStart.
  *
- * The git revert itself is delegated to the user (or to a v0.1 git adapter
- * caller) — this function performs the structural revert (state + file).
+ * v0.2 (DD-083): also creates a programmatic `[coherence-revert]` commit
+ * so the matching DD-082 accept commit lands a paired revert in git
+ * history. The previous wireshell delegated this to the user, which made
+ * the velocity-counter sweep blind to programmatic reverts.
  */
 import { existsSync, unlinkSync } from 'fs';
 import path from 'path';
 import type { StateStore } from '../state/stateStore.js';
 import { ProposalStore } from '../proposals/store.js';
 import { emitMetric } from '../state/metrics.js';
+import { stageFiles, createCommit } from '../git/adapter.js';
 
 export interface ProposeRevertArgs {
   store: StateStore;
@@ -51,6 +54,7 @@ export async function runProposeRevertAcceptance(
       rendered: `[coherence] propose-revert-acceptance: cannot revert from ${entry.state}`,
     };
   }
+  let revertCommitSha: string | null = null;
   if (args.acceptedPath) {
     const rel = path.relative(args.projectRoot, args.acceptedPath);
     if (rel.startsWith('..') || path.isAbsolute(rel)) {
@@ -67,12 +71,29 @@ export async function runProposeRevertAcceptance(
         /* best-effort */
       }
     }
+
+    // DD-083: pair the structural revert with a `[coherence-revert]` git
+    // commit so the v0.1 revertDetect velocity sweep picks it up at the
+    // next SessionStart. Best-effort: outside a git repo we still record
+    // the structural revert and the audit-log row.
+    if (existsSync(path.join(args.projectRoot, '.git'))) {
+      try {
+        if (stageFiles(args.projectRoot, [rel])) {
+          const message = `[coherence-revert] revert proposal ${args.proposalId}`;
+          const result = createCommit(args.projectRoot, message, [rel]);
+          if (result.ok) revertCommitSha = result.sha;
+        }
+      } catch {
+        /* git revert is best-effort */
+      }
+    }
   }
   await pstore.transition(args.proposalId, 'reverted', args.sessionId ?? 'session');
   await emitMetric(args.store, {
     event: 'proposal_reverted',
     session_id: args.sessionId ?? 'session',
     proposal_id: args.proposalId,
+    ...(revertCommitSha ? { commit_sha: revertCommitSha } : {}),
   });
   await args.store.appendMarkdown(
     'coherence-log.md',

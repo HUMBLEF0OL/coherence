@@ -23,7 +23,20 @@ export interface BufferEntry {
   sectionRef: SectionRef;
   contentHash: ContentHash;
   triggeredAt: string; // ISO-8601 UTC
-  source: 'posttooluse' | 'assertion' | 'revert' | 'manual';
+  // v0.2 (DD-066) widens the source enum to cover the trickle deep-scan and
+  // the three signal detectors. The drift-buffer schema already permits
+  // these values; the TS type was the lone holdout.
+  source:
+    | 'posttooluse'
+    | 'assertion'
+    | 'revert'
+    | 'manual'
+    | 'proposer'
+    | 'annotate'
+    | 'trickle_deep_scan'
+    | 'signal_bash'
+    | 'signal_file'
+    | 'signal_correction';
 }
 
 export interface CoherencePlan {
@@ -101,11 +114,14 @@ export interface StopProgressGroup {
 export interface CostEntry {
   session_id: string;
   timestamp: string;
-  stage: 'stage1' | 'stage2';
+  // v0.2 (DD-085): widened to accept the new Author / Annotate / Trickle
+  // partitions that share the v0.1 cost-ledger file. The cost-ledger schema
+  // already permits these enum values; the TS type was the lone holdout.
+  stage: 'stage1' | 'stage2' | 'author' | 'annotate' | 'author_planner';
   input_tokens: number;
   output_tokens: number;
   cost_usd: number;
-  prompt_version: { stage1?: string; stage2?: string };
+  prompt_version: { stage1?: string; stage2?: string; author?: string; annotate?: string };
 }
 
 export interface SubagentStats {

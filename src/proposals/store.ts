@@ -15,14 +15,16 @@ import {
   writeCache,
   enqueueEntry,
   transition,
-  counts,
+  ProposalStateError,
   type ProposalCacheEntry,
   type ProposalCache,
   type SignalKind,
 } from '../state/proposalCache.js';
+import { counts as cacheCounts } from '../state/proposalCache.js';
 import type { ProposalState } from './manifest.js';
 import { emitMetric } from '../state/metrics.js';
 import { lockManager } from '../state/locks.js';
+import { quarantineFile } from '../state/quarantine.js';
 
 export interface EnqueueArgs {
   projectRoot: string;
@@ -228,7 +230,34 @@ export class ProposalStore {
     reason?: string,
   ): Promise<{ truncated: boolean; cache: ProposalCache }> {
     const cache = await readCache(this.store);
-    const result = transition(cache, proposalId, toState, reason);
+    let result;
+    try {
+      result = transition(cache, proposalId, toState, reason);
+    } catch (err) {
+      // FR-FAILURE-N3 / DD-088: an illegal FSM transition implies the cache
+      // is corrupt or has been mutated outside the FSM. Quarantine the
+      // cache file (mirroring StateStore.read's quarantine path) and emit
+      // a `proposal_validation_failed` event before re-throwing. Without
+      // this, a ProposalStateError leaks to callers that already wrap it
+      // in a non-fatal try/catch, leaving the corrupt cache in place.
+      if (err instanceof ProposalStateError) {
+        try {
+          const cachePath = path.join(this.store.coherencePath, 'proposal-cache.json');
+          quarantineFile(cachePath, this.store.quarantinePath);
+          await emitMetric(this.store, {
+            event: 'proposal_validation_failed',
+            session_id: sessionId,
+            proposal_id: proposalId,
+            from_state: err.fromState,
+            to_state: err.toState,
+            reason: 'illegal_fsm_transition',
+          });
+        } catch {
+          /* quarantine itself is best-effort */
+        }
+      }
+      throw err;
+    }
     await writeCache(this.store, result.cache);
     if (result.truncated) {
       await emitMetric(this.store, {
@@ -264,6 +293,6 @@ export class ProposalStore {
   }
 
   async counts(): Promise<{ queued: number; surfaced: number; ignored: number }> {
-    return counts(await readCache(this.store));
+    return cacheCounts(await readCache(this.store));
   }
 }

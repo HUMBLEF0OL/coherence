@@ -85,6 +85,12 @@ export class StateStore {
     return this.coherenceDir;
   }
 
+  /** Quarantine root for this store. Used by FR-FAILURE-N3 callers that
+   *  need to quarantine an externally-mutated state file (DD-088). */
+  get quarantinePath(): string {
+    return this.quarantineDir;
+  }
+
   /** Read and validate a JSON state file. Returns null if missing or corrupt (quarantined). */
   async read<T>(filename: string): Promise<T | null> {
     const filePath = path.join(this.coherenceDir, filename);

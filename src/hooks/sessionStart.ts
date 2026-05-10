@@ -7,6 +7,7 @@ import { withExceptionGuard } from './exceptionGuard.js';
 import { Sentinels } from '../state/sentinels.js';
 import { getCoherenceDir, getQuarantineDir, initCoherenceDir, makeStateStore } from '../state/init.js';
 import { runMigrations } from '../state/migrate/index.js';
+import { emitMetric } from '../state/metrics.js';
 import { runRetentionSweep } from '../state/metricsRetention.js';
 import { buildSectionIndex } from '../detection/sectionIndex.js';
 import { runFinalizeSweep } from '../state/finalizeSweep.js';
@@ -39,7 +40,7 @@ export async function sessionStartHook(
 
     // Step 2: first-touch init + migrations
     await initCoherenceDir(projectRoot);
-    await runMigrations(coherenceDir, getQuarantineDir(projectRoot));
+    const migrationResults = await runMigrations(coherenceDir, getQuarantineDir(projectRoot));
 
     // Step 3: anchor integrity sweep (builds section index for this session)
     buildSectionIndex(projectRoot);
@@ -69,6 +70,27 @@ export async function sessionStartHook(
     // P1 fix: read sessionId via the documented host shape too.
     const evt = normaliseHookEvent(event);
     const sessionId = evt.sessionId ?? `session-${Date.now()}`;
+
+    // DD-080 sub-step (h): emit migration_completed once per actual migration.
+    // The metric is registered in metrics.ts but was never emitted; this is
+    // the call-site the audit flagged.
+    for (const r of migrationResults) {
+      if (r.migrated) {
+        try {
+          await emitMetric(store, {
+            event: 'migration_completed',
+            session_id: sessionId,
+            from: r.from,
+            to: r.to,
+            duration_ms: r.duration_ms ?? 0,
+            files_created: r.files_created ?? [],
+            files_quarantined: r.files_quarantined ?? [],
+          });
+        } catch {
+          /* migration metric emit non-fatal */
+        }
+      }
+    }
 
     // FR-OBS-N2: clear cross-session correlation cache.
     clearResponseCorrelation();

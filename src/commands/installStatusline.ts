@@ -17,6 +17,7 @@ import {
   copyFileSync,
   mkdirSync,
   renameSync,
+  readdirSync,
   unlinkSync,
 } from 'fs';
 import os from 'os';
@@ -41,6 +42,32 @@ export interface InstallStatuslineResult {
 
 function defaultSettingsPath(): string {
   return path.join(os.homedir(), '.claude', 'settings.json');
+}
+
+/** Find the most-recent `<settingsPath>.coherence-backup-<ts>` file, or null. */
+function findLatestBackup(settingsPath: string): string | null {
+  const dir = path.dirname(settingsPath);
+  const base = path.basename(settingsPath);
+  const prefix = `${base}.coherence-backup-`;
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return null;
+  }
+  let bestTs = -1;
+  let bestName: string | null = null;
+  for (const name of entries) {
+    if (!name.startsWith(prefix)) continue;
+    const tsRaw = name.slice(prefix.length);
+    const ts = Number.parseInt(tsRaw, 10);
+    if (!Number.isFinite(ts)) continue;
+    if (ts > bestTs) {
+      bestTs = ts;
+      bestName = name;
+    }
+  }
+  return bestName ? path.join(dir, bestName) : null;
 }
 
 export class InstallStatuslineRefusal extends Error {
@@ -78,12 +105,35 @@ export function installStatusline(args: InstallStatuslineArgs): InstallStatuslin
     }
   }
 
-  // Diff-check: refuse if the user hand-edited statusLine since our last backup.
+  // FR-PERMISSION-N2 diff-check: if the live statusLine entry is a coherence
+  // entry but does NOT match the value recorded in our most recent backup,
+  // the user (or another tool) has edited it out-of-band. Refuse rather than
+  // overwrite their edit. The previous wireshell computed `hadOurStatusline`
+  // but never threw, so any drift was silently squashed.
   const backupGlobPrefix = `${settingsPath}.coherence-backup-`;
   const hadOurStatusline =
     typeof existing[STATUSLINE_KEY] === 'object' &&
     typeof (existing[STATUSLINE_KEY] as { command?: string } | undefined)?.command === 'string' &&
     (existing[STATUSLINE_KEY] as { command?: string }).command?.includes('coherence-statusline');
+
+  if (hadOurStatusline) {
+    const lastBackup = findLatestBackup(settingsPath);
+    if (lastBackup) {
+      try {
+        const backupRaw = readFileSync(lastBackup, 'utf8');
+        const backupParsed = JSON.parse(backupRaw) as ClaudeSettings;
+        const live = JSON.stringify(existing[STATUSLINE_KEY] ?? null);
+        const recorded = JSON.stringify(backupParsed[STATUSLINE_KEY] ?? null);
+        if (live !== recorded) {
+          throw new InstallStatuslineRefusal('manual_edit_detected');
+        }
+      } catch (err) {
+        if (err instanceof InstallStatuslineRefusal) throw err;
+        // Backup unreadable — fail-closed: treat as manual edit.
+        throw new InstallStatuslineRefusal('manual_edit_detected');
+      }
+    }
+  }
 
   // Backup current settings
   mkdirSync(path.dirname(settingsPath), { recursive: true });

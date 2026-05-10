@@ -34,6 +34,7 @@ import { getProposalDir, type ProposalKind } from '../proposals/quarantine.js';
 import { emitMetric } from '../state/metrics.js';
 import { lockManager } from '../state/locks.js';
 import { getCoherenceDir } from '../state/init.js';
+import { stageFiles, createCommit, getHeadSha } from '../git/adapter.js';
 
 export interface ProposeAcceptCmdArgs {
   store: StateStore;
@@ -296,12 +297,39 @@ async function runProposeAcceptLocked(
     await pstore.transition(args.proposalId, 'surfaced', args.sessionId ?? 'session');
   }
   await pstore.transition(args.proposalId, 'accepted', args.sessionId ?? 'session');
+
+  // DD-082 step (h): create a coherence-attributable commit so the matching
+  // DD-083 revert command has something to revert. Best-effort — we already
+  // wrote the file, so any git failure is logged on the metric but doesn't
+  // unwind the accept.
+  let acceptCommitSha: string | null = null;
+  if (existsSync(path.join(args.projectRoot, '.git'))) {
+    try {
+      const writtenRel = path.relative(args.projectRoot, writePath);
+      if (stageFiles(args.projectRoot, [writtenRel])) {
+        const commitMessage = `[coherence] accept proposal ${args.proposalId} (${kind})`;
+        const result = createCommit(args.projectRoot, commitMessage, [writtenRel]);
+        if (result.ok) {
+          acceptCommitSha = result.sha;
+        }
+      }
+    } catch {
+      /* git work is best-effort — accept already wrote the file */
+    }
+    if (acceptCommitSha === null) {
+      // Capture the current HEAD as a parent reference even if the dedicated
+      // commit didn't materialise, so revert has *something* to point at.
+      acceptCommitSha = getHeadSha(args.projectRoot);
+    }
+  }
+
   await emitMetric(args.store, {
     event: 'proposal_accepted',
     session_id: args.sessionId ?? 'session',
     proposal_id: args.proposalId,
     kind,
     written_path: path.relative(args.projectRoot, writePath),
+    ...(acceptCommitSha ? { commit_sha: acceptCommitSha } : {}),
     ...(kind === 'slash_command'
       ? {
           delivery_mode: 'documentation_only',

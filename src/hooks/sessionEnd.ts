@@ -40,7 +40,11 @@ import {
   closeSync,
 } from 'fs';
 import path from 'path';
-import type { HostCapabilities } from '../types/index.js';
+import type { BufferEntry, HostCapabilities, NormalizedPath } from '../types/index.js';
+import { scanAnchors } from '../detection/anchorScanner.js';
+import { hashContent } from '../buffer/contentHash.js';
+import { normalizePath, makeSectionRef } from '../state/pathNormaliser.js';
+import type { StateStore } from '../state/stateStore.js';
 
 const SUCCESS: HookResult = { success: true };
 
@@ -103,11 +107,16 @@ export async function sessionEndHook(
     try {
       const graduation = await readGraduation(store);
       const trickleState = await readScanCacheState(store);
-      const allDocs = collectMarkdownDocs(projectRoot);
+      // DD-066: trickle deep-scan walks *anchored* docs to refresh their
+      // sectionRef contentHashes; annotate auto-firing walks *anchorless*
+      // docs to propose an anchored rewrite. Two distinct candidate sets.
+      const anchoredDocs = collectAnchoredDocs(projectRoot);
+      const anchorlessDocs = collectMarkdownDocs(projectRoot);
+      const candidates = [...anchoredDocs, ...anchorlessDocs];
       // Idle gate uses session-end as the idle moment (no in-flight tools).
       const idleMs = Number.MAX_SAFE_INTEGER;
       const r = scanTrickle(trickleState, {
-        candidatePaths: allDocs,
+        candidatePaths: candidates,
         idleMs,
         cumulativeMs: 0,
       });
@@ -119,16 +128,27 @@ export async function sessionEndHook(
           scanned_count: r.scanned.length,
         });
 
+        // DD-066: for the subset of scanned paths that ARE anchored, append
+        // `trickle_deep_scan` entries to the drift-buffer. Without this the
+        // widened drift-buffer enum value would be unreachable from runtime.
+        const anchoredSet = new Set(anchoredDocs);
+        const scannedAnchored = r.scanned.filter((p) => anchoredSet.has(p));
+        if (scannedAnchored.length > 0) {
+          await appendTrickleEntries(store, projectRoot, scannedAnchored);
+        }
+
         // A3: when graduation mode for a doc's scope is `annotate`
         // or `author`, run the annotate proposer over scanned docs.
         // The docCache memoises within this loop in case the trickle
         // scanner ever returns duplicate paths (defensive; today each
         // path appears once per scan).
+        const anchorlessSet = new Set(anchorlessDocs);
         const caps = await store.read<HostCapabilities>('host-capabilities.json');
         const preserves = caps?.frontmatter_preserves_unknown_keys ?? false;
         const pstore = new ProposalStore(store);
         const docCache = new Map<string, string | null>();
         for (const docPath of r.scanned) {
+          if (!anchorlessSet.has(docPath)) continue; // annotate runs on anchorless docs only
           const rel = path.relative(projectRoot, docPath).replace(/\\/g, '/');
           const mode = resolveMode({ graduation, targetPath: rel });
           if (mode !== 'annotate' && mode !== 'author') continue;
@@ -374,4 +394,90 @@ function collectMarkdownDocs(projectRoot: string): string[] {
 
   if (existsSync(projectRoot)) walk(projectRoot, 0);
   return out.sort();
+}
+
+/**
+ * DD-066 trickle candidate collector — markdown docs that DO contain a
+ * coherence anchor in their first 4 KB. Mirrors collectMarkdownDocs but
+ * inverts the anchor-marker filter: trickle deep-scan re-validates
+ * anchored docs while annotate auto-firing operates on anchorless docs.
+ */
+function collectAnchoredDocs(projectRoot: string): string[] {
+  const out: string[] = [];
+  const skipDirs = new Set([
+    'node_modules',
+    '.git',
+    'dist',
+    'coverage',
+    'build',
+    '.claude',
+    '.next',
+    '.cache',
+    '.idea',
+    '.vscode',
+  ]);
+
+  function walk(dir: string, depth: number): void {
+    if (depth > MARKDOWN_WALK_MAX_DEPTH) return;
+    if (out.length >= MARKDOWN_WALK_CAP) return;
+    let entries: string[];
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const name of entries) {
+      if (skipDirs.has(name)) continue;
+      if (out.length >= MARKDOWN_WALK_CAP) return;
+      const full = path.join(dir, name);
+      let st: ReturnType<typeof statSync>;
+      try {
+        st = statSync(full);
+      } catch {
+        continue;
+      }
+      if (st.isDirectory()) walk(full, depth + 1);
+      else if (st.isFile() && full.endsWith('.md')) {
+        if (hasAnchorMarker(full)) out.push(full);
+      }
+    }
+  }
+
+  if (existsSync(projectRoot)) walk(projectRoot, 0);
+  return out.sort();
+}
+
+/**
+ * DD-066: append `trickle_deep_scan` entries to drift-buffer.json for each
+ * anchored doc the scanner visited. One entry per (doc, section) pair.
+ * Errors per file are swallowed — the trickle path is best-effort and must
+ * never fail the SessionEnd hook.
+ */
+async function appendTrickleEntries(
+  store: StateStore,
+  projectRoot: string,
+  scannedPaths: string[],
+): Promise<void> {
+  const lifecycle = new BufferLifecycle(store);
+  for (const docPath of scannedPaths) {
+    try {
+      const source = readFileSync(docPath, 'utf8');
+      const { sections } = scanAnchors(source, docPath);
+      if (sections.length === 0) continue;
+      const normalizedPath = normalizePath(docPath) as NormalizedPath;
+      for (const section of sections) {
+        const entry: BufferEntry = {
+          path: normalizedPath,
+          sectionRef: makeSectionRef(normalizedPath, section.id),
+          contentHash: hashContent(section.content),
+          triggeredAt: nowIsoUtc(),
+          source: 'trickle_deep_scan',
+        };
+        await lifecycle.append(entry);
+      }
+    } catch {
+      /* per-doc failures must not abort the trickle pass */
+    }
+    void projectRoot; // reserved for future relativisation; keeps signature stable
+  }
 }
