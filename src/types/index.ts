@@ -51,6 +51,10 @@ export interface HostCapabilities {
   hook_event_shapes: Record<string, string>;
   token_count_in_posttooluse: boolean;
   host_version?: string;
+  /** v0.2 (DD-090) — three-tier hyperlink degradation. */
+  terminal_hyperlink?: 'osc8' | 'osc52' | 'plain';
+  /** v0.2 (DD-090) — claude:// URL scheme support probe. */
+  claude_url_scheme_supported?: boolean;
 }
 
 export type CoherenceMode = 'observe' | 'graduated';

@@ -58,6 +58,16 @@ DD-091 (Author/Annotate LLM contract), DD-092 (v0.2.1 calibration commit).
 - `cost-ledger.json` stage enum widened (`author`, `annotate`,
   `author_planner`).
 
+### Slash-command kind: documentation-only delivery (N5)
+
+`/coherence:propose-accept` for `kind: 'slash_command'` writes the
+proposed markdown to `.claude/commands/<name>.md` but does NOT modify
+`plugin.json`. The markdown is a documentation skeleton; making the
+command actually runnable requires the user to hand-write the JS handler
+and add the `slashCommands[]` entry. The accept event carries
+`delivery_mode: 'documentation_only'`. Auto-generated runnable handlers
+deferred to v0.3.
+
 ### Slash commands (v0.2 surface)
 
 `/coherence:graduate <mode> [<scope>]`, `/coherence:graduate --status`,

@@ -6,7 +6,14 @@
  *   (2) signal-recurrence fence: signal_hash absent from metrics last 7 days → expired
  *   (3) consecutive-ignored counter: ≥ 5 → expired (default per FR-PROPOSE-11)
  */
-import { existsSync, readFileSync } from 'fs';
+import {
+  existsSync,
+  readFileSync,
+  statSync,
+  openSync,
+  readSync,
+  closeSync,
+} from 'fs';
 import path from 'path';
 import type { StateStore } from '../state/stateStore.js';
 import { getCoherenceDir } from '../state/init.js';
@@ -30,7 +37,13 @@ export interface ExpirySweepConfig {
   projectRoot?: string;
 }
 
-/** E7: load recent signal hashes from metrics.jsonl (last N days). */
+/**
+ * E7 + P8: load recent signal hashes from metrics.jsonl (last N days).
+ * Bounded — if the file exceeds `MAX_METRICS_BYTES`, we read only the
+ * tail. Old hashes are unlikely to be in the recent window anyway.
+ */
+const MAX_METRICS_BYTES = 5 * 1024 * 1024; // 5 MB
+
 function loadRecentSignalHashes(
   projectRoot: string,
   windowDays: number,
@@ -42,7 +55,23 @@ function loadRecentSignalHashes(
   const cutoff = now.getTime() - windowDays * 24 * 3600 * 1000;
   let raw: string;
   try {
-    raw = readFileSync(jsonlPath, 'utf8');
+    const stat = statSync(jsonlPath);
+    if (stat.size > MAX_METRICS_BYTES) {
+      // Tail-read: skip the leading bytes; the partial first line gets
+      // dropped by the JSON.parse guard below. Newer entries (the ones we
+      // care about for the recurrence fence) live at the file's end.
+      const handle = openSync(jsonlPath, 'r');
+      try {
+        const buf = Buffer.alloc(MAX_METRICS_BYTES);
+        const offset = stat.size - MAX_METRICS_BYTES;
+        readSync(handle, buf, 0, MAX_METRICS_BYTES, offset);
+        raw = buf.toString('utf8');
+      } finally {
+        closeSync(handle);
+      }
+    } else {
+      raw = readFileSync(jsonlPath, 'utf8');
+    }
   } catch {
     return out;
   }
@@ -60,7 +89,7 @@ function loadRecentSignalHashes(
       if (Number.isNaN(ts) || ts < cutoff) continue;
       out.add(ev.signal_hash);
     } catch {
-      /* skip malformed line */
+      /* skip malformed line — including the partial first line in tail-read */
     }
   }
   return out;

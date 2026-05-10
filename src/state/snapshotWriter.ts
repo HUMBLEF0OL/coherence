@@ -75,13 +75,20 @@ export async function flush(
   store: StateStore,
   options: { force?: boolean; bootstrap?: boolean; now?: number } = {},
 ): Promise<boolean> {
-  // Look up per-store first; fall through to default for callers that
-  // markDirty() without a store reference.
+  // P5 fix: strict per-store lookup with fall-through to defaultState ONLY
+  // when the per-store entry doesn't exist at all (legacy markDirty() with
+  // no store reference). If perStore[store] exists but is clean, that
+  // means there's nothing to flush — return false. Previously the
+  // fall-through allowed a clean store to inherit defaultState's pending
+  // data, leaking snapshots across stores.
   let s = perStore.get(store);
-  if (!s || (!s.dirty && !s.pending)) {
+  if (!s) {
+    // Honour legacy callers that markDirty() without a store reference.
+    if (!defaultState.dirty && !defaultState.pending && !options.bootstrap) {
+      return false;
+    }
     s = defaultState;
-  }
-  if (!s.dirty || !s.pending) {
+  } else if (!s.dirty || !s.pending) {
     if (!options.bootstrap) return false;
   }
   const now = options.now ?? Date.now();

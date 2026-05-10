@@ -285,25 +285,11 @@ async function runProposeAcceptLocked(
     }
   }
 
-  // N5 fix: do NOT auto-register slash_command in plugin.json. The proposed
-  // artifact is markdown-shaped (a documentation skeleton), not an executable
-  // JS handler. Auto-registering would surface a slash command whose every
-  // invocation fails. Instead, the markdown is delivered as documentation
-  // under .claude/commands/<name>.md; the user must hand-write the JS
-  // handler and edit plugin.json themselves before the command becomes live.
-  // We log this via a metric so ops can track conversion-from-doc-to-handler.
-  if (kind === 'slash_command') {
-    await emitMetric(args.store, {
-      event: 'proposal_accepted',
-      session_id: args.sessionId ?? 'session',
-      proposal_id: args.proposalId,
-      kind,
-      delivery_mode: 'documentation_only',
-      written_path: path.relative(args.projectRoot, writePath),
-      note:
-        'slash_command kind ships as documentation in v0.2; manual JS handler + plugin.json entry required to make it runnable.',
-    });
-  }
+  // N5: slash_command proposals ship as documentation only — markdown
+  // lands at .claude/commands/<name>.md but plugin.json is NOT modified.
+  // The user must hand-write the JS handler + plugin.json entry to make
+  // the command runnable. Surfaced via `delivery_mode` on the unified
+  // accept event below (P4 fix: single emit, no double-count).
 
   // Transition queued → surfaced if needed, then surfaced → accepted.
   if (entry.state === 'queued') {
@@ -316,6 +302,13 @@ async function runProposeAcceptLocked(
     proposal_id: args.proposalId,
     kind,
     written_path: path.relative(args.projectRoot, writePath),
+    ...(kind === 'slash_command'
+      ? {
+          delivery_mode: 'documentation_only',
+          note:
+            'slash_command kind ships as documentation in v0.2; manual JS handler + plugin.json entry required to make it runnable.',
+        }
+      : {}),
   });
   return {
     accepted: true,

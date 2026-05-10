@@ -152,15 +152,17 @@ export class ProposalStore {
     // the freshly-inserted entry so DD-088 append-only-ness holds.
     if (carriedHistory) {
       const STATE_HISTORY_CAP = 50;
+      // P15 fix: replace the new entry's auto-generated initial-queued
+      // history with the carried-forward history (which already ends in a
+      // 're-enqueued after terminal' continuation marker). Avoids the
+      // adjacent duplicate `queued` entries the previous fix produced.
       updated = {
         ...updated,
         entries: updated.entries.map((e) =>
           e.proposal_id === manifest.proposal_id
             ? {
                 ...e,
-                state_history: [...carriedHistory!, ...e.state_history].slice(
-                  -STATE_HISTORY_CAP,
-                ),
+                state_history: carriedHistory!.slice(-STATE_HISTORY_CAP),
               }
             : e,
         ),

@@ -10,6 +10,8 @@ import { BufferLifecycle } from '../buffer/lifecycle.js';
 import { readSignalCache, writeSignalCache, pruneSignalCache } from '../signal/signalCache.js';
 import { flush } from '../state/snapshotWriter.js';
 import { clearResponseCorrelation } from '../signal/telemetry.js';
+import { resetFileLocalityCache } from '../signal/fileLocalityCache.js';
+import { normaliseHookEvent } from './eventShape.js';
 import { emitMetric } from '../state/metrics.js';
 import {
   scanTrickle,
@@ -27,10 +29,6 @@ import type { HostCapabilities } from '../types/index.js';
 
 const SUCCESS: HookResult = { success: true };
 
-interface SessionEndEvent {
-  session_id?: string;
-}
-
 const SEVEN_DAYS_MS = 7 * 24 * 3600 * 1000;
 
 export async function sessionEndHook(
@@ -42,7 +40,8 @@ export async function sessionEndHook(
     if (sentinels.isDisabled()) return SUCCESS;
 
     const store = makeStateStore(projectRoot);
-    const sessionId = (event as SessionEndEvent | undefined)?.session_id ?? `session-${Date.now()}`;
+    const evt = normaliseHookEvent(event);
+    const sessionId = evt.sessionId ?? `session-${Date.now()}`;
     const buffer = new BufferLifecycle(store);
 
     // Persist deferred buffer to pending.md
@@ -92,23 +91,28 @@ export async function sessionEndHook(
           scanned_count: r.scanned.length,
         });
 
-        // A3: when graduation mode for a doc's scope is `annotate` or
-        // `author`, run the annotate proposer over scanned docs that have
-        // no anchors and enqueue proposals (subject to the session cap).
+        // A3 + P7: when graduation mode for a doc's scope is `annotate`
+        // or `author`, run the annotate proposer over scanned docs.
+        // Memoise content reads so we don't re-read the same doc twice.
         const caps = await store.read<HostCapabilities>('host-capabilities.json');
         const preserves = caps?.frontmatter_preserves_unknown_keys ?? false;
         const pstore = new ProposalStore(store);
+        const docCache = new Map<string, string | null>();
         for (const docPath of r.scanned) {
           const rel = path.relative(projectRoot, docPath).replace(/\\/g, '/');
           const mode = resolveMode({ graduation, targetPath: rel });
           if (mode !== 'annotate' && mode !== 'author') continue;
           if (ProposalStore.peekSessionCount(sessionId) >= 3) break;
-          let body: string;
-          try {
-            body = readFileSync(docPath, 'utf8');
-          } catch {
-            continue;
+          let body = docCache.get(docPath);
+          if (body === undefined) {
+            try {
+              body = readFileSync(docPath, 'utf8');
+            } catch {
+              body = null;
+            }
+            docCache.set(docPath, body);
           }
+          if (body === null) continue;
           const proposal = proposeAnnotate({
             body,
             basename: path.basename(docPath, path.extname(docPath)),
@@ -137,21 +141,39 @@ export async function sessionEndHook(
       /* flush non-fatal */
     }
     clearResponseCorrelation();
+    resetFileLocalityCache();
 
     return SUCCESS;
   });
 }
 
 /**
- * Walk the project tree under `projectRoot` and return all `.md` files
- * (lex-sorted, project-relative absolute paths). Skips ignored directories
- * and the coherence runtime.
+ * Walk the project tree under `projectRoot` and return at most
+ * `MARKDOWN_WALK_CAP` `.md` files (lex-sorted, project-relative absolute
+ * paths). P6 fix: bounded by file-count and depth so a deep monorepo
+ * cannot blow past the NFR-PERF-N3 5 ms median budget at SessionEnd.
  */
+const MARKDOWN_WALK_CAP = 500;
+const MARKDOWN_WALK_MAX_DEPTH = 8;
+
 function collectMarkdownDocs(projectRoot: string): string[] {
   const out: string[] = [];
-  const skipDirs = new Set(['node_modules', '.git', 'dist', 'coverage', '.claude']);
+  const skipDirs = new Set([
+    'node_modules',
+    '.git',
+    'dist',
+    'coverage',
+    'build',
+    '.claude',
+    '.next',
+    '.cache',
+    '.idea',
+    '.vscode',
+  ]);
 
-  function walk(dir: string): void {
+  function walk(dir: string, depth: number): void {
+    if (depth > MARKDOWN_WALK_MAX_DEPTH) return;
+    if (out.length >= MARKDOWN_WALK_CAP) return;
     let entries: string[];
     try {
       entries = readdirSync(dir);
@@ -160,6 +182,7 @@ function collectMarkdownDocs(projectRoot: string): string[] {
     }
     for (const name of entries) {
       if (skipDirs.has(name)) continue;
+      if (out.length >= MARKDOWN_WALK_CAP) return;
       const full = path.join(dir, name);
       let st: ReturnType<typeof statSync>;
       try {
@@ -167,11 +190,11 @@ function collectMarkdownDocs(projectRoot: string): string[] {
       } catch {
         continue;
       }
-      if (st.isDirectory()) walk(full);
+      if (st.isDirectory()) walk(full, depth + 1);
       else if (st.isFile() && full.endsWith('.md')) out.push(full);
     }
   }
 
-  if (existsSync(projectRoot)) walk(projectRoot);
+  if (existsSync(projectRoot)) walk(projectRoot, 0);
   return out.sort();
 }

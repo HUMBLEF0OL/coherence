@@ -18,13 +18,11 @@ import { flush, markDirty } from '../state/snapshotWriter.js';
 import { readGraduation } from '../state/graduation.js';
 import { resolveMode } from '../modes/resolver.js';
 import { clearResponseCorrelation } from '../signal/telemetry.js';
+import { resetFileLocalityCache } from '../signal/fileLocalityCache.js';
 import { nowIsoUtc } from '../util/time.js';
+import { normaliseHookEvent } from './eventShape.js';
 
 const SUCCESS: HookResult = { success: true };
-
-interface SessionStartEvent {
-  session_id?: string;
-}
 
 export async function sessionStartHook(
   event: unknown,
@@ -66,10 +64,15 @@ export async function sessionStartHook(
     }
 
     // ----- v0.2 wiring (D1 fix) -----
-    const sessionId = (event as SessionStartEvent | undefined)?.session_id ?? `session-${Date.now()}`;
+    // P1 fix: read sessionId via the documented host shape too.
+    const evt = normaliseHookEvent(event);
+    const sessionId = evt.sessionId ?? `session-${Date.now()}`;
 
     // FR-OBS-N2: clear cross-session correlation cache.
     clearResponseCorrelation();
+
+    // P2: reset session-scoped file-locality cache.
+    resetFileLocalityCache();
 
     // Reset per-session proposal cap counter (D5).
     ProposalStore.resetSessionCount(sessionId);

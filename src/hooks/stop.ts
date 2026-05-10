@@ -65,15 +65,22 @@ export async function stopHook(
       mode,
     });
 
-    // ----- v0.2 DD-068 agent response signature (N2 fix) -----
+    // ----- v0.2 DD-068 agent response signature (N2 fix; P3 fix) -----
+    // P3: only emit when the host event carries an explicit agent_id
+    // and a non-zero response_lines. Defaulting to sessionId+0 produces
+    // a session-stable digest that pollutes prior_response_id.
     try {
-      const agentId =
-        (event['agent_id'] as string | undefined) ??
-        (event['parent_session_id'] as string | undefined) ??
-        sessionId;
+      const agentIdRaw = event['agent_id'] as string | undefined;
       const responseLines =
-        typeof event['response_lines'] === 'number' ? (event['response_lines'] as number) : 0;
-      await emitAgentResponseId(store, sessionId, { agentId, responseLines });
+        typeof event['response_lines'] === 'number'
+          ? (event['response_lines'] as number)
+          : 0;
+      if (agentIdRaw && responseLines > 0) {
+        await emitAgentResponseId(store, sessionId, {
+          agentId: agentIdRaw,
+          responseLines,
+        });
+      }
     } catch {
       /* telemetry non-fatal */
     }

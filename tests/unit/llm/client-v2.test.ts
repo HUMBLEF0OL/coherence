@@ -33,7 +33,15 @@ describe('D6 prompts/v2 manifest', () => {
   });
 });
 
-describe('D6 author pipeline live transport', () => {
+describe('D6 author pipeline live transport (P12 expanded coverage)', () => {
+  it('v0.2 prompts contain the kind-specific Author proposer headers', () => {
+    expect(loadV2Prompt('author/skill.md')).toContain('Author proposer — Skill');
+    expect(loadV2Prompt('author/slash-command.md')).toContain(
+      'Author proposer — Slash command',
+    );
+    expect(loadV2Prompt('author/agent.md')).toContain('Author proposer — Agent');
+  });
+
   it('liveAuthorTransport replays a cassette when one exists', async () => {
     // Drop a cassette file directly. The cassette id is
     // `author/<signal_kind>/<signal_hash>`.

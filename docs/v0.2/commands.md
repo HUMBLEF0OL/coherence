@@ -16,3 +16,17 @@
 All v0.2 commands are read-only against the project tree except for
 `propose-accept` and `install/uninstall-statusline`, which are the two
 boundary-crossing operators (DD-065).
+
+### Slash-command kind ships as documentation in v0.2 (P9 / N5)
+
+For `kind: 'slash_command'`, accept writes the proposed markdown to
+`.claude/commands/<name>.md` but does **not** modify `plugin.json`. The
+markdown is a documentation skeleton — what the command should do, with
+example invocations and expected outputs. To make the command runnable
+the user must hand-write the JS handler and add the `slashCommands[]`
+entry themselves. The accept event carries `delivery_mode:
+'documentation_only'` for ops visibility.
+
+Why the limitation: the Author LLM produces markdown, not JavaScript,
+and v0.2 explicitly avoids LLM-generated executable code. Auto-generating
+a runnable handler is deferred to v0.3 (DD-091 amendment candidate).

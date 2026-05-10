@@ -23,14 +23,8 @@ import { emitMetric } from '../state/metrics.js';
 import { ProposalStore } from '../proposals/store.js';
 import { readGraduation } from '../state/graduation.js';
 import { resolveMode } from '../modes/resolver.js';
-
-interface PostToolUseEvent {
-  tool?: string;
-  path?: string;
-  command?: string;
-  session_id?: string;
-  [key: string]: unknown;
-}
+import { normaliseHookEvent } from './eventShape.js';
+import { rememberFileContent } from '../signal/fileLocalityCache.js';
 
 const SUCCESS: HookResult = { success: true };
 
@@ -42,18 +36,19 @@ export async function postToolUseHook(
   return withExceptionGuard(sentinels, async () => {
     if (sentinels.isDisabled()) return SUCCESS;
 
-    const evt = event as PostToolUseEvent;
-    const sessionId = evt.session_id ?? `session-${Date.now()}`;
+    const evt = normaliseHookEvent(event);
+    const sessionId = evt.sessionId ?? `session-${Date.now()}`;
     const store = makeStateStore(projectRoot);
     const tool = evt.tool ?? '';
 
     // ----- v0.2: DD-068 telemetry + signal detection -----
+    // P1 fix: read normalised fields (works against documented host shape).
     if (tool === 'Bash' || tool === 'Edit' || tool === 'Write') {
       try {
         await emitToolInvocationSignature(store, sessionId, {
           toolName: tool,
           ...(evt.command !== undefined ? { command: evt.command } : {}),
-          ...(evt.path !== undefined ? { filePath: evt.path } : {}),
+          ...(evt.filePath !== undefined ? { filePath: evt.filePath } : {}),
         });
       } catch {
         /* telemetry non-fatal */
@@ -75,24 +70,21 @@ export async function postToolUseHook(
           /* detector non-fatal */
         }
       }
-      // A5 fix: file-creation signal on Edit/Write of new-ish files.
+      // A5 + P2 fix: file-creation signal on Edit/Write. Locality lookup
+      // uses the session-scoped fileLocalityCache (keyed by file path), not
+      // the persisted signal cache (which only stores hashes).
       if (
         (tool === 'Edit' || tool === 'Write') &&
-        typeof evt.path === 'string' &&
-        existsSync(evt.path)
+        typeof evt.filePath === 'string' &&
+        existsSync(evt.filePath)
       ) {
         try {
           const fileFilter = new PathFilter(projectRoot);
-          if (fileFilter.isAllowed(evt.path, projectRoot)) {
-            const content = readFileSync(evt.path, 'utf8');
+          if (fileFilter.isAllowed(evt.filePath, projectRoot)) {
+            const content = readFileSync(evt.filePath, 'utf8');
             const cache = await readSignalCache(store);
-            const recentTokens = new Map<string, Set<string>>();
-            // Build the locality token map from recent file_creation entries
-            // in the same directory.
-            for (const item of cache.buckets.file_creation.items) {
-              recentTokens.set(item.signature_hash, new Set([item.signature_hash]));
-            }
-            const r = detectFileCreation(cache, evt.path, content, recentTokens);
+            const recentTokens = rememberFileContent(evt.filePath, content);
+            const r = detectFileCreation(cache, evt.filePath, content, recentTokens);
             const next = appendFile(
               cache,
               r.signature_hash,
@@ -116,7 +108,7 @@ export async function postToolUseHook(
     }
 
     // ----- v0.1: drift-buffer append for markdown anchors -----
-    const filePath = evt.path;
+    const filePath = evt.filePath;
     if (filePath) {
       const filter = new PathFilter(projectRoot);
       if (
