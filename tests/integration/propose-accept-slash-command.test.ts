@@ -1,5 +1,7 @@
 /**
- * D7 fix coverage: slash_command accept appends to plugin.json.
+ * N5 fix coverage: slash_command accept delivers the markdown artifact to
+ * .claude/commands/<name>.md but does NOT auto-register in plugin.json
+ * (since the artifact is documentation-shaped, not an executable handler).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'fs';
@@ -17,7 +19,6 @@ beforeEach(() => {
   const c = path.join(dir, '.claude', 'coherence');
   store = new StateStore(c, path.join(c, 'quarantine'));
   ProposalStore.resetSessionCount('s');
-  // Seed a minimal plugin.json the registrar will append to.
   writeFileSync(
     path.join(dir, 'plugin.json'),
     JSON.stringify({ name: 'coherence', slashCommands: [] }, null, 2),
@@ -28,8 +29,8 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-describe('D7: slash_command accept registers in plugin.json', () => {
-  it('appends a slashCommands entry on accept', async () => {
+describe('N5 fix: slash_command accept is documentation-only', () => {
+  it('writes the markdown to .claude/commands/<name>.md', async () => {
     const pstore = new ProposalStore(store);
     const r = await pstore.enqueue({
       projectRoot: dir,
@@ -46,20 +47,17 @@ describe('D7: slash_command accept registers in plugin.json', () => {
     });
     expect(out.accepted).toBe(true);
     expect(existsSync(out.written_path!)).toBe(true);
-
-    const plugin = JSON.parse(readFileSync(path.join(dir, 'plugin.json'), 'utf8'));
-    const cmd = (plugin.slashCommands as Array<{ name: string; handler: string }>)
-      .find((c) => c.name === 'coherence:cleanup');
-    expect(cmd).toBeDefined();
-    expect(cmd!.handler).toBe('commands/cleanup');
+    expect(out.written_path).toContain(path.join('.claude', 'commands'));
+    expect(readFileSync(out.written_path!, 'utf8')).toBe('# Cleanup');
   });
 
-  it('idempotent: re-registering the same name does not duplicate', async () => {
+  it('does NOT modify plugin.json (no broken auto-registration)', async () => {
+    const before = readFileSync(path.join(dir, 'plugin.json'), 'utf8');
     const pstore = new ProposalStore(store);
     const r = await pstore.enqueue({
       projectRoot: dir,
       kind: 'slash_command',
-      signalHash: 'h',
+      signalHash: 'h2',
       artifact: { filename: 'foo.md', content: '# Foo' },
       sessionId: 's',
     });
@@ -68,9 +66,7 @@ describe('D7: slash_command accept registers in plugin.json', () => {
       projectRoot: dir,
       proposalId: r.manifest.proposal_id,
     });
-    // Manually edit plugin.json again with the same name; rerun
-    const plugin1 = JSON.parse(readFileSync(path.join(dir, 'plugin.json'), 'utf8'));
-    const before = (plugin1.slashCommands as unknown[]).length;
-    expect(before).toBe(1);
+    const after = readFileSync(path.join(dir, 'plugin.json'), 'utf8');
+    expect(after).toBe(before);
   });
 });

@@ -9,11 +9,32 @@ import { getCoherenceDir, makeStateStore } from '../state/init.js';
 import { runStopOrchestrator } from '../pipeline/stop.js';
 import type { StopOrchestratorResult } from '../pipeline/stop.js';
 import type { SectionIndexEntry } from '../types/index.js';
-import { runAuthorPipeline, mockAuthorTransport } from '../llm/authorPipeline.js';
+import {
+  runAuthorPipeline,
+  mockAuthorTransport,
+  liveAuthorTransport,
+  type AuthorTransport,
+} from '../llm/authorPipeline.js';
 import { ProposalStore } from '../proposals/store.js';
 import { readSignalCache } from '../signal/signalCache.js';
 import { flush } from '../state/snapshotWriter.js';
 import { signatureHash } from '../signal/signatureHash.js';
+import { emitAgentResponseId } from '../signal/telemetry.js';
+import type { SignalKind } from '../state/proposalCache.js';
+
+/**
+ * N1 fix: pick the Author transport at hook-invocation time.
+ *  - `COHERENCE_AUTHOR_LIVE=1` forces live (Anthropic SDK).
+ *  - `COHERENCE_AUTHOR_MOCK=1` forces mock (deterministic).
+ *  - Otherwise default to live iff `ANTHROPIC_API_KEY` is set.
+ */
+function pickAuthorTransport(): AuthorTransport {
+  const env = process.env;
+  if (env['COHERENCE_AUTHOR_MOCK'] === '1') return mockAuthorTransport;
+  if (env['COHERENCE_AUTHOR_LIVE'] === '1') return liveAuthorTransport;
+  if (env['ANTHROPIC_API_KEY']) return liveAuthorTransport;
+  return mockAuthorTransport;
+}
 
 const SUCCESS: HookResult = { success: true };
 
@@ -43,6 +64,19 @@ export async function stopHook(
       projectFileContents: [],
       mode,
     });
+
+    // ----- v0.2 DD-068 agent response signature (N2 fix) -----
+    try {
+      const agentId =
+        (event['agent_id'] as string | undefined) ??
+        (event['parent_session_id'] as string | undefined) ??
+        sessionId;
+      const responseLines =
+        typeof event['response_lines'] === 'number' ? (event['response_lines'] as number) : 0;
+      await emitAgentResponseId(store, sessionId, { agentId, responseLines });
+    } catch {
+      /* telemetry non-fatal */
+    }
 
     // ----- v0.2 Author tail (D1 fix, FR-AUTHOR-1..5) -----
     try {
@@ -84,10 +118,10 @@ export async function stopHook(
 }
 
 /**
- * Author pipeline post-Stop entry point. Walks the bash-repetition signal
- * cache for items that fired this session; for each, invokes the Author
- * pipeline and enqueues the result through proposalStore. The
- * `proposals_per_session ≤ 3` cap is enforced inside the store (D5).
+ * Author pipeline post-Stop entry point.
+ * A6 fix: walks all three signal-cache buckets (bash, file, agent) and for
+ * each item that exceeded its threshold, invokes the Author pipeline.
+ * The `proposals_per_session ≤ 3` cap is enforced inside the store (D5).
  */
 async function runAuthorPostStopTail(
   store: ReturnType<typeof makeStateStore>,
@@ -95,24 +129,69 @@ async function runAuthorPostStopTail(
   sessionId: string,
 ): Promise<void> {
   const cache = await readSignalCache(store);
-  const candidates = cache.buckets.bash_repetition.items.filter((i) => i.occurrences >= 3);
-  if (candidates.length === 0) return;
+  const transport = pickAuthorTransport();
   const pstore = new ProposalStore(store);
-  for (const item of candidates) {
-    const out = await runAuthorPipeline(
-      {
+
+  type Cand = {
+    signal_kind: SignalKind;
+    signal_hash: string;
+    signal_evidence: Record<string, unknown>;
+  };
+  const candidates: Cand[] = [];
+  for (const item of cache.buckets.bash_repetition.items) {
+    if (item.occurrences >= 3) {
+      candidates.push({
         signal_kind: 'bash_repetition',
         signal_hash: item.signature_hash,
-        signal_evidence: { occurrences: item.occurrences, last_seen: item.last_seen },
-      },
-      mockAuthorTransport,
-    );
+        signal_evidence: {
+          occurrences: item.occurrences,
+          last_seen: item.last_seen,
+          first_seen: item.first_seen,
+        },
+      });
+    }
+  }
+  for (const item of cache.buckets.file_creation.items) {
+    if (item.occurrences >= 3) {
+      candidates.push({
+        signal_kind: 'file_creation',
+        signal_hash: item.signature_hash,
+        signal_evidence: {
+          occurrences: item.occurrences,
+          directory_hash: item.directory_hash,
+          last_seen: item.last_seen,
+        },
+      });
+    }
+  }
+  for (const item of cache.buckets.agent_correction.items) {
+    if (item.occurrences >= 3 && item.line_ratio >= 0.2) {
+      candidates.push({
+        signal_kind: 'agent_correction',
+        signal_hash: signatureHash('agent_correction', item.agent_id),
+        signal_evidence: {
+          agent_id_hash: signatureHash('agent_correction', item.agent_id),
+          ratio: item.line_ratio,
+          occurrences_in_window: item.occurrences,
+        },
+      });
+    }
+  }
+
+  for (const cand of candidates) {
+    if (ProposalStore.peekSessionCount(sessionId) >= 3) break;
+    let out;
+    try {
+      out = await runAuthorPipeline(cand, transport);
+    } catch {
+      continue;
+    }
     if (out.status !== 'proposal' || !out.artifact) continue;
     const r = await pstore.enqueue({
       projectRoot,
       kind: out.kind,
-      signalHash: signatureHash('tool_invocation', item.signature_hash),
-      signalKind: 'bash_repetition',
+      signalHash: cand.signal_hash,
+      signalKind: cand.signal_kind,
       artifact: out.artifact,
       sessionId,
     });

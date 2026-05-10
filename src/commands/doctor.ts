@@ -7,6 +7,7 @@
  */
 import type { StateStore } from '../state/stateStore.js';
 import type { HostCapabilities } from '../types/index.js';
+import type { HostCapabilitiesV02 } from '../observability/statusline.js';
 
 export interface DoctorOptions {
   initialProbe?: boolean;
@@ -20,9 +21,33 @@ export interface DoctorResult {
   actions: string[];
 }
 
-function probeCapabilities(hostVersion?: string): HostCapabilities {
+/**
+ * A7 fix: probe v0.2 host capabilities.
+ *
+ * Detection heuristics:
+ *  - `terminal_hyperlink`: walks `TERM_PROGRAM` and `TERM` env vars. iTerm2,
+ *    WezTerm, kitty, Alacritty support OSC 8. Apple_Terminal supports
+ *    OSC 52 only. Default `plain`. Honours `FORCE_HYPERLINK=1` (forces osc8).
+ *  - `claude_url_scheme_supported`: env `CLAUDE_URL_SCHEME=1` forces true,
+ *    otherwise defaults to false. (Real detection requires host APIs that
+ *    aren't exposed; this is a conservative default.)
+ */
+function probeTerminalHyperlink(env: NodeJS.ProcessEnv): 'osc8' | 'osc52' | 'plain' {
+  if (env['FORCE_HYPERLINK'] === '1') return 'osc8';
+  const tp = (env['TERM_PROGRAM'] ?? '').toLowerCase();
+  const term = (env['TERM'] ?? '').toLowerCase();
+  const osc8Hosts = ['iterm.app', 'wezterm', 'kitty', 'alacritty', 'vscode', 'hyper'];
+  for (const h of osc8Hosts) {
+    if (tp.includes(h) || term.includes(h)) return 'osc8';
+  }
+  if (tp.includes('apple_terminal')) return 'osc52';
+  return 'plain';
+}
+
+function probeCapabilities(hostVersion?: string): HostCapabilities & HostCapabilitiesV02 {
+  const env = process.env;
   return {
-    subagent_attribution: typeof process.env['CLAUDE_SUBAGENT_ATTRIBUTION'] !== 'undefined',
+    subagent_attribution: typeof env['CLAUDE_SUBAGENT_ATTRIBUTION'] !== 'undefined',
     frontmatter_preserves_unknown_keys: true,
     hook_event_shapes: {
       PostToolUse: 'tool_name,tool_input,tool_response',
@@ -30,8 +55,11 @@ function probeCapabilities(hostVersion?: string): HostCapabilities {
       Stop: 'session_id',
     },
     token_count_in_posttooluse:
-      typeof process.env['CLAUDE_TOKEN_COUNT_IN_POSTTOOLUSE'] !== 'undefined',
+      typeof env['CLAUDE_TOKEN_COUNT_IN_POSTTOOLUSE'] !== 'undefined',
     ...(hostVersion ? { host_version: hostVersion } : {}),
+    // v0.2 (DD-090):
+    terminal_hyperlink: probeTerminalHyperlink(env),
+    claude_url_scheme_supported: env['CLAUDE_URL_SCHEME'] === '1',
   };
 }
 
@@ -71,6 +99,14 @@ export async function runDoctor(
   actions.push(`  subagent_attribution: ${caps.subagent_attribution}`);
   actions.push(`  frontmatter_preserves_unknown_keys: ${caps.frontmatter_preserves_unknown_keys}`);
   actions.push(`  token_count_in_posttooluse: ${caps.token_count_in_posttooluse}`);
+  // A7: surface v0.2 capabilities in the doctor report.
+  const v2 = caps as HostCapabilitiesV02;
+  if (v2.terminal_hyperlink !== undefined) {
+    actions.push(`  terminal_hyperlink: ${v2.terminal_hyperlink}`);
+  }
+  if (v2.claude_url_scheme_supported !== undefined) {
+    actions.push(`  claude_url_scheme_supported: ${v2.claude_url_scheme_supported}`);
+  }
 
   if (!caps.frontmatter_preserves_unknown_keys) {
     actions.push('  ⚠ Host strips unknown frontmatter keys — run /coherence:enable-sidecars');

@@ -33,11 +33,23 @@ export interface EnqueueArgs {
   targetPath?: string;
 }
 
+/**
+ * EnqueueResult — uniform shape across success and refusal so callers can
+ * always read `manifest.proposal_id`. M1 fix: even at session_cap we
+ * compute the deterministic proposal_id (no empty-string stub).
+ *
+ *  - On success: `enqueued: true`, `manifest` is the persisted manifest,
+ *    `entry` is the new cache entry.
+ *  - On collision: `enqueued: false`, `reason: 'collision'`, `manifest`
+ *    has the deterministic id, `entry` is the existing cache entry.
+ *  - On session_cap: `enqueued: false`, `reason: 'session_cap'`,
+ *    `manifest` carries the would-be id but is NOT written to disk;
+ *    `entry` is null.
+ */
 export interface EnqueueResult {
-  manifest: ProposalManifest;
-  entry: ProposalCacheEntry;
-  /** false if collision or session-cap refused. */
   enqueued: boolean;
+  manifest: ProposalManifest;
+  entry: ProposalCacheEntry | null;
   reason?: 'collision' | 'session_cap';
 }
 
@@ -57,18 +69,16 @@ export class ProposalStore {
 
   async enqueue(args: EnqueueArgs): Promise<EnqueueResult> {
     // D5 fix: FR-AUTHOR-3 cap — at most 3 proposals enqueued per session.
+    // M1 fix: derive the manifest (with real proposal_id) even at the cap,
+    // so callers reading `r.manifest.proposal_id` always see a valid id.
+    const capManifest = newManifest(
+      args.kind,
+      args.signalHash,
+      undefined,
+      args.targetPath ? { targetPath: args.targetPath } : {},
+    );
     const used = sessionCounts.get(args.sessionId) ?? 0;
     if (used >= PROPOSALS_PER_SESSION_CAP) {
-      const stub: ProposalManifest = {
-        proposal_id: '',
-        kind: args.kind,
-        signal_hash: args.signalHash,
-        generated_at: new Date().toISOString(),
-        expires_at: new Date().toISOString(),
-        state: 'queued',
-        ignored_count: 0,
-        schema_version: 2,
-      };
       await emitMetric(this.store, {
         event: 'proposal_skipped_budget',
         session_id: args.sessionId,
@@ -76,14 +86,10 @@ export class ProposalStore {
         signal_hash: args.signalHash,
       });
       return {
-        manifest: stub,
-        entry: {
-          ...stub,
-          consecutive_ignored: 0,
-          state_history: [],
-        },
         enqueued: false,
         reason: 'session_cap',
+        manifest: capManifest,
+        entry: null,
       };
     }
 
@@ -91,20 +97,30 @@ export class ProposalStore {
 
     // DD-collision pre-check: refuse if any non-terminal entry shares the
     // proposal_id (which is derived from `kind + signal_hash`).
-    const manifest = newManifest(
-      args.kind,
-      args.signalHash,
-      undefined,
-      args.targetPath ? { targetPath: args.targetPath } : {},
-    );
+    const manifest = capManifest;
     const existing = cache.entries.find((e) => e.proposal_id === manifest.proposal_id);
     if (existing && NON_TERMINAL.includes(existing.state)) {
-      return { manifest, entry: existing, enqueued: false, reason: 'collision' };
+      return {
+        enqueued: false,
+        reason: 'collision',
+        manifest,
+        entry: existing,
+      };
     }
-    // D3 fix: a prior terminal-state entry (rejected/expired/reverted)
-    // must not block re-enqueue of the same kind+signal_hash. Evict it
-    // from the cache so enqueueEntry's id-uniqueness invariant holds.
+    // D3 + N6 fix: a prior terminal-state entry (rejected/expired/reverted)
+    // must not block re-enqueue, but DD-088 append-only state_history must
+    // be preserved across the re-enqueue. Carry forward the old history
+    // and add a terminal-state separator so the audit trail survives.
+    let carriedHistory: ProposalCacheEntry['state_history'] | undefined;
     if (existing) {
+      carriedHistory = [
+        ...existing.state_history,
+        {
+          state: 'queued',
+          at: new Date().toISOString(),
+          reason: `re-enqueued after terminal state '${existing.state}'`,
+        },
+      ];
       cache = {
         ...cache,
         entries: cache.entries.filter((e) => e.proposal_id !== manifest.proposal_id),
@@ -131,7 +147,25 @@ export class ProposalStore {
       consecutive_ignored: 0,
     };
     if (args.signalKind) enqueueArg.signal_kind = args.signalKind;
-    const updated = enqueueEntry(cache, enqueueArg);
+    let updated = enqueueEntry(cache, enqueueArg);
+    // N6: if we evicted a terminal entry, splice the carried history into
+    // the freshly-inserted entry so DD-088 append-only-ness holds.
+    if (carriedHistory) {
+      const STATE_HISTORY_CAP = 50;
+      updated = {
+        ...updated,
+        entries: updated.entries.map((e) =>
+          e.proposal_id === manifest.proposal_id
+            ? {
+                ...e,
+                state_history: [...carriedHistory!, ...e.state_history].slice(
+                  -STATE_HISTORY_CAP,
+                ),
+              }
+            : e,
+        ),
+      };
+    }
     await writeCache(this.store, updated);
     const entry = updated.entries.find((e) => e.proposal_id === manifest.proposal_id)!;
     sessionCounts.set(args.sessionId, used + 1);

@@ -53,6 +53,42 @@ describe('D3: re-enqueue after terminal state', () => {
     expect(b.manifest.proposal_id).toBe(a.manifest.proposal_id);
   });
 
+  it('N6: re-enqueue preserves prior state_history (DD-088 append-only)', async () => {
+    const a = await pstore.enqueue({
+      projectRoot: dir,
+      kind: 'skill',
+      signalHash: 'preserve',
+      artifact: { filename: 'SKILL.md', content: '# v1' },
+      sessionId: 's',
+    });
+    await pstore.transition(a.manifest.proposal_id, 'surfaced', 's');
+    await pstore.transition(a.manifest.proposal_id, 'rejected', 's');
+    const cacheBefore = await pstore.list();
+    expect(cacheBefore.entries[0].state_history).toHaveLength(3);
+
+    const b = await pstore.enqueue({
+      projectRoot: dir,
+      kind: 'skill',
+      signalHash: 'preserve',
+      artifact: { filename: 'SKILL.md', content: '# v2' },
+      sessionId: 's',
+    });
+    expect(b.enqueued).toBe(true);
+
+    const cacheAfter = await pstore.list();
+    const entry = cacheAfter.entries.find(
+      (e) => e.proposal_id === b.manifest.proposal_id,
+    )!;
+    expect(entry.state_history.length).toBeGreaterThanOrEqual(4);
+    // The continuation marker is present.
+    const sep = entry.state_history.find((h) =>
+      h.reason?.includes('re-enqueued after terminal'),
+    );
+    expect(sep).toBeDefined();
+    // First state in the merged history is the original `queued`.
+    expect(entry.state_history[0].state).toBe('queued');
+  });
+
   it('re-enqueueing while still surfaced is refused (collision)', async () => {
     const a = await pstore.enqueue({
       projectRoot: dir,
@@ -120,6 +156,30 @@ describe('D5: proposals_per_session ≤ 3 cap', () => {
       sessionId: 's',
     });
     expect(r.enqueued).toBe(true);
+  });
+
+  it('M1: session_cap returns a real proposal_id (no empty-string stub)', async () => {
+    for (let i = 0; i < 3; i++) {
+      await pstore.enqueue({
+        projectRoot: dir,
+        kind: 'skill',
+        signalHash: `h${i}`,
+        artifact: { filename: 'SKILL.md', content: '' },
+        sessionId: 's',
+      });
+    }
+    const r = await pstore.enqueue({
+      projectRoot: dir,
+      kind: 'skill',
+      signalHash: 'over-the-cap',
+      artifact: { filename: 'SKILL.md', content: '' },
+      sessionId: 's',
+    });
+    expect(r.enqueued).toBe(false);
+    expect(r.reason).toBe('session_cap');
+    expect(r.entry).toBeNull();
+    // The manifest has a real 32-hex id (M1 fix), not an empty stub.
+    expect(r.manifest.proposal_id).toMatch(/^[0-9a-f]{32}$/);
   });
 
   it('separate session ids have independent budgets', async () => {

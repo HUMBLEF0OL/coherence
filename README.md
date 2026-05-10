@@ -135,6 +135,6 @@ Wilson 95 % confidence interval reported in the patch CHANGELOG.
 
 ```
 npm run typecheck
-npm test          # 460+ tests
+npm test          # ~470 tests across unit / integration / e2e / security / perf / preconditions / rollback / schema
 npm run build
 ```

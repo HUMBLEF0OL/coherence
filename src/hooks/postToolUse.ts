@@ -16,7 +16,8 @@ import type { BufferEntry, NormalizedPath } from '../types/index.js';
 import { nowIsoUtc } from '../util/time.js';
 import { emitToolInvocationSignature } from '../signal/telemetry.js';
 import { detectBashRepetition } from '../signal/bashRepetition.js';
-import { readSignalCache, writeSignalCache } from '../signal/signalCache.js';
+import { detectFileCreation } from '../signal/fileCreation.js';
+import { readSignalCache, writeSignalCache, appendFile } from '../signal/signalCache.js';
 import { markDirty } from '../state/snapshotWriter.js';
 import { emitMetric } from '../state/metrics.js';
 import { ProposalStore } from '../proposals/store.js';
@@ -74,6 +75,44 @@ export async function postToolUseHook(
           /* detector non-fatal */
         }
       }
+      // A5 fix: file-creation signal on Edit/Write of new-ish files.
+      if (
+        (tool === 'Edit' || tool === 'Write') &&
+        typeof evt.path === 'string' &&
+        existsSync(evt.path)
+      ) {
+        try {
+          const fileFilter = new PathFilter(projectRoot);
+          if (fileFilter.isAllowed(evt.path, projectRoot)) {
+            const content = readFileSync(evt.path, 'utf8');
+            const cache = await readSignalCache(store);
+            const recentTokens = new Map<string, Set<string>>();
+            // Build the locality token map from recent file_creation entries
+            // in the same directory.
+            for (const item of cache.buckets.file_creation.items) {
+              recentTokens.set(item.signature_hash, new Set([item.signature_hash]));
+            }
+            const r = detectFileCreation(cache, evt.path, content, recentTokens);
+            const next = appendFile(
+              cache,
+              r.signature_hash,
+              r.directory_hash,
+              new Date().toISOString(),
+            );
+            await writeSignalCache(store, next);
+            await emitMetric(store, {
+              event: 'proposal_signal_observed',
+              session_id: sessionId,
+              signal_kind: 'file_creation',
+              signal_hash: r.signature_hash,
+              would_have_fired: r.fired,
+              occurrences_in_locality: r.occurrences_in_locality,
+            });
+          }
+        } catch {
+          /* detector non-fatal */
+        }
+      }
     }
 
     // ----- v0.1: drift-buffer append for markdown anchors -----
@@ -109,19 +148,23 @@ export async function postToolUseHook(
     }
 
     // ----- v0.2: snapshot mark-dirty (DD-084 hot-path-zero-cost) -----
+    // N4 fix: pass store so per-StateStore WeakMap isolation applies.
     try {
       const graduation = await readGraduation(store);
       const effective = resolveMode({ graduation, targetPath: '.' });
       const pstore = new ProposalStore(store);
       const counts = await pstore.counts();
       const buf = await store.read<{ entries: unknown[] }>('drift-buffer.json');
-      markDirty({
-        schema_version: 2,
-        written_at: nowIsoUtc(),
-        buffer_count: buf?.entries.length ?? 0,
-        proposal_counts: counts,
-        mode: effective,
-      });
+      markDirty(
+        {
+          schema_version: 2,
+          written_at: nowIsoUtc(),
+          buffer_count: buf?.entries.length ?? 0,
+          proposal_counts: counts,
+          mode: effective,
+        },
+        store,
+      );
     } catch {
       /* mark-dirty non-fatal */
     }

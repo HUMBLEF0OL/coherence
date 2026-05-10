@@ -102,55 +102,10 @@ function suffixed(targetPath: string): string {
   return path.join(dir, `${base}-${i}${ext}`);
 }
 
-interface PluginJson {
-  slashCommands?: Array<{ name: string; description?: string; handler?: string }>;
-  [key: string]: unknown;
-}
-
-/**
- * D7: register an accepted slash_command proposal in plugin.json.
- * The proposed artifact is `.claude/commands/<name>.md`. The slash command
- * `name` is derived from the markdown filename without the `.md` extension,
- * prefixed `coherence:` to match the v0.1 namespace.
- */
-function registerSlashCommand(
-  projectRoot: string,
-  writtenPath: string,
-  proposalId: string,
-): void {
-  const pluginJsonPath = path.join(projectRoot, 'plugin.json');
-  if (!existsSync(pluginJsonPath)) {
-    throw new Error(`plugin.json not found at ${pluginJsonPath}`);
-  }
-  const raw = readFileSync(pluginJsonPath, 'utf8');
-  const plugin = JSON.parse(raw) as PluginJson;
-  const commands = Array.isArray(plugin.slashCommands) ? plugin.slashCommands : [];
-
-  const baseName = path.basename(writtenPath, path.extname(writtenPath));
-  const cmdName = baseName.startsWith('coherence:') ? baseName : `coherence:${baseName}`;
-  if (commands.some((c) => c.name === cmdName)) {
-    return; // already registered
-  }
-  commands.push({
-    name: cmdName,
-    description: `Accepted proposal ${proposalId}`,
-    handler: `commands/${baseName}`,
-  });
-  plugin.slashCommands = commands;
-
-  // Atomic temp+rename — same contract as stateStore.write.
-  const tmp = `${pluginJsonPath}.${process.pid}.${Date.now()}.tmp`;
-  writeFileSync(tmp, JSON.stringify(plugin, null, 2) + '\n', 'utf8');
-  try {
-    renameSync(tmp, pluginJsonPath);
-  } finally {
-    try {
-      if (existsSync(tmp)) unlinkSync(tmp);
-    } catch {
-      /* best-effort */
-    }
-  }
-}
+// N5: registerSlashCommand was removed. v0.2 ships slash_command proposals
+// as documentation only — not auto-registered in plugin.json. See the
+// `proposal_accepted { delivery_mode: 'documentation_only' }` metric for
+// ops visibility into the conversion path.
 
 export async function runProposeAccept(
   args: ProposeAcceptCmdArgs,
@@ -330,23 +285,24 @@ async function runProposeAcceptLocked(
     }
   }
 
-  // D7 fix: slash_command accept must register the new command in
-  // plugin.json so Claude Code surfaces it. The plugin.json edit lands
-  // through the same atomic temp+rename contract.
+  // N5 fix: do NOT auto-register slash_command in plugin.json. The proposed
+  // artifact is markdown-shaped (a documentation skeleton), not an executable
+  // JS handler. Auto-registering would surface a slash command whose every
+  // invocation fails. Instead, the markdown is delivered as documentation
+  // under .claude/commands/<name>.md; the user must hand-write the JS
+  // handler and edit plugin.json themselves before the command becomes live.
+  // We log this via a metric so ops can track conversion-from-doc-to-handler.
   if (kind === 'slash_command') {
-    try {
-      registerSlashCommand(args.projectRoot, writePath, args.proposalId);
-    } catch (err) {
-      // If registration fails, the markdown file still landed but the
-      // command is invisible. Surface this via a metric for ops visibility.
-      await emitMetric(args.store, {
-        event: 'proposal_acceptance_blocked',
-        session_id: args.sessionId ?? 'session',
-        proposal_id: args.proposalId,
-        reason: 'plugin_json_registration_failed',
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
+    await emitMetric(args.store, {
+      event: 'proposal_accepted',
+      session_id: args.sessionId ?? 'session',
+      proposal_id: args.proposalId,
+      kind,
+      delivery_mode: 'documentation_only',
+      written_path: path.relative(args.projectRoot, writePath),
+      note:
+        'slash_command kind ships as documentation in v0.2; manual JS handler + plugin.json entry required to make it runnable.',
+    });
   }
 
   // Transition queued → surfaced if needed, then surfaced → accepted.

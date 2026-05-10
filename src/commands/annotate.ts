@@ -76,12 +76,22 @@ export async function runAnnotate(args: AnnotateCmdArgs): Promise<AnnotateCmdRes
     session_id: args.sessionId ?? 'session',
     proposal_id: r.manifest.proposal_id,
     doc_path_hash: signatureHash('file_write_path', rel),
+    enqueued: r.enqueued,
+    ...(r.reason ? { refusal_reason: r.reason } : {}),
   });
+  if (r.enqueued) {
+    return {
+      proposed: true,
+      proposal_id: r.manifest.proposal_id,
+      rendered: `[coherence] annotate: proposal ${r.manifest.proposal_id} for ${args.docPath}`,
+    };
+  }
   return {
-    proposed: r.enqueued,
+    proposed: false,
     proposal_id: r.manifest.proposal_id,
-    rendered: r.enqueued
-      ? `[coherence] annotate: proposal ${r.manifest.proposal_id} for ${args.docPath}`
-      : `[coherence] annotate: collision; proposal ${r.manifest.proposal_id} already exists`,
+    rendered:
+      r.reason === 'session_cap'
+        ? `[coherence] annotate: refused (session cap of 3 proposals reached)`
+        : `[coherence] annotate: collision; proposal ${r.manifest.proposal_id} already exists`,
   };
 }

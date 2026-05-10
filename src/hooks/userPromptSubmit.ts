@@ -12,6 +12,7 @@ import { Sentinels } from '../state/sentinels.js';
 import { getCoherenceDir, makeStateStore } from '../state/init.js';
 import { BufferLifecycle } from '../buffer/lifecycle.js';
 import type { DriftBuffer } from '../buffer/lifecycle.js';
+import { emitUserPromptSignature } from '../signal/telemetry.js';
 
 const SUCCESS: HookResult = { success: true };
 const LONG_TURN_SILENCE_MS = 5 * 60 * 1000; // 5 min user silence
@@ -40,8 +41,13 @@ function isLongTurnBoundary(): boolean {
   return silenceMs >= LONG_TURN_SILENCE_MS || toolCallCount >= 5;
 }
 
+interface UserPromptSubmitEvent {
+  prompt?: string;
+  session_id?: string;
+}
+
 export async function userPromptSubmitHook(
-  _event: unknown,
+  event: unknown,
   projectRoot: string,
 ): Promise<HookResult> {
   const sentinels = new Sentinels(getCoherenceDir(projectRoot));
@@ -51,6 +57,17 @@ export async function userPromptSubmitHook(
     const store = makeStateStore(projectRoot);
     const buffer = new BufferLifecycle(store);
     const buf = await buffer.read();
+    const evt = event as UserPromptSubmitEvent | undefined;
+    const sessionId = evt?.session_id ?? `session-${Date.now()}`;
+
+    // N2 fix: emit DD-068 user_prompt_signature (privacy-safe digest only).
+    if (typeof evt?.prompt === 'string') {
+      try {
+        await emitUserPromptSignature(store, sessionId, { prompt: evt.prompt });
+      } catch {
+        /* telemetry non-fatal */
+      }
+    }
 
     const distinctGroups = countDistinctTriggerGroups(buf);
     const msSinceLastStop = Date.now() - lastStopOrReviewTime;

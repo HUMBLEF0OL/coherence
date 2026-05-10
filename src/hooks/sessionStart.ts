@@ -74,27 +74,32 @@ export async function sessionStartHook(
     // Reset per-session proposal cap counter (D5).
     ProposalStore.resetSessionCount(sessionId);
 
-    // Run proposal expiry sweep (DD-075).
+    // Run proposal expiry sweep (DD-075). N3 fix: pass projectRoot so the
+    // signal-recurrence fence loads recentSignalHashes from metrics.jsonl.
     try {
-      await runExpirySweep(store, sessionId);
+      await runExpirySweep(store, sessionId, { projectRoot });
     } catch {
       /* expiry sweep failure is non-fatal */
     }
 
     // Bootstrap initial state-snapshot (FR-STATUSLINE-10 — first-snapshot bootstrap exempt from debounce).
+    // N4 fix: pass store to markDirty so per-StateStore isolation is real.
     try {
       const graduation = await readGraduation(store);
       const effective = resolveMode({ graduation, targetPath: '.' });
       const pstore = new ProposalStore(store);
       const c = await pstore.counts();
-      markDirty({
-        schema_version: 2,
-        written_at: nowIsoUtc(),
-        buffer_count: 0,
-        proposal_counts: c,
-        mode: effective,
-        degraded: sentinels.isAutoDisabled(),
-      });
+      markDirty(
+        {
+          schema_version: 2,
+          written_at: nowIsoUtc(),
+          buffer_count: 0,
+          proposal_counts: c,
+          mode: effective,
+          degraded: sentinels.isAutoDisabled(),
+        },
+        store,
+      );
       await flush(store, { bootstrap: true });
     } catch {
       /* snapshot bootstrap is non-fatal */
