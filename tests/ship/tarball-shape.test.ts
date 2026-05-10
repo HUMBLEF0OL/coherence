@@ -77,12 +77,10 @@ describe('M-LEGACY-1 + M-INSTALL-1: tarball shape (NFR-ARCH-2, DD-118)', () => {
 
   it('dist/state/schemas/ is non-empty post-build (round-2 C5)', () => {
     const schemasDir = path.join(ROOT, 'dist', 'state', 'schemas');
-    if (!existsSync(schemasDir)) {
-      // Pre-build runs have no dist/. Treat as informational; the release
-      // pipeline (`npm run build && npm run gates`) ensures dist/ exists
-      // when the gate is enforced.
-      return;
-    }
+    expect(
+      existsSync(schemasDir),
+      `dist/state/schemas/ missing — run \`npm run build\` (which now triggers scripts/copy-schemas.mjs) before \`npm run gates\``,
+    ).toBe(true);
     const files = readdirSync(schemasDir).filter(
       (n) => n.endsWith('.json') && statSync(path.join(schemasDir, n)).isFile(),
     );
