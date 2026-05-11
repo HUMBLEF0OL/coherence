@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-05-11T14:04:53.109Z",
+  "plugins": {
+    "@claude-flow/neural": {
+      "name": "@claude-flow/neural",
+      "version": "3.0.0-alpha.8",
+      "installedAt": "2026-05-11T13:59:46.106Z",
+      "enabled": true,
+      "source": "npm",
+      "path": "E:\\Projects and Learning\\coherence\\.claude-flow\\plugins\\node_modules\\@claude-flow\\neural",
+      "commands": [],
+      "hooks": []
+    },
+    "@claude-flow/teammate-plugin": {
+      "name": "@claude-flow/teammate-plugin",
+      "version": "1.0.0-alpha.1",
+      "installedAt": "2026-05-11T14:04:10.537Z",
+      "enabled": true,
+      "source": "npm",
+      "path": "E:\\Projects and Learning\\coherence\\.claude-flow\\plugins\\node_modules\\@claude-flow\\teammate-plugin",
+      "commands": [],
+      "hooks": []
+    },
+    "@claude-flow/embeddings": {
+      "name": "@claude-flow/embeddings",
+      "version": "3.0.0-alpha.16",
+      "installedAt": "2026-05-11T14:04:53.109Z",
+      "enabled": true,
+      "source": "npm",
+      "path": "E:\\Projects and Learning\\coherence\\.claude-flow\\plugins\\node_modules\\@claude-flow\\embeddings",
+      "commands": [],
+      "hooks": []
+    }
+  }
+}

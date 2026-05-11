@@ -3,6 +3,17 @@
 
 version: "3.0.0"
 
+workflow:
+  methodology: superpowers
+  hooks:
+    brainstorming: "swarm_coordinate --topology mesh"
+    executing-plans: "subagent_spawn --with-memory"
+    requesting-code-review: "swarm_coordinate --consensus byzantine"
+
+intelligence:
+  learning_mode: trajectory
+  pattern_matching: true
+
 swarm:
   topology: hierarchical-mesh
   maxAgents: 15

@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@claude-flow/embeddings": "^3.0.0-alpha.16",
+    "@claude-flow/neural": "^3.0.0-alpha.8",
+    "@claude-flow/teammate-plugin": "^1.0.0-alpha.1"
+  }
+}
