@@ -12,6 +12,7 @@ import {
   acceptPlan,
   PlanNotFoundError,
   MalformedPlanError,
+  PlanAlreadyTerminalError,
 } from '../state/plans/lifecycle.js';
 
 export interface PlanAcceptArgs {
@@ -58,6 +59,11 @@ export async function runPlanAccept(args: PlanAcceptArgs): Promise<PlanAcceptRes
     if (err instanceof MalformedPlanError) {
       throw new Error(
         `plan-accept: plan file is malformed JSON at ${err.filePath}; resolve manually.`,
+      );
+    }
+    if (err instanceof PlanAlreadyTerminalError) {
+      throw new Error(
+        `plan-accept: plan ${err.planId} is already ${err.finalAction}; no-op.`,
       );
     }
     throw err;

@@ -41,7 +41,9 @@ import {
   writeScopeCache,
   isStale as isScopeEntryStale,
   shouldEmitScopeCacheMiss,
+  enforceScopeCacheLru,
 } from '../state/scope/cache.js';
+import { withInProcessMutex } from '../util/asyncMutex.js';
 // v0.3 audit-3 B4: per-file tombstone consultation before trickle re-reads.
 import {
   upsertTombstone,
@@ -165,26 +167,41 @@ export async function postToolUseHook(
     // promised by M1 fires here today.
     if (evt.filePath) {
       try {
-        const cache = await readScopeCache(store);
         const cacheKey = path.isAbsolute(evt.filePath)
           ? evt.filePath
           : path.resolve(projectRoot, evt.filePath);
-        const existing = cache.entries[cacheKey];
+        // Cheap pre-check WITHOUT holding the lock: read once, check if we
+        // have a fresh entry, and skip the locked RMW on a hit. The walk
+        // happens unlocked because it's a pure fs probe of ancestor files.
+        const preCache = await readScopeCache(store);
+        const existing = preCache.entries[cacheKey];
         const isHit = existing && !isScopeEntryStale(existing);
         if (!isHit) {
           const ancestors = walkScopeAncestors(cacheKey, { projectRoot });
           const resolved = resolveScope(ancestors);
-          cache.entries[cacheKey] = {
-            file: cacheKey,
-            ancestor_chain: ancestors.map((a) => ({
-              file: a.file,
-              mtimeMs: a.mtimeMs,
-            })),
-            extends_resolved: resolved.effective as unknown as Record<string, unknown>,
-            written_at: nowIsoUtc(),
-          };
-          cache.generated_at = nowIsoUtc();
-          await writeScopeCache(store, cache);
+          // Audit-4 A: serialise the read-modify-write so two parallel
+          // PostToolUse hooks on different filePaths don't lose entries
+          // to last-write-wins. Audit-4 B: bound the cache with an LRU cap.
+          // In-process Promise mutex — cross-process safety is provided by
+          // `StateStore.write`'s atomic temp+rename pattern, which is fine
+          // because concurrent Claude Code sessions are rare and each one
+          // is single-threaded.
+          const scopeMutexKey = 'scope-cache:' + getCoherenceDir(projectRoot);
+          await withInProcessMutex(scopeMutexKey, async () => {
+            const cache = await readScopeCache(store);
+            cache.entries[cacheKey] = {
+              file: cacheKey,
+              ancestor_chain: ancestors.map((a) => ({
+                file: a.file,
+                mtimeMs: a.mtimeMs,
+              })),
+              extends_resolved: resolved.effective as unknown as Record<string, unknown>,
+              written_at: nowIsoUtc(),
+            };
+            enforceScopeCacheLru(cache);
+            cache.generated_at = nowIsoUtc();
+            await writeScopeCache(store, cache);
+          });
           if (shouldEmitScopeCacheMiss()) {
             await emitMetric(store, {
               event: 'scope_cache_miss',
@@ -380,58 +397,62 @@ async function appendTrickleEntries(
 ): Promise<void> {
   const lifecycle = new BufferLifecycle(store);
   const coherenceDir = getCoherenceDir(projectRoot);
-  const tombstones = readTombstoneCache(coherenceDir);
-  let tombstoneDirty = false;
 
-  for (const docPath of scannedPaths) {
-    try {
-      const st = statSync(docPath);
-      const tomb = queryTombstone({
-        cache: tombstones,
-        filePath: docPath,
-        currentMtimeMs: st.mtimeMs,
-      });
-      if (tomb.hit) {
-        // Skip — the doc was scanned recently and its content is unchanged.
-        continue;
+  // Audit-4 C: serialise the tombstone read-modify-write so two parallel
+  // trickle passes don't lose entries. In-process mutex (same rationale
+  // as the scope-cache lock above).
+  const tombstoneMutexKey = 'tombstone-cache:' + coherenceDir;
+  await withInProcessMutex(tombstoneMutexKey, async () => {
+    const tombstones = readTombstoneCache(coherenceDir);
+    let tombstoneDirty = false;
+
+    for (const docPath of scannedPaths) {
+      try {
+        const st = statSync(docPath);
+        const tomb = queryTombstone({
+          cache: tombstones,
+          filePath: docPath,
+          currentMtimeMs: st.mtimeMs,
+        });
+        if (tomb.hit) {
+          continue;
+        }
+
+        const source = readFileSync(docPath, 'utf8');
+        const { sections } = scanAnchors(source, docPath);
+        upsertTombstone({
+          cache: tombstones,
+          filePath: docPath,
+          content: source,
+          mtimeMs: st.mtimeMs,
+        });
+        tombstoneDirty = true;
+
+        if (sections.length === 0) continue;
+        const normalizedPath = normalizePath(docPath);
+        for (const section of sections) {
+          const entry: BufferEntry = {
+            path: normalizedPath,
+            sectionRef: makeSectionRef(normalizedPath, section.id),
+            contentHash: hashContent(section.content),
+            triggeredAt: nowIsoUtc(),
+            source: 'trickle_deep_scan',
+          };
+          await lifecycle.append(entry);
+        }
+      } catch {
+        /* per-doc errors must not abort the trickle pass */
       }
+    }
 
-      const source = readFileSync(docPath, 'utf8');
-      const { sections } = scanAnchors(source, docPath);
-      // Upsert tombstone regardless of section count: even an empty-anchor
-      // doc must be tombstoned so we don't re-read it next trickle pass.
-      upsertTombstone({
-        cache: tombstones,
-        filePath: docPath,
-        content: source,
-        mtimeMs: st.mtimeMs,
-      });
-      tombstoneDirty = true;
-
-      if (sections.length === 0) continue;
-      const normalizedPath = normalizePath(docPath);
-      for (const section of sections) {
-        const entry: BufferEntry = {
-          path: normalizedPath,
-          sectionRef: makeSectionRef(normalizedPath, section.id),
-          contentHash: hashContent(section.content),
-          triggeredAt: nowIsoUtc(),
-          source: 'trickle_deep_scan',
-        };
-        await lifecycle.append(entry);
+    if (tombstoneDirty) {
+      try {
+        writeTombstoneCache(coherenceDir, tombstones);
+      } catch {
+        /* tombstone persistence is best-effort */
       }
-    } catch {
-      /* per-doc errors must not abort the trickle pass */
     }
-  }
-
-  if (tombstoneDirty) {
-    try {
-      writeTombstoneCache(coherenceDir, tombstones);
-    } catch {
-      /* tombstone persistence is best-effort */
-    }
-  }
+  });
 }
 
 /** Test hook: clear the per-project idle tracker. */

@@ -14,6 +14,7 @@ import {
   rejectPlan,
   PlanNotFoundError,
   MalformedPlanError,
+  PlanAlreadyTerminalError,
   type RejectReason,
 } from '../state/plans/lifecycle.js';
 
@@ -66,6 +67,11 @@ export async function runPlanReject(args: PlanRejectArgs): Promise<PlanRejectRes
     }
     if (err instanceof MalformedPlanError) {
       throw new Error(`plan-reject: plan file is malformed JSON at ${err.filePath}.`);
+    }
+    if (err instanceof PlanAlreadyTerminalError) {
+      throw new Error(
+        `plan-reject: plan ${err.planId} is already ${err.finalAction}; no-op.`,
+      );
     }
     throw err;
   }

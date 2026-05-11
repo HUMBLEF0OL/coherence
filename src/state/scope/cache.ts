@@ -40,8 +40,37 @@ export interface ScopeCacheFile {
 
 const SCOPE_CACHE_FILE = 'scope-cache.json';
 
+/**
+ * Audit-4 B: LRU cap on the scope cache.
+ *
+ * Without this, a long-running session that touches many distinct files
+ * grows `scope-cache.json` unbounded. The 5,000 entry cap mirrors the
+ * tombstone LRU (`TOMBSTONE_LRU_CAP`) and matches the per-session work
+ * upper bound for any reasonable monorepo session.
+ */
+export const SCOPE_CACHE_LRU_CAP = 5_000;
+
 export function emptyScopeCache(): ScopeCacheFile {
   return { schema_version: 3, generated_at: nowIsoUtc(), entries: {} };
+}
+
+/**
+ * Trim the LRU to `cap` entries by dropping the oldest `written_at`
+ * entries. Mutates `cache.entries` in place. Audit-4 B.
+ */
+export function enforceScopeCacheLru(
+  cache: ScopeCacheFile,
+  cap: number = SCOPE_CACHE_LRU_CAP,
+): void {
+  const keys = Object.keys(cache.entries);
+  if (keys.length <= cap) return;
+  const sorted = keys
+    .map((k) => ({ k, at: cache.entries[k].written_at }))
+    .sort((a, b) => (a.at < b.at ? -1 : 1));
+  const drop = keys.length - cap;
+  for (let i = 0; i < drop; i++) {
+    delete cache.entries[sorted[i].k];
+  }
 }
 
 export async function readScopeCache(store: StateStore): Promise<ScopeCacheFile> {

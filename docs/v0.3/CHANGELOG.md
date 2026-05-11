@@ -426,3 +426,42 @@ race condition, ANSI injection) and one staleness bug. Closures:
 postToolUse-scope-cache (3), sessionStart-team-ignore (3), trickle-tombstone (1),
 plan-cli (10), recover-target-parser (4), v0.3-path-containment (6),
 scope/cache new-ancestor (2), identity sanitiseDisplay (5).
+
+## Post-audit-3 audit-4 closures (concurrency hardening + bounded reads)
+
+A fourth audit (focused on the new wirings landed in audit-3) found six
+real issues in the production hot-path code added during audit-3. None
+were caught by previous audits because they ARE the new code.
+
+**Audit-4 fixes:**
+- **A** Scope-cache read-modify-write race on PostToolUse — two parallel
+  hooks both `readScopeCache → mutate → writeScopeCache`, last-write-wins
+  drops entries. Fix: serialise with `withInProcessMutex('scope-cache:<dir>')`.
+  Verified by a 20-parallel test.
+- **B** Scope-cache unbounded growth — every unique file added an entry,
+  no LRU. Fix: `enforceScopeCacheLru(cache, SCOPE_CACHE_LRU_CAP = 5000)`,
+  matching the tombstone cap.
+- **C** Tombstone cache RMW race — same shape as A. Fix: same in-process
+  mutex, keyed `tombstone-cache:<dir>`.
+- **E** `coherence/ignore` unbounded read — `readFileSync` would load a
+  hostile multi-MB file into memory. Fix: cap at 1 MB; bytes past the cap
+  are dropped with a `[coherence]` warning. Sweep still fires on the
+  first-chunk matches.
+- **F** Plan-accept/reject double-fire — accepting an already-accepted
+  plan recorded a second `audit_log` entry and emitted a duplicate
+  `plan_accepted` event. Fix: new `PlanAlreadyTerminalError` raised when
+  audit_log already contains an `accepted` or `rejected` entry. CLI
+  wrappers translate to "already X; no-op".
+- **I** Duplicated `isInside` / `isPathInside` in deAnnotate + exportMetrics.
+  Fix: shared `src/util/pathContainment.ts` with one Windows-robust
+  implementation.
+
+**New util:** `src/util/asyncMutex.ts` exposes `withInProcessMutex(key, fn)`.
+Promise-queue serialisation, no fs contention, used for the in-session
+RMW paths above. The cross-process `withCacheLock` (DD-100) remains in
+place for cross-session safety on plan-store / proposal-cache files.
+
+**Test coverage added (+15 tests, 798 → 813):**
+asyncMutex (3), pathContainment (4), scope-cache LRU (3),
+plan-lifecycle-idempotency (3), scope-cache concurrent-write (1),
+team-ignore 1.2-MB read cap (1).

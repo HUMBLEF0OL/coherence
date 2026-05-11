@@ -30,6 +30,7 @@ import { getCoherenceDir } from '../state/init.js';
 import { readTelemetryConsent } from '../state/consent.js';
 import { emitMetric } from '../state/metrics.js';
 import { nowIsoUtc } from '../util/time.js';
+import { isPathInside } from '../util/pathContainment.js';
 
 /** v0.2 P8 — tail-read fence for metrics.jsonl. */
 const METRICS_TAIL_BYTES = 5 * 1024 * 1024;
@@ -254,20 +255,6 @@ function anonymise(value: unknown): unknown {
     return out;
   }
   return value;
-}
-
-/**
- * Audit-3 S3 helper: True if `candidate` resolves inside `boundary` (or
- * equals it). Robust to Windows path roots — `path.relative` returns an
- * absolute path when roots differ, which is exactly the "outside" signal
- * we want to refuse.
- */
-function isPathInside(boundary: string, candidate: string): boolean {
-  const b = path.resolve(boundary);
-  const c = path.resolve(candidate);
-  if (c === b) return true;
-  const rel = path.relative(b, c);
-  return rel.length > 0 && !rel.startsWith('..') && !path.isAbsolute(rel);
 }
 
 function bucketCount(n: number): ExportMetricsResult['countBucket'] {

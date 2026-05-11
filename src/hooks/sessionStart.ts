@@ -195,6 +195,9 @@ export async function sessionStartHook(
  * extractable anchor today, so they're skipped — `applyTeamIgnoreSweep`
  * tolerates `resolveAnchor` returning undefined.
  */
+/** Audit-4 E: cap on `coherence/ignore` read so a hostile file can't OOM the session. */
+const COHERENCE_IGNORE_MAX_BYTES = 1 * 1024 * 1024;
+
 async function runTeamIgnoreSweepFromCommittedFile(
   store: StateStore,
   sessionId: string,
@@ -202,7 +205,31 @@ async function runTeamIgnoreSweepFromCommittedFile(
 ): Promise<void> {
   const ignorePath = path.join(projectRoot, 'coherence', 'ignore');
   if (!existsSync(ignorePath)) return;
-  const lines = readFileSync(ignorePath, 'utf8')
+  // Audit-4 E: bound the read so a hostile or accidentally-committed
+  // multi-MB ignore file can't blow up SessionStart.
+  let raw: string;
+  try {
+    const { statSync, openSync, readSync, closeSync } = await import('fs');
+    const st = statSync(ignorePath);
+    if (st.size <= COHERENCE_IGNORE_MAX_BYTES) {
+      raw = readFileSync(ignorePath, 'utf8');
+    } else {
+      const fd = openSync(ignorePath, 'r');
+      try {
+        const buf = Buffer.alloc(COHERENCE_IGNORE_MAX_BYTES);
+        readSync(fd, buf, 0, COHERENCE_IGNORE_MAX_BYTES, 0);
+        raw = buf.toString('utf8');
+      } finally {
+        closeSync(fd);
+      }
+      console.warn(
+        `[coherence] team-ignore sweep: coherence/ignore is ${st.size} bytes (> ${COHERENCE_IGNORE_MAX_BYTES}); read first ${COHERENCE_IGNORE_MAX_BYTES} bytes only`,
+      );
+    }
+  } catch {
+    return;
+  }
+  const lines = raw
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l.length > 0 && !l.startsWith('#'));

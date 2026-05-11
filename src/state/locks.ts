@@ -153,7 +153,14 @@ export const lockManager = new LockManager();
  */
 export async function withCacheLock<T>(
   filePath: string,
-  namespace: 'proposal-cache' | 'team-plan-store' | 'session-start',
+  namespace:
+    | 'proposal-cache'
+    | 'team-plan-store'
+    | 'session-start'
+    // Audit-4 A + C: scope-cache + tombstone read-modify-write paths on
+    // the PostToolUse hot-path race when two tool calls fire close together.
+    | 'scope-cache'
+    | 'tombstone-cache',
   fn: () => Promise<T>,
 ): Promise<T> {
   const acquired = await lockManager.acquire(filePath, namespace);

@@ -76,8 +76,37 @@ export interface AcceptPlanResult {
   filePath: string;
 }
 
+/**
+ * Audit-4 F: thrown by acceptPlan/rejectPlan when the plan is already
+ * terminal (audit_log already contains an `accepted` or `rejected` entry).
+ * Re-accepting or re-rejecting would record a second audit entry + emit a
+ * second telemetry event — both undesired.
+ */
+export class PlanAlreadyTerminalError extends Error {
+  constructor(
+    public readonly planId: string,
+    public readonly finalAction: 'accepted' | 'rejected',
+  ) {
+    super(`team plan ${planId} is already ${finalAction}`);
+    this.name = 'PlanAlreadyTerminalError';
+  }
+}
+
+function planTerminalAction(plan: TeamPlan): 'accepted' | 'rejected' | null {
+  for (const entry of plan.audit_log ?? []) {
+    if (entry.action === 'accepted') return 'accepted';
+    if (entry.action === 'rejected') return 'rejected';
+  }
+  return null;
+}
+
 export async function acceptPlan(args: AcceptPlanArgs): Promise<AcceptPlanResult> {
   return mutate(args.store, args.projectRoot, args.branchSha, args.planId, async (plan) => {
+    // Audit-4 F: idempotency — refuse a second accept.
+    const terminal = planTerminalAction(plan);
+    if (terminal !== null) {
+      throw new PlanAlreadyTerminalError(plan.plan_id, terminal);
+    }
     const actorHash = args.actorHash ?? getIdentity().hash;
     const updated = appendPlanAudit(plan, { actor_hash: actorHash, action: 'accepted' });
     const filePath = writeTeamPlan(args.projectRoot, updated);
@@ -108,6 +137,11 @@ export interface RejectPlanArgs extends AcceptPlanArgs {
 
 export async function rejectPlan(args: RejectPlanArgs): Promise<AcceptPlanResult> {
   return mutate(args.store, args.projectRoot, args.branchSha, args.planId, async (plan) => {
+    // Audit-4 F: idempotency — refuse a second reject (or accept-then-reject).
+    const terminal = planTerminalAction(plan);
+    if (terminal !== null) {
+      throw new PlanAlreadyTerminalError(plan.plan_id, terminal);
+    }
     const actorHash = args.actorHash ?? getIdentity().hash;
     const updated = appendPlanAudit(plan, {
       actor_hash: actorHash,

@@ -20,6 +20,7 @@
 import { existsSync, readFileSync, writeFileSync, statSync } from 'fs';
 import path from 'path';
 import type { StateStore } from '../state/stateStore.js';
+import { isPathInside } from '../util/pathContainment.js';
 import {
   readGraduation,
   writeGraduation,
@@ -92,7 +93,7 @@ export async function runDeAnnotate(
     // Audit-3 S1: refuse paths outside projectRoot. Without this, a
     // malicious or buggy caller could `/coherence:de-annotate ../../etc/foo.md`
     // and we'd overwrite the file if it happened to match ANNOTATE_BLOCK_RE.
-    if (!isInside(projectRoot, abs)) {
+    if (!isPathInside(projectRoot, abs)) {
       throw new Error(
         `de-annotate: refuses to operate on path outside the project root: ${target}`,
       );
@@ -154,19 +155,6 @@ function applyAction(absPath: string, action: DeAnnotateAction): ApplyResult {
 
   writeFileSync(absPath, next, 'utf8');
   return { changed: true, ...(hint !== undefined ? { hint } : {}) };
-}
-
-/**
- * Audit-3 S1: assert `candidate` resolves inside `projectRoot`. Symlinks
- * are not followed — relative-path traversal is the documented attack
- * surface; symlink hijacks require shell-level access already.
- */
-function isInside(projectRoot: string, candidate: string): boolean {
-  const projectAbs = path.resolve(projectRoot);
-  const candAbs = path.resolve(candidate);
-  if (candAbs === projectAbs) return true;
-  const rel = path.relative(projectAbs, candAbs);
-  return rel.length > 0 && !rel.startsWith('..') && !path.isAbsolute(rel);
 }
 
 export function formatDeAnnotate(r: DeAnnotateResult): string {

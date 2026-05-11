@@ -106,6 +106,32 @@ describe('SessionStart × team-ignore sweep (audit-3 B2)', () => {
     expect(entry!.state).toBe('queued');
   });
 
+  // ── audit-4 E: bounded read on coherence/ignore ────────────────────────
+
+  it('caps coherence/ignore at 1 MB so a hostile multi-MB file does not OOM', async () => {
+    const pid = 'e'.repeat(32);
+    await seedAnnotateProposal(pid, 'docs/intro.md');
+
+    mkdirSync(path.join(dir, 'coherence'), { recursive: true });
+    // Build a > 1 MB file whose first chunk does contain a matching line so
+    // the sweep still fires. We pad with comment lines (parser strips them).
+    const head = 'docs/\n';
+    const padLine = '# padding line that the parser strips because it starts with #\n';
+    const pads = Math.ceil((1.2 * 1024 * 1024) / padLine.length);
+    const body = head + padLine.repeat(pads);
+    writeFileSync(path.join(dir, 'coherence', 'ignore'), body);
+
+    // sessionStart MUST NOT throw, and the matched proposal MUST still
+    // transition (the first chunk includes `docs/`).
+    const r = await sessionStartHook({ session_id: 's' }, dir);
+    expect(r.success).toBe(true);
+
+    const store = makeStateStore(dir);
+    const cache = await readCache(store);
+    const entry = cache.entries.find((e) => e.proposal_id === pid);
+    expect(entry!.state).toBe('ignored_by_team');
+  });
+
   it('is a no-op when no proposal anchor matches', async () => {
     const pid = 'c'.repeat(32);
     await seedAnnotateProposal(pid, 'docs/intro.md');
