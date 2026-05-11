@@ -60,6 +60,45 @@ modified, suggesting `--keep-as-user-anchor` so in-progress edits survive.
 
 Implementation: [src/commands/deAnnotate.ts](../../src/commands/deAnnotate.ts).
 
+## `/coherence:plan-create <kind> <title> [--body <markdown>]`
+
+Audit-3 B3. Writes a cross-team plan file at
+`coherence/plans/<branch-sha>/<plan-id>.json`. `kind` is one of `proposal`,
+`decision`, `directive`, `alignment`, `ad_hoc`. The plan id is a
+deterministic 32-hex SHA-256 of `branch_sha + author_hash + title +
+created_at`. Emits `plan_created`.
+
+Implementation: [src/commands/planCreate.ts](../../src/commands/planCreate.ts).
+
+## `/coherence:plan-accept <branch-sha> <plan-id>`
+
+Audit-3 B3. Loads the plan under `withCacheLock('team-plan-store')`,
+appends an `audit_log` entry, persists, and emits `plan_accepted` with the
+hashed actor and `duration_minutes` since creation.
+
+Surfaces friendly errors when the plan file is missing
+(`PlanNotFoundError`) or malformed JSON (`MalformedPlanError`).
+
+Implementation: [src/commands/planAccept.ts](../../src/commands/planAccept.ts).
+
+## `/coherence:plan-reject <branch-sha> <plan-id> <reason>`
+
+Audit-3 B3. `reason` is one of `stale`, `superseded`, `rejected_explicit`.
+Emits `plan_rejected` with the reason in the payload.
+
+Implementation: [src/commands/planReject.ts](../../src/commands/planReject.ts).
+
+## `/coherence:recover [--target <tag>]`
+
+Audit-3 B5. Without args runs the within-major recover flow (clears
+auto-disabled sentinel, resets locks, drops stop-progress, clears
+quarantine). With `--target <tag>` (or a bare positional `v0.X.Y`),
+refuses when the target's major.minor differs from the running plugin's;
+otherwise proceeds. See [rollback.md](rollback.md) for the major-version
+matrix.
+
+Implementation: [src/commands/recover.ts](../../src/commands/recover.ts).
+
 ## v0.3 doctor amendment
 
 `/coherence:doctor` now flags any cross-team plan older than 7 days

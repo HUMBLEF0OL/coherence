@@ -48,10 +48,38 @@ export function getIdentity(): DeveloperIdentity {
   const name = readGitConfig('user.name') ?? email;
 
   _cachedHash = hashEmail(email);
-  _cachedDisplay = name.trim();
+  _cachedDisplay = sanitiseDisplay(name);
 
   return { hash: _cachedHash, display: _cachedDisplay };
 }
+
+/**
+ * Audit-3 S7: strip ANSI / CSI control sequences from the display name
+ * before echoing it. A developer's `git config user.name` of
+ * `\x1b[2J\x1b[H` would otherwise clear the terminal when surfaced by
+ * any /coherence:plan-* CLI output. Strip both 7-bit (`\x1b[...m`) and
+ * raw C0 control characters except TAB.
+ */
+/* eslint-disable no-control-regex */
+/**
+ * Audit-3 S7 — exported for direct unit testing. Not part of the public
+ * identity API. Use `getIdentity().display` in production code; this helper
+ * is the implementation detail that strips ANSI/CSI control sequences so a
+ * malicious `git config user.name` cannot inject terminal escapes.
+ */
+export function sanitiseDisplay(raw: string): string {
+  return raw
+    // strip CSI escape sequences
+    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
+    // strip OSC sequences
+    .replace(/\x1b\][^\x07]*\x07/g, '')
+    // strip remaining ESC + single char
+    .replace(/\x1b./g, '')
+    // strip C0 controls except TAB (0x09)
+    .replace(/[\x00-\x08\x0a-\x1f\x7f]/g, '')
+    .trim();
+}
+/* eslint-enable no-control-regex */
 
 export function hashEmail(email: string): string {
   return createHash('sha256').update(email.trim().toLowerCase()).digest('hex').slice(0, HASH_LEN);

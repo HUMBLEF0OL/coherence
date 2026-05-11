@@ -76,4 +76,49 @@ describe('scope-cache (DD-106)', () => {
     const back = readScopeCacheDirect(root);
     expect(back.entries['/abs/file.ts']).toEqual(cache.entries['/abs/file.ts']);
   });
+
+  // ── audit-3 S9: stale when a NEW ancestor appears ─────────────────────
+
+  it('isStale returns true when a new CLAUDE.md is added higher up the tree', () => {
+    // Layout:
+    //   root/packages/a/src/file.ts
+    // initially: no CLAUDE.md anywhere → ancestor_chain is empty → not stale
+    // then add root/CLAUDE.md → MUST become stale (new ancestor exists)
+    const mkSync = (p: string) => {
+      const fs = require('fs') as typeof import('fs');
+      fs.mkdirSync(path.dirname(p), { recursive: true });
+      fs.writeFileSync(p, '# x', 'utf8');
+    };
+    const filePath = path.join(root, 'packages', 'a', 'src', 'file.ts');
+    mkSync(filePath);
+
+    const entry: ScopeCacheEntry = {
+      file: filePath,
+      ancestor_chain: [],
+      extends_resolved: {},
+      written_at: new Date().toISOString(),
+    };
+    expect(isStale(entry)).toBe(false);
+
+    // Add a CLAUDE.md at root → cache must become stale.
+    mkSync(path.join(root, 'CLAUDE.md'));
+    expect(isStale(entry)).toBe(true);
+  });
+
+  it('isStale does NOT report stale for an ancestor that is already in the chain', () => {
+    const fs = require('fs') as typeof import('fs');
+    const filePath = path.join(root, 'packages', 'a', 'file.ts');
+    const claude = path.join(root, 'CLAUDE.md');
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, '');
+    fs.writeFileSync(claude, '# x');
+    const mtimeMs = fs.statSync(claude).mtimeMs;
+    const entry: ScopeCacheEntry = {
+      file: filePath,
+      ancestor_chain: [{ file: claude, mtimeMs }],
+      extends_resolved: {},
+      written_at: new Date().toISOString(),
+    };
+    expect(isStale(entry)).toBe(false);
+  });
 });

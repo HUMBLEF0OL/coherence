@@ -87,7 +87,21 @@ export async function runExportMetrics(
   const outPath = path.resolve(
     options.out ?? `metrics-export-${nowIsoUtc().replace(/[:.]/g, '-')}.jsonl`,
   );
-  mkdirSync(path.dirname(outPath), { recursive: true });
+  // Audit-3 S3: refuse paths whose parent directory does NOT already
+  // exist when that directory falls outside cwd OR projectRoot. We accept
+  // arbitrary `--out` inside cwd / projectRoot (the developer is operating
+  // on their own machine) but refuse to silently create new directories
+  // outside it — that's the surface a hostile `--out /etc/cron.daily/x`
+  // would exploit. If the dirname already exists, we trust the user.
+  const outDir = path.dirname(outPath);
+  if (!existsSync(outDir)) {
+    if (!isPathInside(path.resolve(projectRoot), outDir) && !isPathInside(process.cwd(), outDir)) {
+      throw new Error(
+        `export-metrics: refusing to create directory outside project/cwd: ${outDir}`,
+      );
+    }
+    mkdirSync(outDir, { recursive: true });
+  }
 
   if (!existsSync(jsonlPath)) {
     throw new Error(`export-metrics: ${jsonlPath} does not exist`);
@@ -240,6 +254,20 @@ function anonymise(value: unknown): unknown {
     return out;
   }
   return value;
+}
+
+/**
+ * Audit-3 S3 helper: True if `candidate` resolves inside `boundary` (or
+ * equals it). Robust to Windows path roots — `path.relative` returns an
+ * absolute path when roots differ, which is exactly the "outside" signal
+ * we want to refuse.
+ */
+function isPathInside(boundary: string, candidate: string): boolean {
+  const b = path.resolve(boundary);
+  const c = path.resolve(candidate);
+  if (c === b) return true;
+  const rel = path.relative(b, c);
+  return rel.length > 0 && !rel.startsWith('..') && !path.isAbsolute(rel);
 }
 
 function bucketCount(n: number): ExportMetricsResult['countBucket'] {

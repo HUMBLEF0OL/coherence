@@ -56,8 +56,21 @@ export async function writeScopeCache(
   await store.write(SCOPE_CACHE_FILE, cache);
 }
 
-/** True if any ancestor in `entry.ancestor_chain` no longer matches its recorded mtime. */
+/**
+ * True if any ancestor in `entry.ancestor_chain` no longer matches its
+ * recorded mtime, OR if any DIRECTORY between `entry.file` and the
+ * shallowest recorded ancestor has acquired a new candidate scope file
+ * since the entry was written.
+ *
+ * Audit-3 S9: the old check only validated EXISTING ancestor mtimes. If a
+ * developer added a NEW `CLAUDE.md` higher up the tree after the entry was
+ * cached, the resolved chain was missing that file but isStale returned
+ * false. The fix walks the candidate directory list from `entry.file`
+ * upward and asserts that no scope file exists at a directory that isn't
+ * already in `ancestor_chain`.
+ */
 export function isStale(entry: ScopeCacheEntry): boolean {
+  // Existing ancestor mtime check.
   for (const ref of entry.ancestor_chain) {
     if (!existsSync(ref.file)) return true;
     try {
@@ -66,6 +79,25 @@ export function isStale(entry: ScopeCacheEntry): boolean {
     } catch {
       return true;
     }
+  }
+  // New-ancestor check: walk dirs from entry.file up; if any directory
+  // contains CLAUDE.md or coherence/scope.json AND that file is not in
+  // ancestor_chain, the cache is stale.
+  const recordedFiles = new Set(entry.ancestor_chain.map((r) => r.file));
+  let cursor = path.dirname(entry.file);
+  const fsRoot = path.parse(cursor).root;
+  // Cap the walk to match SCOPE_WALK_MAX_DEPTH = 8 (avoid pathological climbs).
+  for (let depth = 0; depth <= 8; depth++) {
+    for (const candidateName of ['CLAUDE.md', path.join('coherence', 'scope.json')]) {
+      const candidate = path.join(cursor, candidateName);
+      if (existsSync(candidate) && !recordedFiles.has(candidate)) {
+        return true;
+      }
+    }
+    if (cursor === fsRoot) break;
+    const parent = path.dirname(cursor);
+    if (parent === cursor) break;
+    cursor = parent;
   }
   return false;
 }

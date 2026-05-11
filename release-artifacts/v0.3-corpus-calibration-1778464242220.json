@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-10T15:51:32.882Z",
+  "generated_at": "2026-05-11T01:50:42.219Z",
   "corpus_path": "tests/fixtures/signal-corpora",
   "case_count": 72,
   "acceptance_floor": {

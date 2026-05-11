@@ -32,6 +32,23 @@ import {
   writeScanCacheState,
   TRICKLE_BUDGET_MS,
 } from '../scanner/trickleScanner.js';
+// v0.3 audit-3 B1: scope-cache consultation on the PostToolUse hot path
+// (plan TS-2 §"PostToolUse adds scope-cache consultation").
+import { walkScopeAncestors } from '../state/scope/walker.js';
+import { resolveScope } from '../state/scope/resolver.js';
+import {
+  readScopeCache,
+  writeScopeCache,
+  isStale as isScopeEntryStale,
+  shouldEmitScopeCacheMiss,
+} from '../state/scope/cache.js';
+// v0.3 audit-3 B4: per-file tombstone consultation before trickle re-reads.
+import {
+  upsertTombstone,
+  queryTombstone,
+  readTombstoneCache,
+  writeTombstoneCache,
+} from '../scanner/scanCacheTombstone.js';
 
 const SUCCESS: HookResult = { success: true };
 
@@ -139,6 +156,48 @@ export async function postToolUseHook(
       }
     }
 
+    // ----- v0.3 M1 (audit-3 B1): scope-cache consultation -----
+    // Plan TS-2: "PostToolUse adds scope-cache consultation". Cache hit
+    // skips the walk; miss walks ancestors, populates cache, emits
+    // `scope_cache_miss` sampled 1:100. The resolved scope is not yet
+    // consumed downstream — downstream consumers (FR-SCOPE-1..4) ship in
+    // v0.4 once a feature actually reads it — but the cache + telemetry
+    // promised by M1 fires here today.
+    if (evt.filePath) {
+      try {
+        const cache = await readScopeCache(store);
+        const cacheKey = path.isAbsolute(evt.filePath)
+          ? evt.filePath
+          : path.resolve(projectRoot, evt.filePath);
+        const existing = cache.entries[cacheKey];
+        const isHit = existing && !isScopeEntryStale(existing);
+        if (!isHit) {
+          const ancestors = walkScopeAncestors(cacheKey, { projectRoot });
+          const resolved = resolveScope(ancestors);
+          cache.entries[cacheKey] = {
+            file: cacheKey,
+            ancestor_chain: ancestors.map((a) => ({
+              file: a.file,
+              mtimeMs: a.mtimeMs,
+            })),
+            extends_resolved: resolved.effective as unknown as Record<string, unknown>,
+            written_at: nowIsoUtc(),
+          };
+          cache.generated_at = nowIsoUtc();
+          await writeScopeCache(store, cache);
+          if (shouldEmitScopeCacheMiss()) {
+            await emitMetric(store, {
+              event: 'scope_cache_miss',
+              session_id: sessionId,
+              ancestor_count: ancestors.length,
+            });
+          }
+        }
+      } catch {
+        /* scope-cache path is best-effort */
+      }
+    }
+
     // ----- v0.1: drift-buffer append for markdown anchors -----
     const filePath = evt.filePath;
     if (filePath) {
@@ -197,7 +256,7 @@ export async function postToolUseHook(
         });
         if (r.scanned.length > 0) {
           await writeScanCacheState(store, r.state);
-          await appendTrickleEntries(store, r.scanned);
+          await appendTrickleEntries(store, projectRoot, r.scanned);
           await emitMetric(store, {
             event: 'trickle_scan_pass',
             session_id: sessionId,
@@ -304,15 +363,51 @@ function collectAnchoredDocs(projectRoot: string): string[] {
   return out.sort();
 }
 
+/**
+ * v0.3 audit-3 B4: tombstone-aware trickle append.
+ *
+ * Plan M5: tombstone consultation BEFORE disk re-read; misses populate
+ * the tombstone after scan. Composes with v0.2 P7 doc-content memo —
+ * tombstone hit + memo content_hash match → skip readFileSync entirely.
+ * Today the memo is keyed differently and the composition is implicit
+ * (we still need source bytes for anchorScanner); the tombstone short-
+ * circuits the per-doc scan loop, which is the primary cost driver.
+ */
 async function appendTrickleEntries(
   store: ReturnType<typeof makeStateStore>,
+  projectRoot: string,
   scannedPaths: string[],
 ): Promise<void> {
   const lifecycle = new BufferLifecycle(store);
+  const coherenceDir = getCoherenceDir(projectRoot);
+  const tombstones = readTombstoneCache(coherenceDir);
+  let tombstoneDirty = false;
+
   for (const docPath of scannedPaths) {
     try {
+      const st = statSync(docPath);
+      const tomb = queryTombstone({
+        cache: tombstones,
+        filePath: docPath,
+        currentMtimeMs: st.mtimeMs,
+      });
+      if (tomb.hit) {
+        // Skip — the doc was scanned recently and its content is unchanged.
+        continue;
+      }
+
       const source = readFileSync(docPath, 'utf8');
       const { sections } = scanAnchors(source, docPath);
+      // Upsert tombstone regardless of section count: even an empty-anchor
+      // doc must be tombstoned so we don't re-read it next trickle pass.
+      upsertTombstone({
+        cache: tombstones,
+        filePath: docPath,
+        content: source,
+        mtimeMs: st.mtimeMs,
+      });
+      tombstoneDirty = true;
+
       if (sections.length === 0) continue;
       const normalizedPath = normalizePath(docPath);
       for (const section of sections) {
@@ -327,6 +422,14 @@ async function appendTrickleEntries(
       }
     } catch {
       /* per-doc errors must not abort the trickle pass */
+    }
+  }
+
+  if (tombstoneDirty) {
+    try {
+      writeTombstoneCache(coherenceDir, tombstones);
+    } catch {
+      /* tombstone persistence is best-effort */
     }
   }
 }

@@ -52,6 +52,17 @@ export async function runScopeDebug(
     ? filePath
     : path.resolve(projectRoot, filePath);
 
+  // Audit-3 S2: refuse paths outside projectRoot. The walker would
+  // otherwise statSync every CLAUDE.md / coherence/scope.json above the
+  // project (info disclosure: existence + mtime probes outside the repo).
+  const projectAbs = path.resolve(projectRoot);
+  const rel = path.relative(projectAbs, absFile);
+  if (absFile !== projectAbs && (rel.startsWith('..') || path.isAbsolute(rel))) {
+    throw new Error(
+      `scope-debug: refuses to inspect path outside the project root: ${filePath}`,
+    );
+  }
+
   if (!existsSync(absFile)) {
     throw new Error(`scope-debug: path not found: ${filePath}`);
   }

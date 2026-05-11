@@ -196,7 +196,9 @@ Walks ancestor `CLAUDE.md` and `coherence/scope.json` files (depth cap 8),
 prints the resolved scope chain, and reports cache hit/miss + age. Powered by
 `src/state/scope/{walker,resolver,cache}.ts`. Cold-start budget ≤ 200 ms p95
 on a 100-package monorepo (NFR-PERF-N4); telemetry sampled 1:100 via
-`scope_cache_miss`.
+`scope_cache_miss`. PostToolUse populates the cache on the hot path so the
+first edit to a file warms the entry for every subsequent tool call in the
+session.
 
 ### Two-file additive ignore (G-2)
 
@@ -205,12 +207,19 @@ on a 100-package monorepo (NFR-PERF-N4); telemetry sampled 1:100 via
 ```
 
 `coherence/ignore` is committed (team-shared); `coherence/ignore.local` is
-gitignored (personal). Both are merged additively at scan time. When a
-teammate's commit to `coherence/ignore` matches a queued proposal's anchor,
-the FSM transitions to `ignored_by_team` and emits the
+gitignored (personal). Both are merged additively at scan time. SessionStart
+runs the team-ignore FSM sweep: when a teammate's commit to
+`coherence/ignore` matches a queued annotate proposal's `target_path`,
+the FSM transitions the proposal to `ignored_by_team` and emits the
 `proposal_ignored_by_team` telemetry event (DD-088 amended).
 
 ### Cross-team plan store (G-4)
+
+```
+/coherence:plan-create <kind> <title> [--body <markdown>]
+/coherence:plan-accept <branch-sha> <plan-id>
+/coherence:plan-reject <branch-sha> <plan-id> <stale|superseded|rejected_explicit>
+```
 
 `coherence/plans/<branch-sha-12>/<plan-id>.json` files capture team plans —
 proposals, decisions, directives — as committed artifacts. Plan ids derive
@@ -218,7 +227,8 @@ deterministically from `branch_sha + author_hash + title + created_at` so two
 parallel branches never collide (DD-099 amended; DD-107; DD-108). Author
 identity is hashed (12-hex SHA-256 of `git config user.email`) and never
 serialised in clear text. `/coherence:doctor` flags any plan older than 7
-days.
+days. Accept/reject paths run under `withCacheLock('team-plan-store')` so
+two simultaneous reviews can't lose either decision.
 
 ### Metrics export + first-run consent (G-5)
 

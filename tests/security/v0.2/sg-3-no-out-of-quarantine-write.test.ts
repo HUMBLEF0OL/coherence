@@ -44,6 +44,9 @@ const ALLOW_LIST = new Set<string>([
   'src/state/migrate/v0_to_v1.ts',
   // v0.3 M1 scope-cache writers — target only .claude/coherence/scope-cache.json.
   'src/state/scope/cache.ts',
+  // v0.3 M5 / audit-3 B4: tombstone cache writes — target only
+  // .claude/coherence/scan-cache/tombstones.json.
+  'src/scanner/scanCacheTombstone.ts',
   // v0.3 M2 ignore-split — writes coherence/ignore + coherence/ignore.local
   // and patches .gitignore. The user-owned `coherence/` root is a v0.3
   // architectural addition (DD-096); .gitignore is patched to exclude

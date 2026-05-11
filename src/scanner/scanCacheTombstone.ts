@@ -22,6 +22,12 @@
  */
 import { createHash } from 'crypto';
 import path from 'path';
+import {
+  existsSync as fsExistsSync,
+  readFileSync as fsReadFileSync,
+  writeFileSync as fsWriteFileSync,
+  mkdirSync as fsMkdirSync,
+} from 'fs';
 
 export const TOMBSTONE_LRU_CAP = 5_000;
 
@@ -157,7 +163,30 @@ export function tombstoneSize(cache: TombstoneCache): number {
   return Object.keys(cache.entries).length;
 }
 
-/** Test/diagnostics helper: project-relative tombstone state path. */
+/** Project-relative tombstone state path: `.claude/coherence/scan-cache/tombstones.json`. */
 export function tombstoneStatePath(coherenceDir: string): string {
   return path.join(coherenceDir, 'scan-cache', 'tombstones.json');
 }
+
+/**
+ * Read the on-disk tombstone cache. Returns an empty cache if the file is
+ * missing or unreadable — tombstone is best-effort.
+ */
+export function readTombstoneCache(coherenceDir: string): TombstoneCache {
+  const p = tombstoneStatePath(coherenceDir);
+  try {
+    if (!fsExistsSync(p)) return emptyTombstoneCache();
+    const raw = fsReadFileSync(p, 'utf8');
+    return JSON.parse(raw) as TombstoneCache;
+  } catch {
+    return emptyTombstoneCache();
+  }
+}
+
+/** Atomic write of the tombstone cache. */
+export function writeTombstoneCache(coherenceDir: string, cache: TombstoneCache): void {
+  const p = tombstoneStatePath(coherenceDir);
+  fsMkdirSync(path.dirname(p), { recursive: true });
+  fsWriteFileSync(p, JSON.stringify(cache, null, 2) + '\n', 'utf8');
+}
+

@@ -22,6 +22,13 @@ import { resolveMode } from '../modes/resolver.js';
 import { clearResponseCorrelation } from '../signal/telemetry.js';
 import { resetFileLocalityCache } from '../signal/fileLocalityCache.js';
 import { resetScopeCacheMissCounter } from '../state/scope/cache.js';
+import { applyTeamIgnoreSweep } from '../proposals/teamIgnore.js';
+import type { ProposalCacheEntry } from '../state/proposalCache.js';
+import { readFileSync, existsSync } from 'fs';
+import path from 'path';
+import type { StateStore } from '../state/stateStore.js';
+import type { ProposalManifest } from '../proposals/manifest.js';
+import { withCacheLock } from '../state/locks.js';
 import { readScanCacheState, writeScanCacheState } from '../scanner/trickleScanner.js';
 import { nowIsoUtc } from '../util/time.js';
 import { normaliseHookEvent } from './eventShape.js';
@@ -44,15 +51,25 @@ export async function sessionStartHook(
     // consults `refuseLegacy()` before laying down v3 state. A future-major
     // (e.g. v4) install seen on disk gets a distinct message so the operator
     // does not delete state thinking it's legacy.
-    const decision = refuseLegacy(coherenceDir);
+    //
+    // Audit-3 S4: gate refuseLegacy + runFreshInstall under a path lock so
+    // two SessionStart hooks racing on the same project don't see partial
+    // version.json mid-write. The lock target is the version.json path
+    // itself; a non-existent parent dir is fine — LockManager mkdir-recursives.
+    const versionLockTarget = path.join(coherenceDir, 'version.json');
+    const decision = await withCacheLock(versionLockTarget, 'session-start', async () => {
+      const initial = refuseLegacy(coherenceDir);
+      if (initial.status === 'fresh') {
+        await runFreshInstall(projectRoot);
+      }
+      // Re-read after install so the returned decision reflects post-state.
+      return refuseLegacy(coherenceDir);
+    });
     if (decision.status === 'refuse' || decision.status === 'refuse_future') {
       console.error(`[coherence] ${decision.message}`);
       return { success: true, refusedLegacy: true };
     }
-    if (decision.status === 'fresh') {
-      await runFreshInstall(projectRoot);
-    }
-    // 'proceed' — version sentinel already === 3; nothing to do.
+    // 'proceed' / 'fresh' (already laid) — fall through.
 
     // Step 3: anchor integrity sweep (builds section index for this session)
     buildSectionIndex(projectRoot);
@@ -119,6 +136,18 @@ export async function sessionStartHook(
       /* expiry sweep failure is non-fatal */
     }
 
+    // v0.3 M2 (audit-3 B2): team-ignore FSM sweep. Reads committed
+    // `coherence/ignore` lines and transitions any non-terminal proposal
+    // whose anchor matches to `ignored_by_team`. The anchor resolver is
+    // kind-aware: annotate proposals carry `target_path` (the source doc);
+    // signal-kind proposals (skill/slash_command/agent) carry their
+    // `signal_hash` only — no anchor extractable today, so they're skipped.
+    try {
+      await runTeamIgnoreSweepFromCommittedFile(store, sessionId, projectRoot);
+    } catch {
+      /* team-ignore sweep is best-effort */
+    }
+
     // T4 fix: 90-day metrics.jsonl retention sweep (NFR-OBS-2, DD-060).
     // The v0.1 sweep wrote a metrics-summary.json once; v0.2 reuses it
     // every SessionStart so the rolling window stays bounded. Without
@@ -154,5 +183,51 @@ export async function sessionStartHook(
     }
 
     return SUCCESS;
+  });
+}
+
+/**
+ * v0.3 audit-3 B2 helper: read committed `coherence/ignore` (DD-096
+ * team-shared file) and apply the FSM team-ignore sweep. The anchor
+ * resolver reads each proposal's manifest at
+ * `.claude/coherence/proposals/<kind>/<id>/manifest.json` and returns its
+ * `target_path` if present (annotate kind). Non-annotate kinds have no
+ * extractable anchor today, so they're skipped — `applyTeamIgnoreSweep`
+ * tolerates `resolveAnchor` returning undefined.
+ */
+async function runTeamIgnoreSweepFromCommittedFile(
+  store: StateStore,
+  sessionId: string,
+  projectRoot: string,
+): Promise<void> {
+  const ignorePath = path.join(projectRoot, 'coherence', 'ignore');
+  if (!existsSync(ignorePath)) return;
+  const lines = readFileSync(ignorePath, 'utf8')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !l.startsWith('#'));
+  if (lines.length === 0) return;
+
+  await applyTeamIgnoreSweep({
+    store,
+    sessionId,
+    ignoreLines: lines,
+    resolveAnchor: (entry: ProposalCacheEntry) => {
+      const manifestPath = path.join(
+        projectRoot,
+        '.claude',
+        'coherence',
+        'proposals',
+        entry.kind,
+        entry.proposal_id,
+        'manifest.json',
+      );
+      try {
+        const m = JSON.parse(readFileSync(manifestPath, 'utf8')) as ProposalManifest;
+        return m.target_path;
+      } catch {
+        return undefined;
+      }
+    },
   });
 }

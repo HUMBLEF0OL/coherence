@@ -147,10 +147,13 @@ export const lockManager = new LockManager();
  * Both surfaces are read-mutate-write JSON workflows that can race when two
  * sessions land at the same SHA. Wrap mutating writes in `withCacheLock()`
  * so the singleton LockManager serialises them under a stable namespace.
+ *
+ * Audit-3 S4: added `session-start` namespace for the
+ * `refuseLegacy + runFreshInstall` race on `version.json`.
  */
 export async function withCacheLock<T>(
   filePath: string,
-  namespace: 'proposal-cache' | 'team-plan-store',
+  namespace: 'proposal-cache' | 'team-plan-store' | 'session-start',
   fn: () => Promise<T>,
 ): Promise<T> {
   const acquired = await lockManager.acquire(filePath, namespace);

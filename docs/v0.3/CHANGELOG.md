@@ -374,5 +374,55 @@ flagged 6 bugs and 9 test gaps. Closures:
   surface the prompt as a slash-command output rather than spawning a TTY
   question. Tracked as future v0.4 deliverable; not blocking v0.3.
 - **N4** `/coherence:export-metrics --out <path>` accepts an absolute path
-  outside the project root. Intentional — user-supplied. Worth flagging
-  for the security review, not blocking.
+  outside the project root. Intentional — user-supplied. Audit-3 S3 added
+  a guard: paths whose parent directory does NOT exist are only created
+  inside cwd/projectRoot.
+
+## Post-M8 audit-3 closures (wiring + security)
+
+A third audit focused on production wiring + security found that five
+v0.3 modules built during M1–M5 were never called from any hook or slash
+command in production paths — milestone acceptance criteria were met for
+tests but not for runtime. Plus four security gaps (path traversal,
+race condition, ANSI injection) and one staleness bug. Closures:
+
+**Wiring (B1–B5):**
+- **B1** PostToolUse now consults the scope cache. Cache hit → use chain;
+  miss → `walkScopeAncestors` + `resolveScope` + populate cache + emit
+  `scope_cache_miss` (sampled 1:100). The cache fills on the hot path,
+  not just from `/coherence:scope-debug`.
+- **B2** SessionStart runs `applyTeamIgnoreSweep` after `runFreshInstall`.
+  Reads committed `coherence/ignore`, resolves each annotate proposal's
+  `target_path` from its on-disk manifest, transitions matched proposals
+  to `ignored_by_team`, and emits `proposal_ignored_by_team`.
+- **B3** Three new slash commands wire the plan lifecycle:
+  `/coherence:plan-create`, `/coherence:plan-accept`,
+  `/coherence:plan-reject`. Catch `PlanNotFoundError` /
+  `MalformedPlanError` (audit-2 E6) and surface them as friendly CLI
+  messages. All three emit their `plan_*` telemetry events.
+- **B4** Trickle scanner now consults the tombstone before reading each
+  candidate doc. Hits skip the per-doc loop; misses upsert the
+  tombstone. Tombstones persist to
+  `.claude/coherence/scan-cache/tombstones.json`.
+- **B5** `parseRecoverArgs(raw: string[])` parses `--target <tag>` and
+  bare positionals — the cross-major-version refusal is now reachable
+  from `/coherence:recover v0.2.0` end-to-end.
+
+**Security (S1–S4, S7, S9):**
+- **S1** `runDeAnnotate` refuses paths outside `projectRoot`.
+- **S2** `runScopeDebug` rejects paths outside `projectRoot` so the
+  walker can't probe `/etc/CLAUDE.md`.
+- **S3** `runExportMetrics` refuses to silently `mkdirSync` outside
+  cwd/projectRoot. Existing dirs outside still accepted.
+- **S4** `refuseLegacy + runFreshInstall` now run under
+  `withCacheLock(versionPath, 'session-start')`. New namespace added.
+- **S7** `sanitiseDisplay` strips CSI/OSC escape sequences and C0
+  controls from `git config user.name`.
+- **S9** `isStale` walks dirs upward from the cached file and treats a
+  newly-added `CLAUDE.md` / `coherence/scope.json` not in
+  `ancestor_chain` as a staleness signal.
+
+**Test coverage added (+33 tests, 765 → 798):**
+postToolUse-scope-cache (3), sessionStart-team-ignore (3), trickle-tombstone (1),
+plan-cli (10), recover-target-parser (4), v0.3-path-containment (6),
+scope/cache new-ancestor (2), identity sanitiseDisplay (5).

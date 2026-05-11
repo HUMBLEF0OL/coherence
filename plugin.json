@@ -127,6 +127,21 @@
       "name": "coherence:de-annotate",
       "description": "Strip auto-annotations or graduate them to user-owned anchors (DD-102/DD-110)",
       "handler": "commands/deAnnotate"
+    },
+    {
+      "name": "coherence:plan-create",
+      "description": "Create a cross-team plan file under coherence/plans/<branch-sha>/<plan-id>.json (DD-099 amended)",
+      "handler": "commands/planCreate"
+    },
+    {
+      "name": "coherence:plan-accept",
+      "description": "Accept a cross-team plan and append an audit-log entry (DD-099 amended)",
+      "handler": "commands/planAccept"
+    },
+    {
+      "name": "coherence:plan-reject",
+      "description": "Reject a cross-team plan with a reason (stale | superseded | rejected_explicit)",
+      "handler": "commands/planReject"
     }
   ]
 }

@@ -138,3 +138,25 @@ export function formatRecover(result: RecoverResult): string {
   for (const a of result.actions) lines.push(`  • ${a}`);
   return lines.join('\n');
 }
+
+/**
+ * Parse raw `/coherence:recover` CLI args (audit-3 B5 fix). The host
+ * delivers the raw token sequence; this helper turns `--target <tag>` into
+ * the structured `RecoverOptions`. Bare tokens are tolerated as the target
+ * tag too (`/coherence:recover v0.2.0` == `/coherence:recover --target v0.2.0`).
+ */
+export function parseRecoverArgs(raw: string[]): RecoverOptions {
+  const opts: RecoverOptions = {};
+  for (let i = 0; i < raw.length; i++) {
+    const a = raw[i];
+    if (a === '--target' && i + 1 < raw.length) {
+      opts.target = raw[i + 1];
+      i++;
+      continue;
+    }
+    if (a !== '' && !a.startsWith('--') && opts.target === undefined) {
+      opts.target = a;
+    }
+  }
+  return opts;
+}
