@@ -58,10 +58,35 @@ One-line-per-export audit trail for `/coherence:export-metrics`. Each line:
 
 ### `scan-cache/tombstones.json` (M5; DD-103, FR-TOMBSTONE-1)
 
-Per-file scan tombstones with mtime + content hashes. Path-keyed; LRU at
-5,000 entries. Schema is part of the existing
-[scan-cache-state.schema.json](../../src/state/schemas/scan-cache-state.schema.json)
-augmented per-entry fields.
+Per-file scan tombstones with mtime + content hashes. Path-keyed (normalised)
+dictionary; LRU at 5,000 entries. Composes with the v0.2 P7 doc-content memo:
+tombstone consultation runs BEFORE doc read; memo consultation runs INSIDE
+the detector. Eviction: any forward jump in the on-disk `mtime` invalidates
+the entry on next consultation; optional `expires_at` ages out long-idle
+entries.
+
+The on-disk file lives in a separate path from the trickle scanner's session
+state (`scan-cache/state.json`) and has its own dedicated schema:
+[scan-cache-tombstones.schema.json](../../src/state/schemas/scan-cache-tombstones.schema.json).
+The earlier plan draft proposed augmenting `scan-cache-state.schema.json`
+in-place; the final implementation persists tombstones to a sibling file so
+the two lifecycles (per-session ephemera vs. cross-session memo) evolve
+independently. The writer is `src/scanner/scanCacheTombstone.ts`; the trickle
+scanner consults it via `src/hooks/postToolUse.ts`.
+
+```jsonc
+{
+  "entries": {
+    "<normalised file path>": {
+      "path_hash":    "<12-hex>",
+      "content_hash": "<12-hex>",
+      "git_mtime":    "2026-05-10T...Z",
+      "inserted_at":  "2026-05-10T...Z",
+      "expires_at":   "2026-05-17T...Z"  // optional
+    }
+  }
+}
+```
 
 ## User-owned (under `coherence/`, committed)
 

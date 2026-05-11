@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/scan-cache-tombstones",
+  "description": "Per-file scan tombstones (v0.3 M5; DD-103, FR-TOMBSTONE-1). Written to .claude/coherence/scan-cache/tombstones.json by src/scanner/scanCacheTombstone.ts. Path-keyed (normalised) dictionary with mtime + content fences; LRU at 5,000 entries. The file is plugin-managed and best-effort; missing or unreadable contents are treated as an empty cache. No schema_version is persisted — the file format is owned by the writer module and tracks the v3 plugin sentinel implicitly.",
+  "type": "object",
+  "required": ["entries"],
+  "additionalProperties": false,
+  "properties": {
+    "entries": {
+      "type": "object",
+      "description": "Map of normalised-path → TombstoneEntry. Normalisation: backslashes → forward slashes; lowercase on win32/darwin; leading './' and '/' stripped.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path_hash", "content_hash", "git_mtime", "inserted_at"],
+        "additionalProperties": false,
+        "properties": {
+          "path_hash": {
+            "type": "string",
+            "description": "12-hex SHA-256 of the normalised path. Privacy-safe key for telemetry.",
+            "pattern": "^[0-9a-f]{12}$"
+          },
+          "content_hash": {
+            "type": "string",
+            "description": "12-hex SHA-256 of the file body at the time of insertion.",
+            "pattern": "^[0-9a-f]{12}$"
+          },
+          "git_mtime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO8601 mtime captured at insertion. Eviction predicate: if stat() shows current mtime > recorded git_mtime, the entry is invalid."
+          },
+          "inserted_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO8601 wall-clock at insertion. LRU ordering key."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Optional explicit expiry. Used by the trickle scanner to age out tombstones for files that haven't been visited in a long time."
+          }
+        }
+      }
+    }
+  }
+}

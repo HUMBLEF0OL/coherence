@@ -19,6 +19,14 @@
  *
  * LRU cap: 5,000 entries. On insertion, the oldest (by `inserted_at`) entry
  * is evicted when the cap is exceeded.
+ *
+ * Persisted to `.claude/coherence/scan-cache/tombstones.json` (sibling of
+ * the trickle scanner's `scan-cache/state.json`, distinct lifecycle). The
+ * on-disk shape is described by
+ * `src/state/schemas/scan-cache-tombstones.schema.json`. The file is written
+ * directly via fs (not via StateStore) because it is plugin-managed,
+ * best-effort, and re-derivable on miss — schema validation is reference
+ * documentation only.
  */
 import { createHash } from 'crypto';
 import path from 'path';
