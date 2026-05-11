@@ -34,6 +34,7 @@ graphify-out
 
 # Coherence runtime + local scratch state
 .claude/coherence/
+.claude/settings.local.json
 
 # npm pack build artifacts (release-asset territory, not version control)
 *.tgz
