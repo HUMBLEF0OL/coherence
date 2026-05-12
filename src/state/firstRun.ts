@@ -12,7 +12,8 @@
  *   - M3: append per-developer state to .gitignore (signal-cache, session-map)
  *   - M4: capture first-run telemetry consent (local + upload tiers)
  */
-import { existsSync, readFileSync, writeFileSync, appendFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, appendFileSync, mkdirSync } from 'fs';
+import os from 'os';
 import path from 'path';
 import { initCoherenceDir, makeStateStore } from './init.js';
 import { recordTelemetryConsent, type TelemetryConsentDecision } from './consent.js';
@@ -44,6 +45,19 @@ export async function runFreshInstall(
 
   // M3: ensure per-developer state files are .gitignored. Idempotent.
   patchGitignore(projectRoot);
+
+  // v0.4 TS-3 §1 (DD-120): establish the per-installation CLAUDE_PLUGIN_DATA
+  // tier. Claude Code sets CLAUDE_PLUGIN_DATA when executing a plugin's
+  // hooks; on dev checkouts (no env var) fall back to an XDG-style path.
+  // No files are written here in v0.4 — directory creation only.
+  const pluginDataDir =
+    process.env['CLAUDE_PLUGIN_DATA'] ??
+    path.join(os.homedir(), '.claude', 'plugins', 'data', 'cohrence');
+  try {
+    mkdirSync(pluginDataDir, { recursive: true });
+  } catch {
+    /* best-effort: a sandboxed shell may forbid writes to ~ */
+  }
 
   // M4: persist telemetry consent (defaults: local ON, upload OFF; non-interactive
   // shells take defaults and re-prompt next interactive session).

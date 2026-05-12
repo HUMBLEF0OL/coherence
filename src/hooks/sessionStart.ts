@@ -6,7 +6,7 @@ import type { HookResult } from './exceptionGuard.js';
 import { withExceptionGuard } from './exceptionGuard.js';
 import { Sentinels } from '../state/sentinels.js';
 import { getCoherenceDir, makeStateStore } from '../state/init.js';
-import { refuseLegacy } from '../state/refuseLegacy.js';
+import { refuseLegacy, refuseLayout } from '../state/refuseLegacy.js';
 import { runFreshInstall } from '../state/firstRun.js';
 import { runRetentionSweep } from '../state/metricsRetention.js';
 import { buildSectionIndex } from '../detection/sectionIndex.js';
@@ -23,6 +23,7 @@ import { clearResponseCorrelation } from '../signal/telemetry.js';
 import { resetFileLocalityCache } from '../signal/fileLocalityCache.js';
 import { resetScopeCacheMissCounter } from '../state/scope/cache.js';
 import { applyTeamIgnoreSweep } from '../proposals/teamIgnore.js';
+import { evaluateTriggerContracts } from '../state/triggerContracts.js';
 import type { ProposalCacheEntry } from '../state/proposalCache.js';
 import { readFileSync, existsSync } from 'fs';
 import path from 'path';
@@ -45,6 +46,17 @@ export async function sessionStartHook(
   return withExceptionGuard(sentinels, async () => {
     // Step 1: kill-switch check (TS-4 §4.1)
     if (sentinels.isDisabled()) return SUCCESS;
+
+    // Step 1b: v0.4 DD-122 — refuse old manifest layout (plugin.json at
+    // plugin root). CLAUDE_PLUGIN_ROOT is set by Claude Code when running
+    // a plugin's hooks; it points to the plugin's installation directory,
+    // NOT the user's projectRoot.
+    const pluginInstallRoot = process.env['CLAUDE_PLUGIN_ROOT'] ?? '';
+    const layoutDecision = refuseLayout(pluginInstallRoot);
+    if (layoutDecision) {
+      console.error(`[coherence] ${layoutDecision.message}`);
+      return { success: true, refusedLegacy: true };
+    }
 
     // Step 2: v0.3 NFR-COMPAT-N4 — refuse pre-v3 state, fresh-install otherwise.
     // DD-118 retired the cross-major-version migration chain; SessionStart now
@@ -71,6 +83,22 @@ export async function sessionStartHook(
     }
     // 'proceed' / 'fresh' (already laid) — fall through.
 
+    // v0.4: pulled up from Step 7 — needed by Step 2b trigger-contract
+    // evaluation and Step 7 revert detection alike.
+    const store = makeStateStore(projectRoot);
+
+    // Step 2b: v0.4 G-3 — telemetry-gated trigger contracts (DD-129,
+    // FR-TRIGGER-1). Reads metrics.jsonl via P8 bounded-read; emits one-time
+    // CLI hints when thresholds are met. Non-fatal; never blocks startup.
+    try {
+      const hints = await evaluateTriggerContracts(store, coherenceDir);
+      for (const hint of hints) {
+        console.log(`[coherence] ${hint}`);
+      }
+    } catch {
+      /* trigger-contract evaluation is non-fatal */
+    }
+
     // Step 3: anchor integrity sweep (builds section index for this session)
     buildSectionIndex(projectRoot);
 
@@ -81,7 +109,6 @@ export async function sessionStartHook(
     // Step 6: assertion evaluation — deferred output in M4 tests
 
     // Step 7: revert detection scan
-    const store = makeStateStore(projectRoot);
     const velocityState = await store.read<VelocityState>('velocity.json');
     if (velocityState) {
       const reverts = detectReverts(projectRoot);
