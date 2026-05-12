@@ -14,6 +14,11 @@ ignore (committed + personal), cross-team plan store rooted at `coherence/`,
 file-only metrics export with first-run consent, de-annotate + tombstone
 ergonomics, and ship-time gates that enforce the **no-backend / no-legacy**
 architectural commitments — see [Architectural commitments](#architectural-commitments-v03) below.
+**v0.4** is the first-impressions polish + marketplace structural release:
+official Anthropic plugin manifest layout (`.claude-plugin/plugin.json`),
+telemetry-gated trigger contracts, `/coherence:consent` without a TTY,
+`/coherence:audit` bundling, `--out` path sandboxing, and `parseMajor`
+correctness for ≥ 1.0.0 versions.
 
 ## Install
 
@@ -27,7 +32,7 @@ npm install
 npm run build
 ```
 
-Wire the plugin into your Claude Code config (see [plugin.json](plugin.json)).
+Wire the plugin into your Claude Code config (see [.claude-plugin/plugin.json](.claude-plugin/plugin.json)).
 
 ## v0.2 walkthrough — Observe → Annotate → Author (DG-1)
 
@@ -157,6 +162,66 @@ future version):
   than migrate. v0.2 codebase remains as historical baseline; v0.3 is
   the next published version.
 
+## v0.4 walkthrough — First-impressions polish
+
+v0.4 is a structural + ergonomics release on top of the v0.3 team workflow layer.
+
+### Manifest layout (G-1, DD-119)
+
+`plugin.json` has moved to `.claude-plugin/plugin.json` per the official Anthropic plugin schema.
+`${CLAUDE_PLUGIN_ROOT}` is now used for internal paths; `${CLAUDE_PLUGIN_DATA}` for per-installation
+state. **Users upgrading from v0.3 must re-install** — no migration is provided (DD-118 / DD-122).
+
+```bash
+claude plugin install cohrence   # canonical install via Anthropic registry
+```
+
+On SessionStart, if `plugin.json` is found at the plugin install root (v0.3 layout), coherence
+refuses and prints a re-install prompt. `.claude/coherence/` (per-project state) is preserved.
+
+### Consent without a TTY (G-2, DD-127)
+
+```
+/coherence:consent                # print current consent state
+/coherence:consent --local on     # enable local hashed event collection
+/coherence:consent --upload off   # disable curl export hint
+/coherence:consent --reset        # restore silent defaults
+```
+
+Because Claude Code hooks run without a TTY, v0.4 replaces the interactive consent prompt with an
+explicit command. Prior defaults (local ON, upload OFF) are unchanged.
+
+### Audit bundling (G-2, DD-125)
+
+```
+/coherence:audit
+```
+
+Runs `/coherence:doctor`, `/coherence:scope-debug`, `/coherence:status`, and
+`/coherence:export-metrics` in sequence and renders a single Markdown report. Failures in any
+sub-command are captured as `[error: ...]` rather than aborting the report. Deep audit ships v1.0.
+
+### Trigger contracts TC-1 / TC-2 (G-3, DD-129)
+
+v0.4 ships the *trigger contracts* that let two deferred capabilities fire automatically when field
+telemetry crosses thresholds — without a code release:
+
+- **TC-1** — author-planner promotion hint: fires when ≥ 25 % of accepted patches are cross-kind
+  AND the window spans ≥ 30 days. Prints a one-time hint to enable `author` mode and sets
+  `trigger-state.json#tc1_hint_emitted_at`. Never repeats.
+- **TC-2** — calibration re-tune hint: fires when ≥ 50 sessions × ≥ 30 days have accumulated.
+
+Both read `metrics.jsonl` locally; no events are emitted for the threshold crossing itself.
+
+### parseMajor fix (G-4, DD-122, DD-124)
+
+`parseMajor()` now uses the SemVer major digit only. Prior versions conflated minor into major
+(`major × 1000 + minor`), causing cross-major refusal between `0.x` versions. All `0.x.y` installs
+are the same major bucket. Cross-major recovery refusal in `/coherence:recover --target <tag>` only
+fires when the SemVer major digit differs (e.g. `v0.x` → `v1.0`).
+
+---
+
 ## Calibration
 
 Detector thresholds (DD-076/077/078) are calibrated against a synthetic
@@ -176,8 +241,9 @@ npm run typecheck
 npm test          # full suite across unit / integration / e2e / security / perf / preconditions / rollback / schema / cost / static-analysis / ship
 npm run lint
 npm run build
-npm run calibrate # corpus-calibration sweep (DD-116, DD-092 amended)
-npm run gates     # v0.3 ship-time gates (M-ARCH-1, M-PRIVACY-1, M-LEGACY-1)
+npm run validate-plugin  # v0.4 manifest validation (claude plugin validate)
+npm run calibrate        # corpus-calibration sweep (DD-116, DD-092 amended)
+npm run gates            # ship-time gates (M-ARCH-1, M-PRIVACY-1, M-LEGACY-1, M-TRIPLEX-1)
 ```
 
 ## v0.3 walkthrough — Team workflows

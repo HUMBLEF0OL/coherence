@@ -5,22 +5,19 @@
 ## Installation
 
 ```bash
-npm install -g coherence-plugin
+claude plugin install cohrence   # Anthropic plugin registry (canonical)
 ```
 
-Or add to your project:
+For local development:
 
 ```bash
-npm install --save-dev coherence-plugin
+git clone https://github.com/HUMBLEF0OL/coherence.git
+cd coherence
+npm install && npm run build
 ```
 
-Then add to `.claude/settings.json`:
-
-```json
-{
-  "plugins": ["coherence"]
-}
-```
+The plugin manifest lives at [`.claude-plugin/plugin.json`](../.claude-plugin/plugin.json) (v0.4+).
+Upgrading from v0.3: re-install — `.claude/coherence/` state is preserved, only the manifest layout changes.
 
 ## Quick Start (Observe Mode)
 
@@ -65,7 +62,9 @@ See [commands.md](commands.md) for the full reference.
 | `/coherence:graduate` | Switch to Graduated mode |
 | `/coherence:graduate --revert` | Return to Observe mode |
 | `/coherence:enable-sidecars` | Provision sidecar files for hosts that strip frontmatter |
-| `/coherence:share-metrics --anonymized` | Export anonymized metrics |
+| `/coherence:consent` | View or update telemetry consent without a TTY (v0.4) |
+| `/coherence:audit` | Bundled doctor + scope-debug + status + metrics report (v0.4) |
+| `/coherence:export-metrics --anonymized` | Export anonymized metrics to a local file |
 
 ## State Files
 
@@ -75,11 +74,12 @@ Key files in `.claude/coherence/`:
 
 | File | Description |
 |---|---|
-| `config.json` | Mode (observe/graduated), watches, ignores |
+| `config.json` | Mode (observe/graduated), watches, ignores, telemetry consent (v0.4) |
 | `drift-buffer.json` | Pending documentation drift entries |
 | `coherence-log.md` | Append-only audit log of applied patches |
 | `metrics.jsonl` | Rolling 90-day event log |
 | `cost-ledger.json` | Per-session LLM cost tracking |
+| `trigger-state.json` | One-time hint guard for TC-1/TC-2 trigger contracts (v0.4) |
 
 ## Rollback
 

@@ -5,6 +5,42 @@ All notable changes to coherence will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-05-12
+
+First-impressions polish + marketplace structural release.
+
+### Added — M0 Manifest relocation (DD-119, DD-121, DD-123)
+- `plugin.json` relocated to `.claude-plugin/plugin.json` per the official Anthropic plugin schema
+- `scripts/validate-plugin.mjs` — `npm run validate-plugin` runs `claude plugin validate`
+- `assertVersionSync(tag)` in the release pipeline to keep `package.json`, `plugin.json`, and `PLUGIN_VERSION` in lockstep
+
+### Fixed — M1 parseMajor + refuseLayout (DD-122, DD-124)
+- `parseMajor()` corrected to use the SemVer major digit only (was `major × 1000 + minor`)
+- `refuseLayout()` + `refuse_layout` discriminant added to `state/refuseLegacy.ts`
+- SessionStart Step 1b refuses startup when a v0.3-style `plugin.json` exists at the plugin install root
+
+### Added — M2 Trigger contracts (DD-129, DD-120)
+- `src/state/triggerContracts.ts`: TC-1 (author-planner promotion) and TC-2 (calibration re-tune) threshold checks
+- `trigger-state.json` per-developer state file — one-time hint guard, written atomically
+- `firstRun.ts` creates `${CLAUDE_PLUGIN_DATA}` directory on fresh install
+
+### Added — M3 Consent + sandbox + audit (DD-125, DD-127, DD-128)
+- `/coherence:consent` — read/write telemetry consent without a TTY
+- `/coherence:audit` — bundling-only report (doctor + scope-debug + status + metrics export)
+- `--out` path sandboxing in `/coherence:export-metrics` now applies on every invocation; `--allow-out-of-tree` required to write outside `projectRoot`
+
+### Added — M4 Autogen stubs + sentinel dispatch (DD-130)
+- `scripts/generate-command-stubs.mjs` generates `commands/<name>.md` at build time from the manifest
+- `src/hooks/commandDispatch.ts` routes `coherence:consent` and `coherence:audit` via `UserPromptSubmit`
+- `commands/` and `.coherence-stub-hash` added to `.gitignore` (build artifacts)
+
+### Added — M5 Tri-partition enforcement + release pipeline
+- `no-cross-dev-leak.test.ts` extended with M-TRIPLEX-1 tier assertions
+- Release pipeline: `build → assertVersionSync → validate-plugin → gates → calibrate → test → tag`
+- Version bumped to `0.4.0` across `package.json`, `.claude-plugin/plugin.json`, `PLUGIN_VERSION`
+
+---
+
 ## [0.1.0] — 2026-05-09
 
 Complete v0.1.0 release. All DD-001..DD-064 covered.
