@@ -38,3 +38,8 @@ graphify-out
 
 # npm pack build artifacts (release-asset territory, not version control)
 *.tgz
+
+# v0.4 M4 — autogen command stubs (build artifacts).
+# Anchored to repo root so src/commands/ remains tracked.
+/commands/
+.coherence-stub-hash

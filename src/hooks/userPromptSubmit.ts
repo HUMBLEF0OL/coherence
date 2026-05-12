@@ -13,6 +13,7 @@ import { getCoherenceDir, makeStateStore } from '../state/init.js';
 import { BufferLifecycle } from '../buffer/lifecycle.js';
 import type { DriftBuffer } from '../buffer/lifecycle.js';
 import { emitUserPromptSignature } from '../signal/telemetry.js';
+import { dispatchCoherenceCommand } from './commandDispatch.js';
 
 const SUCCESS: HookResult = { success: true };
 const LONG_TURN_SILENCE_MS = 5 * 60 * 1000; // 5 min user silence
@@ -66,6 +67,39 @@ export async function userPromptSubmitHook(
         await emitUserPromptSignature(store, sessionId, { prompt: evt.prompt });
       } catch {
         /* telemetry non-fatal */
+      }
+    }
+
+    // v0.4 G-1 (DD-130, FR-AUTOGEN-1): slash-command sentinel dispatch.
+    // The autogen stub at commands/<name>.md embeds:
+    //   <!-- coherence-command: <name> -->
+    // Claude Code routes the rendered stub content here via
+    // UserPromptSubmit. When the sentinel is present and the command is
+    // recognised, we short-circuit the rest of the long-turn pipeline.
+    if (typeof evt?.prompt === 'string') {
+      const sentinelRe = /<!--\s*coherence-command:\s*(\S+)\s*-->/;
+      const match = sentinelRe.exec(evt.prompt);
+      if (match) {
+        const cmdName = match[1];
+        try {
+          const result = await dispatchCoherenceCommand(
+            cmdName,
+            evt.prompt,
+            store,
+            projectRoot,
+            sessionId,
+          );
+          if (result !== null) return result;
+        } catch (e) {
+          // Dispatch failures must not block the user — surface the error
+          // through additionalContext and continue.
+          return {
+            success: true,
+            additionalContext: `[coherence] /${cmdName} failed: ${
+              e instanceof Error ? e.message : String(e)
+            }`,
+          };
+        }
       }
     }
 
