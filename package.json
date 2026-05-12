@@ -1,6 +1,6 @@
 {
   "name": "cohrence",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Claude Code plugin that detects documentation-vs-code drift and proposes surgical patches",
   "type": "module",
   "engines": {
@@ -16,11 +16,12 @@
   },
   "files": [
     "dist",
-    "plugin.json",
+    ".claude-plugin/plugin.json",
+    "commands",
     "prompts/v2"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.json && node scripts/copy-schemas.mjs",
+    "build": "tsc --project tsconfig.json && node scripts/copy-schemas.mjs && node scripts/generate-command-stubs.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -31,7 +32,8 @@
     "calibrate": "npm run build --silent && node scripts/corpus-calibrate.mjs",
     "gates": "vitest run --project static-analysis --project ship",
     "prepare": "husky install",
-    "pack:size": "npm pack --dry-run 2>&1 | tail -5"
+    "pack:size": "npm pack --dry-run 2>&1 | tail -5",
+    "validate-plugin": "node scripts/validate-plugin.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

@@ -92,4 +92,18 @@ describe('M-LEGACY-1 + M-INSTALL-1: tarball shape (NFR-ARCH-2, DD-118)', () => {
     );
     expect(files.length).toBeGreaterThan(0);
   });
+
+  it('tarball includes .claude-plugin/plugin.json (v0.4 manifest location)', () => {
+    if (!parsed) return;
+    expect(
+      entries.some((e) => e.path.includes('.claude-plugin/plugin.json')),
+      'Expected .claude-plugin/plugin.json in tarball — run M0 manifest relocation first',
+    ).toBe(true);
+  });
+
+  it('tarball excludes root-level plugin.json (old v0.3 location)', () => {
+    if (!parsed) return;
+    const rootManifest = entries.filter((e) => /^plugin\.json$/.test(e.path));
+    expect(rootManifest.map((e) => e.path)).toEqual([]);
+  });
 });
