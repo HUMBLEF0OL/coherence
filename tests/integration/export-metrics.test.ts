@@ -248,3 +248,55 @@ describe('runExportMetrics (DD-117 + DD-068 redaction matrix)', () => {
     expect(audit.out).toBe(r.outPath);
   });
 });
+
+describe('--out path sandboxing (M-SANDBOX-1, v0.4 DD-128)', () => {
+  it('accepts output path inside projectRoot without flag', async () => {
+    await initCoherenceDir(dir);
+    seedJsonl([{ event: 'a', session_id: 's' }]);
+    const store = makeStateStore(dir);
+    await expect(
+      runExportMetrics({
+        store,
+        projectRoot: dir,
+        sessionId: 'test',
+        out: path.join(dir, 'out.jsonl'),
+      }),
+    ).resolves.not.toThrow();
+  });
+
+  it('rejects output path outside projectRoot without allowOutOfTree', async () => {
+    await initCoherenceDir(dir);
+    seedJsonl([{ event: 'a', session_id: 's' }]);
+    const store = makeStateStore(dir);
+    // tmpdir() is reliably outside the per-test `dir`.
+    const outside = path.join(tmpdir(), `coherence-evil-${Date.now()}.jsonl`);
+    await expect(
+      runExportMetrics({
+        store,
+        projectRoot: dir,
+        sessionId: 'test',
+        out: outside,
+      }),
+    ).rejects.toThrow('outside the project root');
+  });
+
+  it('accepts output path outside projectRoot with allowOutOfTree=true (warns on stderr)', async () => {
+    await initCoherenceDir(dir);
+    seedJsonl([{ event: 'a', session_id: 's' }]);
+    const store = makeStateStore(dir);
+    const outside = path.join(tmpdir(), `coherence-allowed-${Date.now()}.jsonl`);
+    try {
+      await expect(
+        runExportMetrics({
+          store,
+          projectRoot: dir,
+          sessionId: 'test',
+          out: outside,
+          allowOutOfTree: true,
+        }),
+      ).resolves.not.toThrow();
+    } finally {
+      try { rmSync(outside, { force: true }); } catch { /* ignore */ }
+    }
+  });
+});

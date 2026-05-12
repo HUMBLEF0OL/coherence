@@ -45,6 +45,12 @@ export interface ExportMetricsOptions {
   since?: string;
   /** Hash identifying fields (proposal_id, signal_hash). */
   anonymized?: boolean;
+  /**
+   * v0.4 DD-128: opt-in escape hatch for writing outside the project root.
+   * Defaults to false. Without this flag, any `out` path outside `projectRoot`
+   * is refused.
+   */
+  allowOutOfTree?: boolean;
 }
 
 export interface ExportMetricsResult {
@@ -88,21 +94,27 @@ export async function runExportMetrics(
   const outPath = path.resolve(
     options.out ?? `metrics-export-${nowIsoUtc().replace(/[:.]/g, '-')}.jsonl`,
   );
-  // Audit-3 S3: refuse paths whose parent directory does NOT already
-  // exist when that directory falls outside cwd OR projectRoot. We accept
-  // arbitrary `--out` inside cwd / projectRoot (the developer is operating
-  // on their own machine) but refuse to silently create new directories
-  // outside it — that's the surface a hostile `--out /etc/cron.daily/x`
-  // would exploit. If the dirname already exists, we trust the user.
-  const outDir = path.dirname(outPath);
-  if (!existsSync(outDir)) {
-    if (!isPathInside(path.resolve(projectRoot), outDir) && !isPathInside(process.cwd(), outDir)) {
+  // v0.4 DD-128: always-on `--out` path sandboxing. Refuse any path outside
+  // projectRoot unless the caller explicitly passes `allowOutOfTree=true`.
+  const outResolved = path.resolve(outPath);
+  const rootResolved = path.resolve(projectRoot);
+  if (!isPathInside(rootResolved, outResolved) && outResolved !== rootResolved) {
+    if (!options.allowOutOfTree) {
       throw new Error(
-        `export-metrics: refusing to create directory outside project/cwd: ${outDir}`,
+        `export-metrics: output path is outside the project root.\n` +
+          `  Path: ${outResolved}\n` +
+          `  Pass --allow-out-of-tree to override.`,
       );
     }
-    mkdirSync(outDir, { recursive: true });
+    process.stderr.write(
+      `[coherence] WARNING: writing metrics outside project root.\n` +
+        `  Path: ${outResolved}\n` +
+        `  Explicitly requested via --allow-out-of-tree.\n`,
+    );
   }
+  // Directory creation only when needed (follows the sandbox check).
+  const outDir = path.dirname(outResolved);
+  if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
   if (!existsSync(jsonlPath)) {
     throw new Error(`export-metrics: ${jsonlPath} does not exist`);

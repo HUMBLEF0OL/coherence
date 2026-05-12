@@ -58,7 +58,7 @@ const DEFAULT_DECISION: TelemetryConsentDecision = {
   upload_consent: false,
 };
 
-const DEFAULT_PLUGIN_VERSION = '0.3.0';
+const DEFAULT_PLUGIN_VERSION = '0.4.0';
 
 export async function recordTelemetryConsent(
   store: StateStore,
@@ -75,9 +75,10 @@ export async function recordTelemetryConsent(
   }
 
   const interactive = !!process.stdout.isTTY && decision === undefined;
-  const chosen: TelemetryConsentDecision = decision ?? (interactive
-    ? promptInteractive(silent)
-    : DEFAULT_DECISION);
+  // v0.4 DD-127: the previous `promptInteractive` placeholder always returned
+  // DEFAULT_DECISION. The interactive surface is owned by `/coherence:consent`
+  // now — non-interactive defaults are inlined here.
+  const chosen: TelemetryConsentDecision = decision ?? DEFAULT_DECISION;
 
   const persisted: TelemetryConsent = {
     local_collection: chosen.local_collection,
@@ -103,20 +104,6 @@ export async function recordTelemetryConsent(
   }
 
   return persisted;
-}
-
-/**
- * Interactive prompt placeholder. Actual stdin pumping is left to the host
- * environment — Claude Code's `/coherence:doctor` will surface the prompt as
- * a slash-command output rather than spawning a TTY question. For now this
- * function returns the defaults; the user can override consent via
- * `setTelemetryConsent` (below) at any time.
- */
-function promptInteractive(_silent: boolean): TelemetryConsentDecision {
-  // M4 placeholder: the slash-command surface owns the interactive flow.
-  // Returning defaults here keeps SessionStart non-blocking; the user runs
-  // `/coherence:graduate` or `/coherence:status` to surface the prompt.
-  return DEFAULT_DECISION;
 }
 
 /**

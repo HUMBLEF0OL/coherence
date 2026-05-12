@@ -100,7 +100,7 @@ describe('S3 — runExportMetrics refuses to mkdir outside cwd/projectRoot', () 
         sessionId: 's',
         out: nonExistentOutside,
       }),
-    ).rejects.toThrow(/outside project\/cwd/);
+    ).rejects.toThrow(/outside the project root/);
   });
 
   it('accepts an --out inside projectRoot even if the directory must be created', async () => {
