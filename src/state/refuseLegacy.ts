@@ -32,7 +32,8 @@ export type RefuseLegacyOutcome =
   | { status: 'fresh' }
   | { status: 'proceed'; schemaVersion: 3 }
   | { status: 'refuse'; foundSchemaVersion: number; message: string }
-  | { status: 'refuse_future'; foundSchemaVersion: number; message: string };
+  | { status: 'refuse_future'; foundSchemaVersion: number; message: string }
+  | { status: 'refuse_layout'; message: string };  // v0.4 DD-122
 
 export const REFUSE_LEGACY_MESSAGE =
   'cohrence v0.3 does not migrate from earlier major versions; ' +
@@ -41,6 +42,20 @@ export const REFUSE_LEGACY_MESSAGE =
 export const REFUSE_FUTURE_MESSAGE =
   'cohrence found state from a NEWER major version on disk; ' +
   'upgrade the plugin to match — do not delete `.claude/coherence/`';
+
+export const REFUSE_LAYOUT_MESSAGE =
+  'cohrence found plugin.json at the plugin root (v0.3 layout); ' +
+  're-install via `claude plugin install cohrence` to use the v0.4 layout — ' +
+  'do NOT delete `.claude/coherence/` (your per-project state is intact)';
+
+/**
+ * Narrow return type for `refuseLayout()` — callers don't need exhaustive
+ * narrowing to access `.message`.
+ */
+export interface RefuseLayoutResult {
+  status: 'refuse_layout';
+  message: string;
+}
 
 interface VersionFile {
   schema_version?: number | string;
@@ -90,4 +105,19 @@ function coerceSchemaVersion(raw: number | string | undefined): number {
     if (Number.isFinite(parsed)) return parsed;
   }
   return 0;
+}
+
+/**
+ * v0.4 DD-122: detect old-layout `plugin.json` at the plugin installation
+ * root. Returns refuse_layout if found; null if the layout is correct or
+ * unknown. Called from SessionStart BEFORE `refuseLegacy`.
+ *
+ * IMPORTANT: `pluginRoot` is the plugin install dir (CLAUDE_PLUGIN_ROOT),
+ * NOT the user's project root.
+ */
+export function refuseLayout(pluginRoot: string): RefuseLayoutResult | null {
+  if (!pluginRoot) return null;
+  const oldPath = path.join(pluginRoot, 'plugin.json');
+  if (!existsSync(oldPath)) return null;
+  return { status: 'refuse_layout', message: REFUSE_LAYOUT_MESSAGE };
 }

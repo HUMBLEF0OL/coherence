@@ -55,13 +55,17 @@ function readCurrentMajor(): number {
 
 function parseMajor(version: string): number | null {
   const trimmed = version.replace(/^v/, '').trim();
-  const m = /^(\d+)\.(\d+)(?:\.(\d+))?/.exec(trimmed);
+  const m = /^(\d+)/.exec(trimmed);
   if (!m) return null;
-  // For 0.x.y plugins (still pre-1.0), the *minor* component carries the
-  // breaking-change semantics — i.e. v0.2 → v0.3 is a major bump in this
-  // project's versioning. Treat the major-version key as `major.minor` joined.
-  return Number(m[1]) * 1000 + Number(m[2]);
+  // v0.4 DD-124: semantic major digit only. Prior versions conflated
+  // major.minor (`major*1000 + minor`), incorrectly treating 0.x→0.y as a
+  // cross-major bump. Cross-major refusal now fires only when the SemVer
+  // major digit differs (e.g. v1.0.0 from a v0.4 install).
+  return parseInt(m[1], 10);
 }
+
+/** Test alias — re-exported as `parseMajorForTest` for unit tests. */
+export { parseMajor as parseMajorForTest };
 
 /** Test helper: clear the cached current-major so a fresh package.json read happens. */
 export function _resetRecoverVersionCache(): void {
