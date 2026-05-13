@@ -80,6 +80,14 @@ const ALLOW_LIST = new Set<string>([
   // Validation apply writes diffs to project files via the v0.1 atomic patch
   // contract; legitimate v0.1 surgical patch surface.
   'src/validation/apply.ts',
+  // v1.0 audit cache — writes only .claude/coherence/section-symbol-index.json.
+  'src/audit/sectionSymbolIndex.ts',
+  // v1.0 /coherence:metrics --out — user-chosen output path (parity with
+  // /coherence:export-metrics --out, DD-128 path-sandbox).
+  'src/commands/metrics.ts',
+  // v1.0 /coherence:trust sync — writes coherence/trust/<author-hash>.json
+  // under the user-owned `coherence/` root (DD-117 file-only model).
+  'src/commands/trust.ts',
 ]);
 
 const WRITE_RE = /\b(fs\.(writeFileSync|writeFile|appendFileSync|appendFile|createWriteStream|mkdirSync|mkdir|renameSync|rename|unlinkSync|unlink)|writeFileSync|appendFileSync|createWriteStream|mkdirSync|renameSync)\b/;

@@ -35,6 +35,9 @@ const SCHEMA_NAMES = [
   'scope-cache.schema.json',
   'scope-config.schema.json',
   'team-plan.schema.json',
+  // v1.0 additions
+  'trust-ledger.schema.json',
+  'team-aggregate.schema.json',
 ] as const;
 
 const FILE_TO_SCHEMA: Record<string, string> = {
@@ -56,6 +59,8 @@ const FILE_TO_SCHEMA: Record<string, string> = {
   'scan-cache/state.json': 'scan-cache-state.schema.json',
   // v0.3 additions
   'scope-cache.json': 'scope-cache.schema.json',
+  // v1.0 additions
+  'trust-ledger.json': 'trust-ledger.schema.json',
 };
 
 let schemasLoaded = false;

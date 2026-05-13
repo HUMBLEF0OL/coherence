@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/trust-ledger",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "events",
+    "summary",
+    "promoted_at",
+    "promote_hint_emitted_at",
+    "auto_land_kinds"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 3 },
+    "events": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["_ts", "weight", "kind"],
+          "additionalProperties": false,
+          "properties": {
+            "_ts": { "type": "string", "format": "date-time" },
+            "weight": { "type": "integer", "enum": [-1, 0, 1] },
+            "kind": { "type": "string", "enum": ["accept", "edit", "revert"] }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["score", "as_of", "event_count"],
+        "additionalProperties": false,
+        "properties": {
+          "score": { "type": "number", "minimum": -1, "maximum": 1 },
+          "as_of": { "type": "string", "format": "date-time" },
+          "event_count": { "type": "integer", "minimum": 0, "maximum": 200 }
+        }
+      }
+    },
+    "promoted_at": {
+      "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+    },
+    "promote_hint_emitted_at": {
+      "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+    },
+    "auto_land_kinds": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["annotate", "skill", "agent", "slash_command"] }
+    }
+  }
+}

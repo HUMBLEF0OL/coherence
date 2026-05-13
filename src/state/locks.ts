@@ -160,7 +160,10 @@ export async function withCacheLock<T>(
     // Audit-4 A + C: scope-cache + tombstone read-modify-write paths on
     // the PostToolUse hot-path race when two tool calls fire close together.
     | 'scope-cache'
-    | 'tombstone-cache',
+    | 'tombstone-cache'
+    // v1.0 M-LEDGER-1 — serialise trust-ledger.json read-modify-write so
+    // 50 concurrent recordEvent calls produce a consistent final state.
+    | 'trust-ledger',
   fn: () => Promise<T>,
 ): Promise<T> {
   const acquired = await lockManager.acquire(filePath, namespace);

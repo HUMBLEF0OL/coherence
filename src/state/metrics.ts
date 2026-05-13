@@ -50,7 +50,15 @@ export type MetricEventType =
   | 'plan_created'
   | 'plan_accepted'
   | 'plan_rejected'
-  | 'metrics_export_started';
+  | 'metrics_export_started'
+  // v1.0 telemetry catalogue (FR-TELEMETRY-1)
+  | 'proposal_accept_recorded'
+  | 'proposal_edit_recorded'
+  | 'proposal_revert_recorded'
+  | 'trust_promoted'
+  | 'trust_synced'
+  | 'audit_deep_invoked'
+  | 'audit_deep_estimate_shown';
 
 export interface PromptVersion {
   stage1?: string;
