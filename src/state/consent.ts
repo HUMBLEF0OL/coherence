@@ -18,6 +18,10 @@
 import type { StateStore } from './stateStore.js';
 import type { CoherenceConfig } from '../types/index.js';
 import { nowIsoUtc } from '../util/time.js';
+// Source-of-truth for the plugin version — keeps the consent record's
+// `plugin_version` field aligned with the version baked into version.json
+// so a v1.x install never writes a stale v0.4.x consent record.
+import { PLUGIN_VERSION as INIT_PLUGIN_VERSION } from './init.js';
 
 export interface TelemetryConsent {
   /** Hashed local event collection — default true. */
@@ -58,7 +62,7 @@ const DEFAULT_DECISION: TelemetryConsentDecision = {
   upload_consent: false,
 };
 
-const DEFAULT_PLUGIN_VERSION = '0.4.0';
+const DEFAULT_PLUGIN_VERSION = INIT_PLUGIN_VERSION;
 
 export async function recordTelemetryConsent(
   store: StateStore,
