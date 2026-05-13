@@ -18,6 +18,7 @@ import {
   type AssertionOutcome,
 } from './textPatterns.js';
 import { symbol_exists, file_exists } from './codebaseLinked.js';
+import { symbol_exported } from './exportedSymbol.js';
 
 export type AssertionPolicy = 'block' | 'warn';
 export const DEFAULT_POLICY: AssertionPolicy = 'warn';
@@ -32,7 +33,6 @@ export interface AssertionRunResult extends AssertionOutcome {
   type: string;
   param?: string;
   policy: AssertionPolicy;
-  ignored?: 'unknown_type' | 'cap_exceeded';
 }
 
 export const MAX_ASSERTIONS_PER_SECTION = 10;
@@ -51,6 +51,10 @@ const SYNC_ENGINES: Record<string, SyncEngine> = {
 const ASYNC_ENGINES: Record<string, AsyncEngine> = {
   symbol_exists,
   file_exists,
+  // v1.0.1 Fix 8 (LIM-1 closure): stricter than symbol_exists — requires
+  // the symbol to appear in an actual `export ...` declaration, not just
+  // anywhere in the corpus. Catches rename-with-stale-callers drift.
+  symbol_exported,
 };
 
 /** Names of all assertion types that the registry knows about. */

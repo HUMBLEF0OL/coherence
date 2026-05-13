@@ -66,28 +66,69 @@ export function recomputeChangeClass(files: ParsedFiles): SanityResult {
 }
 
 /**
- * Detect frontmatter-only diff: all changed lines are inside the leading --- block
- * of a Markdown document.
+ * Detect frontmatter-only diff: all changed lines are inside the leading
+ * `---`/`---` block of a Markdown document.
+ *
+ * v1.0.1 Fix 5 (BUG-V1.0-B): the previous implementation treated the
+ * unified-diff file header `--- a/path/to/file` as a frontmatter delimiter
+ * (because `'--- a/...'.startsWith('---')` is true), so every markdown
+ * patch was classified as frontmatter and forced into manual review
+ * regardless of trust score. This implementation:
+ *
+ *   1. Skips unified-diff metadata lines (file headers, hunk headers,
+ *      `diff --git`, `index ...`).
+ *   2. Only treats a *content* line — i.e. after the `+`/`-`/` ` patch
+ *      prefix is stripped — whose remaining content is exactly `---` as
+ *      a frontmatter delimiter.
+ *   3. Returns true only when frontmatter delimiters were encountered AND
+ *      at least one change exists.
  */
 export function isFrontmatterOnlyDiff(diffRaw: string): boolean {
   const lines = diffRaw.split('\n');
   let inFrontmatter = false;
   let frontmatterOpened = false;
+  let anyChange = false;
 
   for (const line of lines) {
-    if (line.startsWith('---') && !frontmatterOpened) {
-      frontmatterOpened = true;
-      inFrontmatter = true;
+    // Skip unified-diff metadata. These never represent markdown content.
+    if (
+      line.startsWith('--- ') ||      // file header (e.g. '--- a/file.md')
+      line.startsWith('+++ ') ||      // file header (e.g. '+++ b/file.md')
+      line.startsWith('@@') ||        // hunk header
+      line.startsWith('diff ') ||     // git's diff header
+      line.startsWith('index ') ||    // git's index header
+      line.startsWith('new file') ||  // git's mode header
+      line.startsWith('deleted file') ||
+      line.startsWith('similarity index') ||
+      line.startsWith('rename from') ||
+      line.startsWith('rename to')
+    ) {
       continue;
     }
-    if (line.startsWith('---') && inFrontmatter) {
-      inFrontmatter = false;
+    if (line.length === 0) continue;
+
+    const prefix = line[0];
+    // Patch-body lines always start with '+', '-', or ' '. Anything else
+    // is metadata we haven't enumerated above — skip conservatively.
+    if (prefix !== '+' && prefix !== '-' && prefix !== ' ') continue;
+    const content = line.slice(1);
+
+    // A bare `---` content line marks a frontmatter delimiter.
+    if (content === '---') {
+      if (!frontmatterOpened) {
+        frontmatterOpened = true;
+        inFrontmatter = true;
+      } else if (inFrontmatter) {
+        inFrontmatter = false;
+      }
+      if (prefix === '+' || prefix === '-') anyChange = true;
       continue;
     }
-    // Any change line outside frontmatter means it's not frontmatter-only
-    if ((line.startsWith('+') || line.startsWith('-')) && !line.startsWith('+++') && !line.startsWith('---')) {
+
+    if (prefix === '+' || prefix === '-') {
+      anyChange = true;
       if (!inFrontmatter) return false;
     }
   }
-  return frontmatterOpened;
+  return frontmatterOpened && anyChange;
 }

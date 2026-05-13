@@ -19,6 +19,12 @@ import type { DriftBuffer } from '../buffer/lifecycle.js';
 import { readGraduation } from '../state/graduation.js';
 import { resolveMode } from '../modes/resolver.js';
 import type { ProposalCache } from '../state/proposalCache.js';
+// Canonical plugin-version source (the same constant version.json reads).
+// v1.0.1 Fix 6: previously the status command's fallback was a hardcoded
+// '0.1.0', surfaced by the v1.0.1 M1 embedded-version scanner. Consuming
+// the same `PLUGIN_VERSION` export removes the magic string entirely so
+// future bumps don't need a manual sweep here.
+import { PLUGIN_VERSION as INIT_PLUGIN_VERSION } from '../state/init.js';
 
 const DD_044_FOOTER =
   'Mid-session branch switches: not detected — Stop-time re-validation';
@@ -39,7 +45,7 @@ export async function runStatus(
   const version = await store.read<VersionInfo>('version.json');
   const config = await store.read<CoherenceConfig>('config.json');
   const mode = config?.mode ?? 'observe';
-  lines.push(`[coherence] status — plugin ${version?.plugin_version ?? '0.1.0'} | mode: ${mode}`);
+  lines.push(`[coherence] status — plugin ${version?.plugin_version ?? INIT_PLUGIN_VERSION} | mode: ${mode}`);
 
   // G7 fix: FR-MODES-7 — surface effective v0.2 mode for cwd.
   try {

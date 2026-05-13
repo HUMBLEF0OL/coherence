@@ -41,12 +41,22 @@ export function scanAnchors(source: string, filePath: string): AnchorScanResult 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Fenced code block detection (R-18)
+    // Fenced code block detection (R-18). We toggle into fence mode so
+    // subsequent heading / anchor parsing skips lines inside the fence,
+    // but the opening fence line itself is part of the section body —
+    // it must still be pushed to the active stack frame.
+    //
+    // v1.0.1 Fix 7 (BUG-V1.0-D): prior implementation `continue`d here
+    // without pushing, dropping the opening ``` line from
+    // `section.content`. That broke `has_example` (FENCED_CODE_RE needs
+    // both opening AND closing fences) and sent malformed section text
+    // to the Stage 2 LLM.
     const fenceMatch = FENCE_RE.exec(line);
     if (!inFence && fenceMatch) {
       inFence = true;
       fenceChar = fenceMatch[1][0]!;
       fenceLen = fenceMatch[1].length;
+      if (stack.length > 0) stack[stack.length - 1].contentLines.push(line);
       continue;
     }
     if (inFence) {

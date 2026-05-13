@@ -114,4 +114,29 @@ describe('first-run consent (DD-115)', () => {
     expect(gi).not.toMatch(/^\.claude\/coherence\/signal-cache\.json$/m);
     expect(gi).not.toMatch(/^\.claude\/coherence\/session-map\.json$/m);
   });
+
+  // ── v1.0.1 regression: DEFAULT_PLUGIN_VERSION was hardcoded to '0.4.0' ──
+  // (commit 2b1a60a). assertVersionSync didn't catch the embedded constant
+  // because it only checked the three top-level version sources. The fresh
+  // install must write the SAME plugin_version into both version.json
+  // (read from init.ts PLUGIN_VERSION) and config.json#telemetry.
+  it('telemetry consent plugin_version matches version.json (regression: 2b1a60a)', async () => {
+    await runFreshInstall(dir, { silent: true });
+    const store = makeStateStore(dir);
+    const versionInfo = await store.read<{ plugin_version: string }>('version.json');
+    const consent = await readTelemetryConsent(store);
+    expect(versionInfo?.plugin_version).toBeDefined();
+    expect(consent?.plugin_version).toBeDefined();
+    expect(consent!.plugin_version).toBe(versionInfo!.plugin_version);
+  });
+
+  it('telemetry consent plugin_version equals init.ts PLUGIN_VERSION export', async () => {
+    // Stronger guard: the consent record must follow the canonical export
+    // from init.ts, not a divergent constant defined inside consent.ts.
+    const { PLUGIN_VERSION } = await import('../../src/state/init.js');
+    await runFreshInstall(dir, { silent: true });
+    const store = makeStateStore(dir);
+    const consent = await readTelemetryConsent(store);
+    expect(consent!.plugin_version).toBe(PLUGIN_VERSION);
+  });
 });

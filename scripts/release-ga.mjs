@@ -20,6 +20,7 @@ import { execSync, spawnSync } from 'node:child_process';
 import { readFileSync, appendFileSync, mkdirSync, renameSync, existsSync, createHash } from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
+import { scanEmbeddedVersions, EMBEDDED_VERSION_ALLOWLIST } from './lib/version-scanner.mjs';
 
 const args = new Set(process.argv.slice(2));
 const doTag = args.has('--tag');
@@ -57,7 +58,24 @@ function assertVersionSync(tag) {
   if (mismatches.length > 0) {
     throw new Error(`Version mismatch for tag ${tag}: ${mismatches.join(', ')}`);
   }
-  console.log(`[release-ga] version sync OK — all sources = ${v}`);
+
+  // v1.0.1 M1: scan src/**/*.ts for embedded version literals that drift
+  // from the canonical version (closes the bug class behind Fix 2).
+  const embeddedFindings = scanEmbeddedVersions('src', v).filter(
+    (f) => !EMBEDDED_VERSION_ALLOWLIST.has(`${f.file}:${f.line}`),
+  );
+  if (embeddedFindings.length > 0) {
+    const detail = embeddedFindings
+      .map((f) => `  ${f.file}:${f.line}  value='${f.value}'  context:\n    ${f.snippet}`)
+      .join('\n');
+    throw new Error(
+      `Embedded version constants drift from canonical ${v}:\n${detail}\n\n` +
+      `Each occurrence is a SemVer string in a line that also names \`*version*\`.\n` +
+      `If the literal is intentional (e.g. migration helper for a prior major), add\n` +
+      `\`<file>:<line>\` to EMBEDDED_VERSION_ALLOWLIST in scripts/release-ga.mjs.`,
+    );
+  }
+  console.log(`[release-ga] version sync OK — all sources + embedded constants = ${v}`);
 }
 
 function runValidatePlugin() {

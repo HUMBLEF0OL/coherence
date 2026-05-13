@@ -17,7 +17,13 @@ export function checkApplies(diffRaw: string, projectRoot: string): ApplyCheckRe
   const tmpPath = path.join(os.tmpdir(), `coherence-${process.pid}-${Date.now()}.patch`);
 
   try {
-    writeFileSync(tmpPath, diffRaw, 'utf8');
+    // v1.0.1 Fix 4 (BUG-V1.0-A): `parseStage2Response` trims its input,
+    // which strips the trailing newline that terminates the diff's last
+    // line. `git apply --check` rejects the patch with "corrupt patch at
+    // line N" when the final hunk line is not newline-terminated. Restore
+    // the terminator at the gate boundary so all upstream trims stay safe.
+    const patchBody = diffRaw.endsWith('\n') ? diffRaw : diffRaw + '\n';
+    writeFileSync(tmpPath, patchBody, 'utf8');
 
     execFileSync('git', ['apply', '--check', tmpPath], {
       cwd: projectRoot,

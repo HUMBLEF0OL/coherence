@@ -12,9 +12,27 @@ export interface AssertionInput {
   sectionRef: string;
 }
 
+/**
+ * Reason an assertion result was skipped or set-aside by the dispatcher.
+ * Engines may emit `unsupported_lang` (e.g. `symbol_exported` for
+ * non-TS/JS languages in v1.0.1). The dispatcher additionally sets
+ * `unknown_type` (no matching engine) and `cap_exceeded` (over
+ * MAX_ASSERTIONS_PER_SECTION).
+ */
+export type AssertionIgnoredReason =
+  | 'unknown_type'
+  | 'cap_exceeded'
+  | 'unsupported_lang';
+
 export interface AssertionOutcome {
   passed: boolean;
   message?: string;
+  /**
+   * Engines may return `ignored: 'unsupported_lang'` to signal "I can't
+   * evaluate for this language yet". The dispatcher pipes the reason
+   * through and may layer its own (`unknown_type`, `cap_exceeded`).
+   */
+  ignored?: AssertionIgnoredReason;
 }
 
 const FENCED_CODE_RE = /```[\s\S]*?```/;

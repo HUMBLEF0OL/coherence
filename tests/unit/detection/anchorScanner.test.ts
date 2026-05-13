@@ -69,6 +69,64 @@ content
     expect(sections).toHaveLength(0);
   });
 
+  // ── v1.0.1 Fix 7 (BUG-V1.0-D) regression ───────────────────────────
+  // Prior bug: the opening fence line was dropped from `section.content`
+  // when scanAnchors entered fence-tracking mode. This broke
+  // `has_example` (FENCED_CODE_RE needs both fences) and sent malformed
+  // text to the Stage 2 LLM. The closing fence was retained but the
+  // opening was lost — sections appeared to lack a code example even
+  // when one was present.
+  it('section content retains BOTH the opening and closing fence lines (Fix 7)', () => {
+    const source = `<!-- coherence:section id="x" -->
+## X
+
+\`\`\`ts
+const x = 1;
+\`\`\`
+<!-- /coherence:section -->
+`;
+    const { sections } = scanAnchors(source, 'x.md');
+    expect(sections).toHaveLength(1);
+    expect(sections[0].content).toContain('```ts');
+    expect(sections[0].content).toContain('const x = 1;');
+    // Closing fence too — should still be there.
+    expect(sections[0].content.split('\n').filter((l) => l.trim() === '```')).toHaveLength(1);
+    // FENCED_CODE_RE = /```[\s\S]*?```/  — must match end-to-end.
+    expect(/```[\s\S]*?```/.test(sections[0].content)).toBe(true);
+  });
+
+  it('retains fences for sections with multiple code blocks', () => {
+    const source = `<!-- coherence:section id="multi" -->
+First block:
+\`\`\`ts
+const a = 1;
+\`\`\`
+Second block:
+\`\`\`js
+const b = 2;
+\`\`\`
+<!-- /coherence:section -->
+`;
+    const { sections } = scanAnchors(source, 'multi.md');
+    expect(sections).toHaveLength(1);
+    expect(sections[0].content).toContain('```ts');
+    expect(sections[0].content).toContain('```js');
+    // Two opening + two closing = 4 fence lines.
+    expect(sections[0].content.split('\n').filter((l) => /^```/.test(l))).toHaveLength(4);
+  });
+
+  it('retains tilde fences inside sections too', () => {
+    const source = `<!-- coherence:section id="t" -->
+~~~yaml
+key: value
+~~~
+<!-- /coherence:section -->
+`;
+    const { sections } = scanAnchors(source, 't.md');
+    expect(sections).toHaveLength(1);
+    expect(sections[0].content).toContain('~~~yaml');
+  });
+
   it('normalizes section ids to [a-z0-9_-]+', () => {
     const source = `
 <!-- coherence:section id="My Section ID" -->
