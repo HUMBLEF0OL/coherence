@@ -5,7 +5,7 @@
 import type { StateStore } from './stateStore.js';
 import { nowIsoUtc } from '../util/time.js';
 
-export type CoherenceLogEventType = 'auto-applied' | 'reviewed' | 'finalize' | 'quarantine';
+export type CoherenceLogEventType = 'auto-applied' | 'reviewed' | 'finalize' | 'quarantine' | 'repair';
 
 export interface CoherenceLogEntry {
   type: CoherenceLogEventType;

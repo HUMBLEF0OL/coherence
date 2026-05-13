@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  id-token: write   # cosign keyless OIDC (FR-SIGN-1)
+  contents: write   # gh release create upload (FR-SIGN-3)
+
+jobs:
+  build-sign-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run gates
+        run: npm run gates
+
+      - name: Pack tarball
+        id: pack
+        run: |
+          npm pack
+          PKG_NAME=$(node -p "require('./package.json').name")
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "tgz=${PKG_NAME}-${PKG_VERSION}.tgz" >> "$GITHUB_OUTPUT"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.4'
+
+      - name: Sign tarball (keyless OIDC)
+        env:
+          COSIGN_EXPERIMENTAL: '1'
+        run: |
+          TGZ='${{ steps.pack.outputs.tgz }}'
+          cosign sign-blob --yes "$TGZ" \
+            --output-signature "${TGZ}.sig" \
+            --output-certificate "${TGZ}.pem"
+
+      - name: Compute sha256
+        id: sha
+        run: |
+          TGZ='${{ steps.pack.outputs.tgz }}'
+          mkdir -p release-artifacts
+          shasum -a 256 "$TGZ" > "release-artifacts/${TGZ}.sha256"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TGZ='${{ steps.pack.outputs.tgz }}'
+          gh release create "${{ github.ref_name }}" \
+            "$TGZ" \
+            "${TGZ}.sig" \
+            "${TGZ}.pem" \
+            "release-artifacts/${TGZ}.sha256" \
+            --title "${{ github.ref_name }}" \
+            --notes-file "RELEASE_NOTES_${{ github.ref_name }}.md" \
+            --verify-tag

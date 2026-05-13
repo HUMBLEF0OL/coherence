@@ -17,14 +17,19 @@
  * Pass `--dry-run` to run all gates without cutting a tag.
  */
 import { execSync, spawnSync } from 'node:child_process';
-import { readFileSync, appendFileSync } from 'node:fs';
+import { readFileSync, appendFileSync, mkdirSync, renameSync, existsSync, createHash } from 'node:fs';
+import crypto from 'node:crypto';
+import path from 'node:path';
 
 const args = new Set(process.argv.slice(2));
 const doTag = args.has('--tag');
 const doPush = args.has('--push');
 const dryRun = args.has('--dry-run');
-const TAG = 'v0.4.0';
-const MSG = 'v0.4.0 GA';
+const unsigned = args.has('--unsigned');
+const TAG = 'v1.0.0';
+const MSG = 'v1.0.0 GA';
+
+void createHash;
 
 function run(cmd) {
   console.log(`\n[release-ga] $ ${cmd}`);
@@ -93,6 +98,49 @@ run('npm run gates');
 run('npm run calibrate');
 run('npx vitest run');
 run('npm run pack:size');
+
+/**
+ * v1.0 M4 — cosign sign step (TS-7, FR-SIGN-*).
+ *
+ * In GitHub Actions (CI) we sign the packed tarball via cosign keyless OIDC.
+ * Locally we either bail out (signing requires GitHub Actions) or, with
+ * `--unsigned`, rename the tgz to `<name>-UNSIGNED.tgz` so it cannot be
+ * confused with a signed artifact.
+ */
+function runSignStep() {
+  const isCI = process.env.GITHUB_ACTIONS === 'true';
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+  const tgz = `${pkg.name}-${pkg.version}.tgz`;
+  if (!isCI && !unsigned) {
+    console.error(`[release-ga] cosign signing requires GitHub Actions. Pass --unsigned to bypass (produces ${pkg.name}-${pkg.version}-UNSIGNED.tgz).`);
+    process.exit(1);
+  }
+  // Generate sha256 alongside (always, regardless of signing path)
+  const artifactsDir = path.join('release-artifacts');
+  mkdirSync(artifactsDir, { recursive: true });
+  const shaFile = path.join(artifactsDir, `${pkg.name}-${pkg.version}.sha256`);
+  if (existsSync(tgz)) {
+    const buf = readFileSync(tgz);
+    const sha = crypto.createHash('sha256').update(buf).digest('hex');
+    appendFileSync(shaFile, `${sha}  ${tgz}\n`);
+    console.log(`[release-ga] wrote sha256 to ${shaFile}`);
+  } else {
+    console.warn(`[release-ga] tarball ${tgz} not found in cwd; skipping sha256 (npm pack runs separately in CI).`);
+  }
+  if (!isCI && unsigned) {
+    if (existsSync(tgz)) {
+      const unsignedTgz = `${pkg.name}-${pkg.version}-UNSIGNED.tgz`;
+      renameSync(tgz, unsignedTgz);
+      console.error(`[release-ga] WARNING: Unsigned release artifact — do not distribute publicly: ${unsignedTgz}`);
+    }
+    return;
+  }
+  // CI path: cosign sign-blob with keyless OIDC
+  run(`cosign sign-blob --yes ${tgz} --output-signature ${tgz}.sig --output-certificate ${tgz}.pem`);
+  console.log('[release-ga] cosign sign-blob completed.');
+}
+
+runSignStep();
 
 if (dryRun) {
   console.log('\n[release-ga] --dry-run: all gates green; no tag created.');
