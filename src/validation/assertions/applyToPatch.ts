@@ -51,7 +51,7 @@ export async function applyAssertions(ctx: PatchAssertionContext): Promise<Asser
   if (asserts.length === 0) return { ok: true, blocks: [], warns: [] };
   const results = await runAssertionsForSection(ctx.sectionRef, ctx.sectionContent, asserts, {
     projectRoot: ctx.projectRoot,
-    emitWarning: ctx.emitWarning ?? ((m) => console.error(m)),
+    emitWarning: ctx.emitWarning ?? ((m): void => console.error(m)),
   });
   return verdict(results);
 }

@@ -150,7 +150,7 @@ export async function runAssertionsForSection(
       const reasons = new Set<string>();
       for (const r of out) if (r.ignored) reasons.add(r.ignored);
       const msg = `coherence: ${ignoredCount} assertion(s) in section ${sectionRef} ignored: ${[...reasons].join(', ')}`;
-      (opts.emitWarning ?? ((m) => console.error(m)))(msg);
+      (opts.emitWarning ?? ((m): void => console.error(m)))(msg);
       warnedSections.add(sectionRef);
     }
   }

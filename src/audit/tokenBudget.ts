@@ -62,7 +62,7 @@ export function buildRows(entries: SectionIndexEntry[]): SectionTokenRow[] {
   });
 }
 
-export async function tokenBudgetReport(projectRoot: string): Promise<string> {
+export function tokenBudgetReport(projectRoot: string): string {
   const entries = readSectionIndex(projectRoot);
   const rows = buildRows(entries).sort((a, b) => b.tokens - a.tokens);
   if (rows.length === 0) return '_No section-index entries yet — run a session to populate._';

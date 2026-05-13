@@ -58,17 +58,17 @@ describe('token budget tiers', () => {
 });
 
 describe('tokenBudgetReport', () => {
-  it('empty index → helpful empty-state message', async () => {
-    const report = await tokenBudgetReport(tmp);
+  it('empty index → helpful empty-state message', () => {
+    const report = tokenBudgetReport(tmp);
     expect(report).toContain('No section-index entries yet');
   });
-  it('renders Markdown table sorted desc by tokens', async () => {
+  it('renders Markdown table sorted desc by tokens', () => {
     seedIndex([
       { sectionRef: 'small.md#x', content_length_chars: 100 },
       { sectionRef: 'huge.md#x', content_length_chars: 24000 },
       { sectionRef: 'mid.md#x', content_length_chars: 8000 },
     ]);
-    const report = await tokenBudgetReport(tmp);
+    const report = tokenBudgetReport(tmp);
     expect(report).toContain('Section | Tokens');
     const iHuge = report.indexOf('huge.md#x');
     const iMid = report.indexOf('mid.md#x');

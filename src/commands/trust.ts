@@ -51,7 +51,7 @@ export async function runTrust(args: TrustCmdArgs): Promise<string> {
   const { argv } = args;
   if (argv[0] === 'sync') return await handleSync(args);
   if (hasFlag(argv, '--promote')) return await handlePromote(args);
-  if (hasFlag(argv, '--prune-stale')) return await handlePruneStale(args);
+  if (hasFlag(argv, '--prune-stale')) return handlePruneStale(args);
   return await handleStatus(args);
 }
 
@@ -131,7 +131,7 @@ async function handlePromote(args: TrustCmdArgs): Promise<string> {
   return `Promoted. Auto-land enabled for: ${kinds.join(', ')}.`;
 }
 
-async function handlePruneStale(args: TrustCmdArgs): Promise<string> {
+function handlePruneStale(args: TrustCmdArgs): string {
   const { projectRoot, argv } = args;
   const yes = hasFlag(argv, '--yes');
   const candidates = listPruneCandidates(projectRoot);

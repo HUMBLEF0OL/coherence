@@ -157,7 +157,7 @@ export async function handleDeepAudit(args: DeepAuditArgs): Promise<string> {
   for (const p of pairs) {
     lines.push('');
     lines.push(`## \`${p.a}\` ↔ \`${p.b}\``);
-    lines.push(`Shared symbols: ${p.shared.slice(0, 8).map((s) => '\`' + s + '\`').join(', ')}` + (p.shared.length > 8 ? `, … (${p.shared.length} total)` : ''));
+    lines.push(`Shared symbols: ${p.shared.slice(0, 8).map((s) => '`' + s + '`').join(', ')}` + (p.shared.length > 8 ? `, … (${p.shared.length} total)` : ''));
     const bodyA = readSectionBody(projectRoot, p.a);
     const bodyB = readSectionBody(projectRoot, p.b);
     const userMessage = JSON.stringify({ section_a: { ref: p.a, body: bodyA }, section_b: { ref: p.b, body: bodyB } });

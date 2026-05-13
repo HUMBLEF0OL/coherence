@@ -36,11 +36,11 @@ function p95(samples: number[]): number {
 }
 
 describe('NFR-PERF-N7 — /coherence:audit free tier', () => {
-  it('tokenBudgetReport renders < 250 ms p95 over 50 iterations on 1000-section index (plan target 100 ms)', async () => {
+  it('tokenBudgetReport renders < 250 ms p95 over 50 iterations on 1000-section index (plan target 100 ms)', () => {
     const samples: number[] = [];
     for (let i = 0; i < 50; i++) {
       const t0 = performance.now();
-      await tokenBudgetReport(tmp);
+      tokenBudgetReport(tmp);
       samples.push(performance.now() - t0);
     }
     const p = p95(samples);
