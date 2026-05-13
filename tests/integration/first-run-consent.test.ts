@@ -87,20 +87,31 @@ describe('first-run consent (DD-115)', () => {
   // ── audit-fix E1 / T7: BOM-prefixed .gitignore is parsed correctly ──────
 
   it('idempotent against a UTF-8 BOM-prefixed .gitignore (E1)', async () => {
-    // Pre-seed .gitignore WITH a BOM and the per-developer entries already
+    // Pre-seed .gitignore WITH a BOM and the per-developer entry already
     // present. firstRun must NOT re-append.
     const bom = '﻿';
     const seeded =
       bom +
-      '# cohrence — per-developer state (do not commit)\n' +
-      '.claude/coherence/signal-cache.json\n' +
-      '.claude/coherence/session-map.json\n';
+      '# Coherence plugin (npm: cohrence) — per-developer state (do not commit)\n' +
+      '.claude/coherence/\n';
     writeFileSync(path.join(dir, '.gitignore'), seeded, 'utf8');
     await runFreshInstall(dir, { silent: true });
     const after = readFileSync(path.join(dir, '.gitignore'), 'utf8');
-    const sigMatches = after.match(/signal-cache\.json/g) ?? [];
-    const sessMatches = after.match(/session-map\.json/g) ?? [];
-    expect(sigMatches.length).toBe(1);
-    expect(sessMatches.length).toBe(1);
+    // NFR-PRIVACY-N5: directory-level ignore covers every per-developer state
+    // file under .claude/coherence/ (trust-ledger, signal-cache, scan-cache,
+    // proposal-cache, metrics.jsonl, coherence-log.md, etc.). Should be
+    // present exactly once after a no-op re-run.
+    const dirIgnoreMatches = after.match(/^\.claude\/coherence\/$/gm) ?? [];
+    expect(dirIgnoreMatches.length).toBe(1);
+  });
+
+  it('writes a directory-level .gitignore line on a fresh project (NFR-PRIVACY-N5)', async () => {
+    await runFreshInstall(dir, { silent: true });
+    const gi = readFileSync(path.join(dir, '.gitignore'), 'utf8');
+    expect(gi).toMatch(/^\.claude\/coherence\/$/m);
+    // The narrow single-file ignores from earlier versions must NOT be
+    // re-introduced — they let several per-developer files leak through.
+    expect(gi).not.toMatch(/^\.claude\/coherence\/signal-cache\.json$/m);
+    expect(gi).not.toMatch(/^\.claude\/coherence\/session-map\.json$/m);
   });
 });

@@ -31,11 +31,15 @@ export interface RunFreshInstallOptions {
   silent?: boolean;
 }
 
-const GITIGNORE_HEADER = '# cohrence — per-developer state (do not commit)';
-const PER_DEV_GITIGNORE_LINES = [
-  '.claude/coherence/signal-cache.json',
-  '.claude/coherence/session-map.json',
-];
+const GITIGNORE_HEADER =
+  '# Coherence plugin (npm: cohrence) — per-developer state (do not commit)';
+// NFR-PRIVACY-N5 + DD-117: ALL per-developer state under .claude/coherence/
+// is private. Earlier versions only ignored signal-cache.json + session-map.json
+// individually; that left trust-ledger.json, state-snapshot.json, cost-ledger.json,
+// metrics.jsonl, coherence-log.md, scan-cache/, proposal-cache.json, etc.
+// committable on `git add .claude/`. The directory-level ignore matches the
+// plugin's own repo .gitignore.
+const PER_DEV_GITIGNORE_LINES = ['.claude/coherence/'];
 
 export async function runFreshInstall(
   projectRoot: string,

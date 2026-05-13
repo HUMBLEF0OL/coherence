@@ -71,11 +71,17 @@ describe('M-PRIVACY-1: cross-developer-leak prevention (NFR-PRIVACY-N5, DD-109)'
     ).toEqual([]);
   });
 
-  it('firstRun.ts patches .gitignore for both per-developer state files', () => {
+  it('firstRun.ts patches .gitignore with a directory-level ignore (NFR-PRIVACY-N5)', () => {
     const text = readFileSync(path.join(SRC, 'state', 'firstRun.ts'), 'utf8');
-    expect(text).toContain('signal-cache.json');
-    expect(text).toContain('session-map.json');
-    expect(text).toContain('# cohrence — per-developer state (do not commit)');
+    // Directory-level ignore: covers every per-developer file under
+    // .claude/coherence/ — trust-ledger, signal-cache, scan-cache,
+    // proposal-cache, metrics.jsonl, coherence-log.md, etc. Earlier versions
+    // only ignored signal-cache.json + session-map.json individually, which
+    // let several other per-developer files leak through `git add .claude/`.
+    expect(text).toContain("'.claude/coherence/'");
+    expect(text).toContain(
+      '# Coherence plugin (npm: cohrence) — per-developer state (do not commit)',
+    );
   });
 });
 
