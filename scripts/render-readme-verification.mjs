@@ -74,7 +74,10 @@ let readme = readFileSync(readmePath, 'utf8');
 const replacement = `${BEGIN}\n${block}${END}`;
 
 if (re.test(readme)) {
-  readme = readme.replace(re, replacement);
+  // Use a replacer FUNCTION rather than a string so `$` inside `block`
+  // (e.g. the regex end-of-line anchor in --certificate-identity-regexp)
+  // isn't interpreted as a backreference token like $&, $1, $`, $'.
+  readme = readme.replace(re, () => replacement);
 } else {
   // Append a fresh Verification section before the last newline
   readme = readme.replace(/\s*$/, '');
