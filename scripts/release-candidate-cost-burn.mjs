@@ -21,8 +21,15 @@ if (!process.env.COHERENCE_LIVE_COST_RUN) {
   process.exit(0);
 }
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('[cost-burn] Error: ANTHROPIC_API_KEY not set.');
+// v1.0.1 Fix 10: accept either API-key or subscription auth.
+// Subscription users are detected via the `claude` CLI being on PATH;
+// the agent SDK reads their credentials directly from the CLI's storage.
+const { detectLiveAuthAvailable } = await import('../dist/llm/authDetect.js');
+if (!detectLiveAuthAvailable(process.env)) {
+  console.error(
+    '[cost-burn] Error: no live auth available. Set ANTHROPIC_API_KEY or ' +
+    'run `claude` once to authenticate the subscription path.',
+  );
   process.exit(1);
 }
 

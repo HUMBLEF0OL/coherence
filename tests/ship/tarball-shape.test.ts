@@ -6,8 +6,8 @@
  *   2. No path under `src/state/migrate/v1_to_v2.ts` (DD-080 retired).
  *   3. Tarball size ≤ 10 MB (M-INSTALL-1).
  *   4. `dist/state/schemas/` is non-empty post-build (round-2 C5 follow-up:
- *      schemas are runtime-loaded by the Anthropic SDK / AJV path, so the
- *      build step has to copy them out of `src/state/schemas/` into `dist/`).
+ *      schemas are runtime-loaded by AJV, so the build step has to copy
+ *      them out of `src/state/schemas/` into `dist/`).
  *
  * Implementation note: `npm pack --dry-run` is slow (~3-5 s on Windows). We
  * shell out once and parse its stdout. The test is gated under the `ship`

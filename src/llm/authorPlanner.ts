@@ -12,6 +12,7 @@
 import type { ProposalKind } from '../proposals/quarantine.js';
 import type { SignalKind } from '../state/proposalCache.js';
 import { llmCall, loadV2Prompt } from './client.js';
+import { detectLiveAuthAvailable } from './authDetect.js';
 
 export interface PlannerSignal {
   kind: SignalKind;
@@ -139,11 +140,21 @@ export function isPlannerEnabled(): boolean {
   return process.env['COHERENCE_AUTHOR_PLANNER'] === '1';
 }
 
-/** Pick the planner transport (mock unless live env override). */
+/**
+ * Pick the planner transport.
+ *
+ *  - `COHERENCE_AUTHOR_LIVE=1` forces live.
+ *  - `COHERENCE_AUTHOR_MOCK=1` forces mock.
+ *  - Default: live iff `detectLiveAuthAvailable()` — either
+ *    `ANTHROPIC_API_KEY` is set OR the `claude` CLI is on PATH
+ *    (subscription path, post-v1.0.1 Fix 9). Falls back to mock when
+ *    neither auth source is configured. v1.0.1 Fix 10 widened the
+ *    default gate from API-key-only to API-key-or-subscription.
+ */
 export function pickPlannerTransport(): PlannerTransport {
   const env = process.env;
   if (env['COHERENCE_AUTHOR_MOCK'] === '1') return mockPlannerTransport;
   if (env['COHERENCE_AUTHOR_LIVE'] === '1') return livePlannerTransport;
-  if (env['ANTHROPIC_API_KEY']) return livePlannerTransport;
+  if (detectLiveAuthAvailable(env)) return livePlannerTransport;
   return mockPlannerTransport;
 }

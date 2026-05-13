@@ -15,6 +15,7 @@ import {
   liveAuthorTransport,
   type AuthorTransport,
 } from '../llm/authorPipeline.js';
+import { detectLiveAuthAvailable } from '../llm/authDetect.js';
 import { ProposalStore } from '../proposals/store.js';
 import { readSignalCache } from '../signal/signalCache.js';
 import { flush, markDirty } from '../state/snapshotWriter.js';
@@ -35,15 +36,22 @@ import { emitMetric } from '../state/metrics.js';
 
 /**
  * N1 fix: pick the Author transport at hook-invocation time.
- *  - `COHERENCE_AUTHOR_LIVE=1` forces live (Anthropic SDK).
+ *  - `COHERENCE_AUTHOR_LIVE=1` forces live.
  *  - `COHERENCE_AUTHOR_MOCK=1` forces mock (deterministic).
- *  - Otherwise default to live iff `ANTHROPIC_API_KEY` is set.
+ *  - Otherwise default to live iff live auth is reachable —
+ *    `ANTHROPIC_API_KEY` env var OR an authenticated `claude` CLI
+ *    session (subscription path, post-v1.0.1 Fix 9). Falls back to
+ *    mock when neither auth source is configured.
+ *
+ * v1.0.1 Fix 10: previously this gate only checked
+ * `ANTHROPIC_API_KEY` — subscription users would silently use the
+ * mock transport even though their auth would have worked.
  */
 function pickAuthorTransport(): AuthorTransport {
   const env = process.env;
   if (env['COHERENCE_AUTHOR_MOCK'] === '1') return mockAuthorTransport;
   if (env['COHERENCE_AUTHOR_LIVE'] === '1') return liveAuthorTransport;
-  if (env['ANTHROPIC_API_KEY']) return liveAuthorTransport;
+  if (detectLiveAuthAvailable(env)) return liveAuthorTransport;
   return mockAuthorTransport;
 }
 

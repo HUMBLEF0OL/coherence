@@ -12,6 +12,7 @@ import { flush, markDirty } from '../state/snapshotWriter.js';
 import { nowIsoUtc } from '../util/time.js';
 import { clearResponseCorrelation } from '../signal/telemetry.js';
 import { resetFileLocalityCache } from '../signal/fileLocalityCache.js';
+import { detectLiveAuthAvailable } from '../llm/authDetect.js';
 import { normaliseHookEvent } from './eventShape.js';
 import { emitMetric } from '../state/metrics.js';
 import {
@@ -240,13 +241,17 @@ export async function sessionEndHook(
 /**
  * Pick the Author transport at hook-invocation time (mirrors stop.ts):
  *   COHERENCE_AUTHOR_LIVE=1 → live; COHERENCE_AUTHOR_MOCK=1 → mock;
- *   default: live iff ANTHROPIC_API_KEY is set, mock otherwise.
+ *   default: live iff `detectLiveAuthAvailable()` — `ANTHROPIC_API_KEY`
+ *   env var OR an authenticated `claude` CLI session (subscription
+ *   path, post-v1.0.1 Fix 9). Falls back to mock when neither auth
+ *   source is configured. v1.0.1 Fix 10: prior gate only checked
+ *   ANTHROPIC_API_KEY and would silently mock for subscription users.
  */
 function pickAuthorTransport(): AuthorTransport {
   const env = process.env;
   if (env['COHERENCE_AUTHOR_MOCK'] === '1') return mockAuthorTransport;
   if (env['COHERENCE_AUTHOR_LIVE'] === '1') return liveAuthorTransport;
-  if (env['ANTHROPIC_API_KEY']) return liveAuthorTransport;
+  if (detectLiveAuthAvailable(env)) return liveAuthorTransport;
   return mockAuthorTransport;
 }
 

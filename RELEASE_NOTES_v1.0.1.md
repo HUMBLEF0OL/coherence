@@ -1,9 +1,10 @@
 # Coherence v1.0.1
 
-Post-tag hardening for the v1.0.0 trust + intelligence release. Nine
+Post-tag hardening for the v1.0.0 trust + intelligence release. Ten
 correctness fixes caught during downstream-bootstrap audits, the
-mcp-sentry LLM-layer smoke test, and a fresh dummy-project smoke
-against a freshly published v1.0.0 plugin install.
+mcp-sentry LLM-layer smoke test, a fresh dummy-project smoke, and a
+thorough Path-C migration audit against a freshly published v1.0.0
+plugin install.
 
 Fixes 4 and 5 unblock the main happy path — without them, the v1.0.0
 trust ladder and auto-apply gate are structurally dead. Fix 7 closes
@@ -48,6 +49,16 @@ provision a separate Anthropic API key to use coherence.
   v1.0.0 (no patch could ever cross the auto-apply threshold).
   `src/validation/sanity.ts` now skips diff metadata lines and only
   treats a bare `---` *content* line as a frontmatter delimiter.
+- **Live-vs-mock transport gates widened to detect subscription auth
+  (Fix 10)** — pre-fix, `pickAuthorTransport` (`stop.ts`,
+  `sessionEnd.ts`) and `pickPlannerTransport` (`authorPlanner.ts`)
+  defaulted to the LIVE transport only if `ANTHROPIC_API_KEY` was set.
+  Combined with Fix 9, subscription users would silently get the
+  mock author/planner pipelines despite their auth being usable.
+  Now centralized in `src/llm/authDetect.ts#detectLiveAuthAvailable()`,
+  which returns true if either env var is set OR the `claude` CLI is
+  on PATH (memoized probe). Explicit `COHERENCE_AUTHOR_LIVE=1` /
+  `COHERENCE_AUTHOR_MOCK=1` overrides still short-circuit detection.
 - **LLM transport switched to Claude Agent SDK (Fix 9 / Path C)** —
   `src/llm/client.ts` no longer imports `@anthropic-ai/sdk` (the raw
   HTTP SDK that required `ANTHROPIC_API_KEY`). It now uses
@@ -448,6 +459,69 @@ declaration grammars.
   `verdict.ok = false` with the diagnostic message hinting at the
   `symbol_exists` distinction.
 
+### Fix 10 — Transport gates honor subscription auth (Path C completeness audit)
+
+**Discovered.** Auditing the Path C migration end-to-end revealed that
+three call sites still gated live-vs-mock transport selection on
+`ANTHROPIC_API_KEY` alone:
+- `src/hooks/stop.ts#pickAuthorTransport`
+- `src/hooks/sessionEnd.ts#pickAuthorTransport`
+- `src/llm/authorPlanner.ts#pickPlannerTransport`
+
+With Fix 9 in place, the LLM transport itself accepts subscription
+auth, but these picker gates would still default to mock for users
+without an API key. The author/planner pipelines would silently run
+in mock mode for the very subscription users Fix 9 was designed to
+support.
+
+**Source fix.** New module
+[src/llm/authDetect.ts](src/llm/authDetect.ts) exports
+`detectLiveAuthAvailable(env?, cliProbe?)`. It returns true when:
+- `ANTHROPIC_API_KEY` is set in the environment (fast path; no CLI
+  probe), OR
+- the `claude` CLI is on PATH (memoized `claude --version` probe;
+  paid for once per process).
+
+The CLI-probe dependency is injectable so unit tests don't depend
+on the developer's machine having `claude` installed. The function
+defaults to `process.env` and the real probe; both can be overridden.
+
+All three picker call sites now consume `detectLiveAuthAvailable()`
+inside their gate; explicit `COHERENCE_AUTHOR_LIVE=1` /
+`COHERENCE_AUTHOR_MOCK=1` overrides still take precedence.
+
+**Other call-site updates surfaced by the same audit:**
+- `docs/privacy.md` — replaced the API-key-only section with a
+  two-path "Authentication" section that documents subscription
+  auth as the default, API-key auth as the override.
+- `scripts/release-candidate-cost-burn.mjs` — now invokes
+  `detectLiveAuthAvailable` instead of requiring `ANTHROPIC_API_KEY`,
+  with a clearer error message pointing users at either auth source.
+- `tests/ship/tarball-shape.test.ts` — comment "schemas loaded by
+  Anthropic SDK / AJV path" reduced to "loaded by AJV" (the SDK is
+  no longer involved in schema validation).
+
+**Test coverage.**
+- ✅ [tests/unit/llm/authDetect.test.ts](tests/unit/llm/authDetect.test.ts)
+  — 15 unit tests covering API-key short-circuit, CLI-probe path,
+  precedence ordering, defensive defaults, and the picker logic the
+  three call sites implement.
+- ✅ [tests/unit/hooks/pickAuthorTransport.test.ts](tests/unit/hooks/pickAuthorTransport.test.ts)
+  — rewritten to use `detectLiveAuthAvailable` with an injected probe.
+  9 tests covering all selection branches.
+
+**End-to-end verification (audit findings summary).**
+| Audit | Result |
+|---|---|
+| A — zero direct `@anthropic-ai/sdk` imports outside the comment docstring | ✅ Clean (transitive dep via agent-sdk is expected) |
+| B — `ANTHROPIC_API_KEY` references in src/ | ⚠️ Found 3 stale gates → fixed in Fix 10 |
+| C — every `llmCall` caller unchanged | ✅ 5 callers; API surface preserved |
+| D — cassette format byte-identical | ✅ 1090 tests pass without re-recording any cassette |
+| E — error / no-auth diagnostics | ✅ New transport throws with subtype + errors detail |
+| F — tarball composition | ✅ 334.5 kB / 682 files; agent SDK shipped as runtime dep |
+| G — docs / release-notes references | ⚠️ `docs/privacy.md` stale → updated; `tarball-shape.test.ts` comment stale → updated |
+| H — full vitest + gates + tsc | ✅ 1105 / 1105, 32 / 32, clean |
+
 ### Fix 9 — LLM transport via Claude Agent SDK (Path C / subscription auth)
 
 **Why.** The v1.0.0 client used `@anthropic-ai/sdk` with `new Anthropic()`,
@@ -554,6 +628,8 @@ Same layout as v1.0.0.
   - 28 symbol_exported / extractExportedSymbols + LIM-1 fixture (Fix 8)
   - 28 validateAuthorPayload security boundary
   - 15 runAssertionsForSection router + cap + warn-cache
+  - 15 detectLiveAuthAvailable + picker-logic + interaction (Fix 10)
+  - 9 pickAuthorTransport (rewritten for Fix 10 gate)
 - **TypeScript:** clean (`tsc --noEmit`).
 - **Gates:** `npm run gates` green — M-ARCH-1, M-PRIVACY-1, M-LEGACY-1,
   M-TRIPLEX-1, plus v1.0 M-LEDGER-*, M-TRUST-*, M-ASSERTS-*,

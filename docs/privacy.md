@@ -49,11 +49,24 @@ spend.
 **Not sent:** sections outside the candidate pair list, project source
 beyond the section bodies.
 
-### API key
+### Authentication
 
-The `ANTHROPIC_API_KEY` is read from the environment and used only for
-API calls. It is **never** persisted to disk in any coherence state
-file (NFR-SECURITY-3).
+Coherence supports two auth paths for live LLM calls (v1.0.1+):
+
+1. **Subscription auth (default for Claude Code users).** When the
+   `claude` CLI is authenticated against a Claude.ai paid plan,
+   coherence's LLM transport uses that session via
+   `@anthropic-ai/claude-agent-sdk`. **No `ANTHROPIC_API_KEY` is
+   required.** No env var is touched. Auth lives entirely in the
+   CLI's own credential storage.
+2. **API key.** If `ANTHROPIC_API_KEY` is set in the environment, the
+   SDK reads it and uses direct API-key auth. The key is read from
+   the environment only and is **never** persisted to disk in any
+   coherence state file (NFR-SECURITY-3).
+
+The runtime picks whichever auth source is available; explicit env
+overrides (`COHERENCE_AUTHOR_LIVE=1` / `COHERENCE_AUTHOR_MOCK=1`)
+short-circuit the detection if needed.
 
 ## Local storage
 
