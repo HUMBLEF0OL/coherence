@@ -34,16 +34,19 @@ describe('v0.2 substrate invariants', () => {
   });
 
   it('preserves DD numbering integrity (no DD-064 collision)', () => {
-    const planPath = path.join(
-      ROOT,
-      'docs',
-      'superpowers',
-      'plans',
-      '2026-05-09-coherence-v0.2.md',
-    );
-    const text = readFileSync(planPath, 'utf8');
-    // v0.1 ended at DD-064; v0.2 starts at DD-065.
-    expect(text).toMatch(/DD-065/);
+    // v0.1 ended at DD-064; v0.2 starts at DD-065 with the quarantine
+    // boundary. The per-version implementation plans that originally
+    // anchored this assertion now live in Notion (see
+    // "Coherence — Implementation Plans (archive)"). DD-065 must still
+    // be referenced in the source tree as the load-bearing quarantine
+    // boundary identifier.
+    const candidates = [
+      path.join(ROOT, 'src', 'permissions', 'proposeAccept.ts'),
+      path.join(ROOT, 'src', 'commands', 'graduate.ts'),
+      path.join(ROOT, 'src', 'modes', 'resolver.ts'),
+    ];
+    const referencedAnywhere = candidates.some((p) => readFileSync(p, 'utf8').includes('DD-065'));
+    expect(referencedAnywhere).toBe(true);
   });
 
   it('proposalId is a deterministic RFC-4122 UUID v5 (32-hex form)', () => {

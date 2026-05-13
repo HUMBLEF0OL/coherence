@@ -1,11 +1,18 @@
-# coherence — Documentation Drift Detection for Claude Code
+# Coherence — documentation drift detection for Claude Code
 
-`coherence` is a Claude Code plugin that automatically detects and repairs drift between your codebase and its documentation. It watches for documentation changes during your session, then proposes surgical patches at session end (Stop) or on demand (`/coherence:review`).
+Coherence is a Claude Code plugin that detects and repairs drift
+between your codebase and its documentation. It watches for changes
+during a session and proposes surgical patches at session end (`Stop`)
+or on demand (`/coherence:review`).
 
-## Installation
+Coherence is **file-only** (DD-117 — no backend, no database, no
+hosted upload service, ever) and **standalone per major version**
+(DD-118 — re-install rather than migrate across major bumps).
+
+## Install
 
 ```bash
-claude plugin install cohrence   # Anthropic plugin registry (canonical)
+claude plugin install cohrence    # Anthropic plugin registry (canonical)
 ```
 
 For local development:
@@ -16,96 +23,75 @@ cd coherence
 npm install && npm run build
 ```
 
-The plugin manifest lives at [`.claude-plugin/plugin.json`](../.claude-plugin/plugin.json) (v0.4+).
-Upgrading from v0.3: re-install — `.claude/coherence/` state is preserved, only the manifest layout changes.
+The plugin manifest is [`.claude-plugin/plugin.json`](../.claude-plugin/plugin.json).
 
-## Quick Start (Observe Mode)
+## Modes
 
-On first launch, coherence starts in **Observe mode** — it watches and proposes patches for review, but never auto-applies.
+Coherence has a per-directory mode lifecycle (DD-074):
 
-1. Open a Claude Code session in your project.
-2. Make changes to source files. Coherence tracks documentation sections via `<!-- coherence:section id="..." -->` anchors.
-3. At session end, coherence runs its pipeline and shows proposed documentation patches.
-4. Review each patch: accept, edit, or dismiss.
+- **Observe** (default) — watches and proposes patches for review;
+  never auto-applies.
+- **Annotate** — proposes anchor placement for anchor-less Markdown
+  docs (DD-069).
+- **Author** — three signal detectors fire (DD-076 bash repetition,
+  DD-077 file-creation patterns, DD-078 agent corrections) and seed
+  Author LLM proposals.
+- **Graduated** — additive patches auto-apply; modifying patches
+  auto-apply only when the section's trust score ≥ 0.85 (DD-131);
+  destructive and frontmatter patches always require confirmation.
 
-## Observe → Graduated Mode
+Switch modes with `/coherence:graduate <mode>` (scoped per directory)
+or `/coherence:graduate --revert` to return to Observe.
 
-Once you're comfortable, switch to **Graduated mode** to auto-apply additive patches:
+## What's in this directory
 
-```
-/coherence:graduate
-```
+- [`commands.md`](commands.md) — every slash command, grouped by
+  surface (lifecycle / trust + intelligence / proposals / team
+  workflows / statusline).
+- [`state-files.md`](state-files.md) — every state file, schema,
+  ownership pattern, and the full telemetry catalogue.
+- [`privacy.md`](privacy.md) — what data leaves the machine,
+  consent model, OWASP commitments, release-signing summary.
+- [`rollback.md`](rollback.md) — same-major recover, cross-major
+  re-install, trust-ledger orphan repair, signed-release rollback.
 
-To revert:
+## Top-level docs at the repo root
 
-```
-/coherence:graduate --revert
-```
+- [`README.md`](../README.md) — capabilities overview, install,
+  architecture, ship-time gates.
+- [`SECURITY.md`](../SECURITY.md) — coordinated disclosure policy.
+- [`CLAUDE.md`](../CLAUDE.md) — guidance for AI agents working in the
+  repo (architecture map, god nodes, task index).
+- [`RELEASE_NOTES_v1.0.0.md`](../RELEASE_NOTES_v1.0.0.md) — most
+  recent release notes (older release notes live at the corresponding
+  GitHub tag).
 
-In Graduated mode:
-- **Additive** patches (new content only): auto-applied and committed as `[coherence] <summary>`.
-- **Modifying** and **destructive** patches: still require your review.
-- **Frontmatter** changes: always require confirmation.
+## Architectural commitments
 
-## Slash Commands
+Two stances are permanent and enforced by ship-time static-analysis
+gates wired into `scripts/release-ga.mjs`:
 
-See [commands.md](commands.md) for the full reference.
+- **DD-117 — no backend, ever.** Cross-team plans live as committed
+  files under `coherence/plans/` (git is the substrate). Telemetry is
+  local JSONL + user-driven `curl` only. There is no project-side
+  server, database, or hosted upload service. Scaling beyond
+  ~50-developer teams is not a project goal.
+- **DD-118 — no legacy version support.** Each major version stands
+  alone. There is no cross-major migrator, no `prompts/v1/` in the
+  tarball, no rollback across a major bump.
 
-| Command | Description |
-|---|---|
-| `/coherence:status` | Show plugin status, buffer, costs |
-| `/coherence:review` | Run Stop pipeline mid-session |
-| `/coherence:review --estimate` | Estimate patches without applying |
-| `/coherence:repair` | Fix anchor collisions and state issues |
-| `/coherence:recover` | Clear auto-disable sentinel, reset locks |
-| `/coherence:doctor` | Probe host capabilities |
-| `/coherence:graduate` | Switch to Graduated mode |
-| `/coherence:graduate --revert` | Return to Observe mode |
-| `/coherence:enable-sidecars` | Provision sidecar files for hosts that strip frontmatter |
-| `/coherence:consent` | View or update telemetry consent without a TTY (v0.4) |
-| `/coherence:audit` | Bundled doctor + scope-debug + status + metrics report (v0.4) |
-| `/coherence:export-metrics --anonymized` | Export anonymized metrics to a local file |
+Gate enforcement: `M-ARCH-1` (no network egress outside
+`src/llm/client.ts`), `M-PRIVACY-1` (no per-developer state under
+`coherence/`), `M-LEGACY-1` (`npm pack --dry-run` excludes legacy
+paths). See [README.md → Ship-time gates](../README.md#ship-time-gates)
+for the full list.
 
-## State Files
+## Release history
 
-See [state-files.md](state-files.md) for schema details.
+Per-version release notes live as GitHub Releases:
+<https://github.com/HUMBLEF0OL/coherence/releases>. Each release is
+signed with Sigstore `cosign` keyless OIDC; the verification command
+is in the README `## Verification` section.
 
-Key files in `.claude/coherence/`:
-
-| File | Description |
-|---|---|
-| `config.json` | Mode (observe/graduated), watches, ignores, telemetry consent (v0.4) |
-| `drift-buffer.json` | Pending documentation drift entries |
-| `coherence-log.md` | Append-only audit log of applied patches |
-| `metrics.jsonl` | Rolling 90-day event log |
-| `cost-ledger.json` | Per-session LLM cost tracking |
-| `trigger-state.json` | One-time hint guard for TC-1/TC-2 trigger contracts (v0.4) |
-
-## Rollback
-
-See [rollback.md](rollback.md) for rollback procedures.
-
-To roll back a coherence commit:
-
-```bash
-git revert HEAD  # if HEAD is the [coherence] commit
-```
-
-Or use `/coherence:recover` to clear stuck state.
-
-## Known Limitations
-
-<!-- coherence:section id="limitations" -->
-
-- **DD-044 / FR-DETECT-9**: Mid-session branch switches are not detected. If you switch branches during a session, coherence re-validates at Stop time against the current branch state.
-- **DD-006**: Greenfield mode (bootstrapping docs from scratch) is deferred to v0.2.
-- **DD-014 / DD-036**: Trickle-scan throttling is deferred to v0.2. Large codebases may have initial scan latency.
-- **LLM dependency**: Stage 1 (canonical selection) and Stage 2 (patch generation) require Anthropic API access. Without `ANTHROPIC_API_KEY`, coherence runs in no-op mode with a one-liner notice.
-
-## Privacy
-
-See [privacy.md](privacy.md) for full data-handling details.
-
-- No project code or content is sent to Anthropic, only documentation section hashes and diffs.
-- Metrics are stored locally in `.claude/coherence/metrics.jsonl` (90-day rolling window).
-- Use `/coherence:share-metrics --anonymized` to export redacted metrics for support.
+Implementation plans (one per major) are archived in Notion: search
+for "Coherence — Implementation Plans (archive)".
