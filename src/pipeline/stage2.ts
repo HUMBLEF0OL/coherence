@@ -11,6 +11,7 @@ import { checkLineRatio } from '../validation/lineRatio.js';
 import { checkPromptInjection, isSkillOrAgentPath } from '../validation/promptInjection.js';
 import { checkHallucination } from '../validation/hallucination.js';
 import { checkApplies } from '../validation/apply.js';
+import { applyAssertions } from '../validation/assertions/applyToPatch.js';
 
 const MAX_CONCURRENT = 8;
 
@@ -161,6 +162,29 @@ async function processSection(
     log.push(`hallucination: demote-class (${hallu.unknownLooseOnlyTokens.length} loose-only unknowns)`);
   } else {
     log.push('hallucination: ok');
+  }
+
+  // Step 6: v1.0 M2 assertion pipeline (TS-4 FR-ASSERTS-*).
+  // Block-policy violations escalate the patch; warn-policy violations are
+  // attached to the validation log so reviewers see them in the bundle.
+  const assertionVerdict = await applyAssertions({
+    sectionRef: section.sectionRef,
+    sectionContent: section.current_content,
+    projectRoot,
+  });
+  if (!assertionVerdict.ok) {
+    const reasons = assertionVerdict.blocks.map((b) => `${b.type}${b.param ? ':' + b.param : ''} — ${b.message ?? 'failed'}`).join('; ');
+    log.push(`assertions: BLOCK — ${reasons}`);
+    return {
+      patch: { sectionRef: section.sectionRef, diff: 'ESCALATE', changeClass, validationPassed: false },
+      validationLog: log,
+    };
+  }
+  for (const w of assertionVerdict.warns) {
+    log.push(`assertions: warn — ${w.type}${w.param ? ':' + w.param : ''}: ${w.message ?? 'failed'}`);
+  }
+  if (assertionVerdict.warns.length === 0 && assertionVerdict.blocks.length === 0) {
+    log.push('assertions: ok');
   }
 
   return {
