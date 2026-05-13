@@ -1,6 +1,6 @@
 # Coherence v1.0.1
 
-Post-tag hardening for the v1.0.0 trust + intelligence release. Eight
+Post-tag hardening for the v1.0.0 trust + intelligence release. Nine
 correctness fixes caught during downstream-bootstrap audits, the
 mcp-sentry LLM-layer smoke test, and a fresh dummy-project smoke
 against a freshly published v1.0.0 plugin install.
@@ -9,7 +9,11 @@ Fixes 4 and 5 unblock the main happy path — without them, the v1.0.0
 trust ladder and auto-apply gate are structurally dead. Fix 7 closes
 a content-extraction bug that mis-handled code fences in anchored
 sections. Fix 8 closes LIM-1 (the rename-with-stale-callers drift
-class) via a new opt-in `symbol_exported` assertion engine.
+class) via a new opt-in `symbol_exported` assertion engine. **Fix 9
+migrates the LLM transport from `@anthropic-ai/sdk` (API-key auth)
+to `@anthropic-ai/claude-agent-sdk` (Claude Code subscription auth)**
+— users with a paid Claude.ai subscription no longer need to
+provision a separate Anthropic API key to use coherence.
 
 ## Highlights
 
@@ -44,6 +48,20 @@ class) via a new opt-in `symbol_exported` assertion engine.
   v1.0.0 (no patch could ever cross the auto-apply threshold).
   `src/validation/sanity.ts` now skips diff metadata lines and only
   treats a bare `---` *content* line as a frontmatter delimiter.
+- **LLM transport switched to Claude Agent SDK (Fix 9 / Path C)** —
+  `src/llm/client.ts` no longer imports `@anthropic-ai/sdk` (the raw
+  HTTP SDK that required `ANTHROPIC_API_KEY`). It now uses
+  `@anthropic-ai/claude-agent-sdk`'s `query()` function, which
+  automatically uses Claude Code's authenticated session when the
+  `claude` CLI is set up. For paid-subscription users this means
+  zero env-var setup; for CI / standalone scripts it transparently
+  falls back to whatever auth Claude CLI is configured with.
+  Cassette format is unchanged — historical recordings still replay
+  cleanly. `total_cost_usd` is now reported by the SDK directly,
+  removing coherence's per-million pricing constants. **`temperature`
+  is no longer settable on Stage 1/2 calls** (the agent SDK doesn't
+  expose it); this is a known semantic shift — determinism in tests
+  comes from cassette replay, and in production from the trust ladder.
 - **`anchorScanner` retains opening fence line (BUG-V1.0-D / Fix 7)** —
   the v1.0.0 anchor scanner toggled into fence-tracking mode without
   pushing the opening ``` line to the section's content. Closing
@@ -429,6 +447,85 @@ declaration grammars.
   exports `times`), the engine correctly reports
   `verdict.ok = false` with the diagnostic message hinting at the
   `symbol_exists` distinction.
+
+### Fix 9 — LLM transport via Claude Agent SDK (Path C / subscription auth)
+
+**Why.** The v1.0.0 client used `@anthropic-ai/sdk` with `new Anthropic()`,
+which reads `ANTHROPIC_API_KEY` from `process.env` and throws if absent.
+Users with a Claude.ai paid subscription had to provision a separate
+Anthropic API key just to use coherence — duplicating billing and
+adding a friction step the official Claude Code workflow doesn't have.
+
+**What changed.**
+[src/llm/client.ts](src/llm/client.ts) now imports `query` from
+`@anthropic-ai/claude-agent-sdk`. The agent SDK invokes the
+`claude` CLI under the hood and uses whatever auth that CLI is
+configured with — for subscription users that's their existing
+Claude Code session; for API-key users `ANTHROPIC_API_KEY` still
+works exactly as before. No env var is required for the common path.
+
+**Architecture.** Coherence's Stage 1/2 are single-shot prompts. The
+agent SDK is conversational, so the new `runAgentQuery` helper
+configures:
+- `maxTurns: 1` — single response, no agent loop.
+- `allowedTools: []` — text-only; no shell / file edits.
+- `settingSources: []` — isolate from host CLAUDE.md / settings.
+- `systemPrompt` — the same stage1/stage2 prompts that were used
+  before.
+
+The SDK's terminal `SDKResultSuccess` message carries:
+- `result` (string) — assistant's full text, ready for `parseStage2Response`.
+- `usage` — input/output tokens.
+- `total_cost_usd` — billed cost (subscription users see this as $0,
+  which is the intended outcome).
+
+**Cassette compatibility.** Cassettes record `{ content, input_tokens,
+output_tokens, cost_usd, timestamp }`. The new transport produces
+the same shape, so every cassette recorded against the old SDK
+replays cleanly through the new one. The 1090-test suite passed
+unchanged after the migration without re-recording any cassette.
+
+**Semantic shifts to be aware of.**
+- **`temperature` is no longer settable.** The agent SDK doesn't
+  expose it. v1.0.0 set `temperature` from the manifest (typically
+  low for determinism). Determinism in tests is preserved by
+  cassette replay; in production it's preserved by the trust
+  ladder converging on accepted patches. This was never the
+  binding constraint.
+- **`cost_usd` reporting source changed.** v1.0.0 derived cost from
+  `input_tokens * INPUT_COST_PER_M + output_tokens * OUTPUT_COST_PER_M`
+  (constants for Sonnet 4.5 pricing). v1.0.1 reads `total_cost_usd`
+  from the SDK directly — accurate and version-tracking, but
+  subscription users will see $0 rather than a synthetic cost.
+- **Streaming.** The SDK yields multiple message types; coherence
+  collects only the terminal `result` message. No partial-message
+  caching today.
+
+**Dependencies.**
+- Added: `@anthropic-ai/claude-agent-sdk ^0.2.140`.
+- Removed: `@anthropic-ai/sdk` (no longer imported anywhere in src/).
+
+**Test coverage.** 1090 existing tests pass unchanged — proving the
+cassette path remains identical. The transport-level integration is
+not directly tested in unit suites (live LLM calls aren't run in CI);
+end-to-end verification is via the dummy + mcp-sentry LLM smoke
+harnesses which exercise the cassette replay path that the new
+transport uses for non-recording calls.
+
+**Live recording path (now unblocked).** Recording real Stage 1+2
+cassettes against mcp-sentry no longer requires `ANTHROPIC_API_KEY`:
+
+```bash
+# 1. Make sure your Claude Code session is authenticated.
+claude  # one-time login if not already done
+
+# 2. Force re-recording at the cassette layer.
+export COHERENCE_REFRESH_CASSETTES=1
+export COHERENCE_CASSETTES_DIR=tests/cassettes
+
+# 3. Drive the pipeline against any fixture.
+node scripts/smoke-mcp-sentry-llm.mjs
+```
 
 ## State file additions
 

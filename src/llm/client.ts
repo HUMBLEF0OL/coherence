@@ -1,9 +1,29 @@
 /**
- * Anthropic SDK wrapper with prompt caching, cost tracking, and cassette replay.
- * TS-2 §2.6, TS-5 §5.2, FR-STOP-13, NFR-COST-6
+ * LLM transport wrapper — Claude Agent SDK with cassette replay.
+ *
+ * TS-2 §2.6, TS-5 §5.2, FR-STOP-13, NFR-COST-6.
+ *
+ * v1.0.1 Fix 9 (Path C): migrated from `@anthropic-ai/sdk` (which
+ * required `ANTHROPIC_API_KEY` env var) to `@anthropic-ai/claude-agent-sdk`
+ * (which uses Claude Code's subscription auth when set up — running
+ * `claude` once authenticates the SDK). Subscription auth is the
+ * intended path for coherence; API-key auth was a leaky workaround.
+ *
+ * Architectural notes:
+ *   - The agent SDK is conversational (an async iterator yielding
+ *     `SDKMessage` values). Coherence's Stage 1/2 are single-shot, so
+ *     we configure `maxTurns: 1, allowedTools: []` and collect the
+ *     assistant's full text from the terminal `SDKResultSuccess`.
+ *   - `total_cost_usd` is reported directly by the SDK (no per-million
+ *     pricing constants to drift over time).
+ *   - Cassette format is unchanged — replay sessions continue to work
+ *     against historical recordings without re-recording.
+ *   - The agent SDK does NOT expose `temperature`. Coherence's
+ *     determinism guarantees come from cassette replay in tests and
+ *     trust-ladder rate of accepts in production; temperature was
+ *     never the binding constraint.
  */
-// eslint-disable-next-line import/no-named-as-default -- @anthropic-ai/sdk default export name collides with named
-import Anthropic from '@anthropic-ai/sdk';
+import { query, type SDKResultSuccess } from '@anthropic-ai/claude-agent-sdk';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -58,10 +78,6 @@ export interface LlmResponse {
   prompt_version: { stage1?: string; stage2?: string };
   cached: boolean;
 }
-
-// Sonnet 4.5 pricing per million tokens (approximate)
-const INPUT_COST_PER_M = 3.0;
-const OUTPUT_COST_PER_M = 15.0;
 
 let _manifest: PromptManifest | null = null;
 let _manifestV2: PromptManifestV2 | null = null;
@@ -123,13 +139,81 @@ export function loadV2Prompt(promptKey: string): string {
   return readFileSync(path.join(promptsDir, promptKey), 'utf8');
 }
 
+/**
+ * Drive a single-shot agent SDK query and collect the terminal result.
+ *
+ * The SDK streams partial messages during execution; for coherence's
+ * purposes we wait for the `SDKResultSuccess` terminal message which
+ * carries:
+ *   - `result` — the assistant's complete text (already concatenated).
+ *   - `usage` — token counts.
+ *   - `total_cost_usd` — billed cost (subscription users see $0 here,
+ *     which is the intended outcome for the v1.0.1 migration).
+ *   - `is_error` / `subtype` — failure modes.
+ *
+ * If the SDK terminates with anything other than `subtype: 'success'`,
+ * the function throws with the result's error details so the cost
+ * ledger does not record a malformed entry.
+ */
+async function runAgentQuery(opts: {
+  systemPrompt: string;
+  userMessage: string;
+  model: string;
+}): Promise<{ content: string; input_tokens: number; output_tokens: number; cost_usd: number }> {
+  let resultMessage: SDKResultSuccess | undefined;
+  let lastErrorSubtype: string | undefined;
+  let lastErrorReason: string | undefined;
+
+  for await (const msg of query({
+    prompt: opts.userMessage,
+    options: {
+      systemPrompt: opts.systemPrompt,
+      model: opts.model,
+      // Single-shot — no tool loop. Stage 1 / Stage 2 produce one
+      // response per call; coherence's pipeline orchestrates the next
+      // stage itself.
+      allowedTools: [],
+      maxTurns: 1,
+      // Isolate from any host-side CLAUDE.md / settings files. The
+      // pipeline supplies the full system prompt explicitly via the
+      // `systemPrompt` option.
+      settingSources: [],
+    },
+  })) {
+    if (msg.type === 'result') {
+      if (msg.subtype === 'success') {
+        resultMessage = msg;
+      } else {
+        lastErrorSubtype = msg.subtype;
+        lastErrorReason = (msg.errors ?? []).join('; ');
+      }
+    }
+  }
+
+  if (!resultMessage) {
+    throw new Error(
+      `[llm] agent SDK terminated without a success result ` +
+      `(subtype=${lastErrorSubtype ?? 'unknown'}; errors=${lastErrorReason ?? 'n/a'})`,
+    );
+  }
+
+  const usage = resultMessage.usage;
+  return {
+    content: resultMessage.result,
+    input_tokens: usage.input_tokens ?? 0,
+    output_tokens: usage.output_tokens ?? 0,
+    cost_usd: resultMessage.total_cost_usd,
+  };
+}
+
 export async function llmCall(req: LlmRequest): Promise<LlmResponse> {
   const manifest = loadManifest();
   const v2 = req.stage === 'author' || req.stage === 'annotate' ? loadManifestV2() : null;
   const model = v2 ? v2.model : manifest.model;
-  const temperature = v2 ? v2.temperature : manifest.temperature;
 
-  // Cassette replay if available and not forcing refresh
+  // Cassette replay if available and not forcing refresh. The cassette
+  // format is unchanged across the v1.0.1 Path C migration — replay
+  // works against any historical recording.
   if (process.env['COHERENCE_REFRESH_CASSETTES'] !== '1' && req.cassetteId) {
     const replayed = loadCassette(req.cassetteId);
     if (replayed) {
@@ -141,30 +225,11 @@ export async function llmCall(req: LlmRequest): Promise<LlmResponse> {
     }
   }
 
-  const client = new Anthropic();
-
-  const response = await client.messages.create({
+  const { content, input_tokens, output_tokens, cost_usd } = await runAgentQuery({
+    systemPrompt: req.systemPrompt,
+    userMessage: req.userMessage,
     model,
-    max_tokens: 8192,
-    temperature,
-    system: [
-      {
-        type: 'text',
-        text: req.systemPrompt,
-        // Prompt caching: long system prompts benefit from cache_control
-        cache_control: { type: 'ephemeral' },
-      },
-    ],
-    messages: [{ role: 'user', content: req.userMessage }],
   });
-
-  const content =
-    response.content[0]?.type === 'text' ? response.content[0].text : '';
-  const input_tokens = response.usage.input_tokens;
-  const output_tokens = response.usage.output_tokens;
-  const cost_usd =
-    (input_tokens / 1_000_000) * INPUT_COST_PER_M +
-    (output_tokens / 1_000_000) * OUTPUT_COST_PER_M;
 
   const result: LlmResponse = {
     content,
@@ -175,7 +240,7 @@ export async function llmCall(req: LlmRequest): Promise<LlmResponse> {
     cached: false,
   };
 
-  // Record cassette for future replay
+  // Record cassette for future replay (only when COHERENCE_REFRESH_CASSETTES=1).
   if (req.cassetteId) {
     recordCassette(req.cassetteId, {
       content,

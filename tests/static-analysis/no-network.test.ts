@@ -14,9 +14,11 @@
  *      angle for redundancy.
  *
  * Allowlist:
- *   - `src/llm/client.ts` imports `@anthropic-ai/sdk` (the only sanctioned
- *     network sink). The SDK loads `node:https` internally — fine — but our
- *     own code must never reference https/http/net/tls directly.
+ *   - `src/llm/client.ts` imports `@anthropic-ai/claude-agent-sdk` (v1.0.1
+ *     Fix 9 / Path C — subscription-auth transport, the only sanctioned
+ *     network sink). The SDK invokes the `claude` CLI which loads
+ *     `node:https` internally — fine — but our own code must never
+ *     reference https/http/net/tls directly.
  *
  * The gate is intentionally conservative: a single offending line trips
  * the test and surfaces the path + line number for the developer.

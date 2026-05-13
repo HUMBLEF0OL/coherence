@@ -37,7 +37,7 @@
     "validate-plugin": "node scripts/validate-plugin.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.140",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "fast-glob": "^3.3.3",
