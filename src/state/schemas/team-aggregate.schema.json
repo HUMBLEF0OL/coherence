@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "coherence/team-aggregate",
+  "type": "object",
+  "required": ["schema_version", "author_hash", "last_synced_at", "scores"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 3 },
+    "author_hash": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+    "last_synced_at": { "type": "string", "format": "date-time" },
+    "scores": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["score", "as_of"],
+        "additionalProperties": false,
+        "properties": {
+          "score": { "type": "number", "minimum": -1, "maximum": 1 },
+          "as_of": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

@@ -33,6 +33,8 @@ import { withCacheLock } from '../state/locks.js';
 import { readScanCacheState, writeScanCacheState } from '../scanner/trickleScanner.js';
 import { nowIsoUtc } from '../util/time.js';
 import { normaliseHookEvent } from './eventShape.js';
+import { checkPromoteEligibility, readLedger, writeLedger } from '../state/trustLedger.js';
+import { runAutoAcceptSweep } from '../proposals/autoAcceptSweep.js';
 
 const SUCCESS: HookResult = { success: true };
 
@@ -173,6 +175,39 @@ export async function sessionStartHook(
       await runTeamIgnoreSweepFromCommittedFile(store, sessionId, projectRoot);
     } catch {
       /* team-ignore sweep is best-effort */
+    }
+
+    // v1.0 M1 — one-time promote hint (FR-TRUST-1). If the ledger meets all
+    // three thresholds AND the hint has not yet been emitted, write a stderr
+    // notice and stamp `promote_hint_emitted_at` atomically.
+    try {
+      const eligibility = await checkPromoteEligibility(store);
+      if (eligibility.eligible && !eligibility.hint_emitted) {
+        console.error(
+          '[coherence] Your trust score qualifies for auto-land. Run /coherence:trust --promote --auto-land annotate to activate.',
+        );
+        const ledger = await readLedger(store);
+        ledger.promote_hint_emitted_at = nowIsoUtc();
+        await writeLedger(store, ledger);
+      }
+    } catch {
+      /* promote hint is non-fatal */
+    }
+
+    // v1.0 M1 Step 7 — Net-new file gate relaxation (FR-TRUST-3).
+    // For promoted developers, auto-accept surfaced proposals whose kind is
+    // in `auto_land_kinds`. Kinds outside that set still require explicit
+    // /coherence:propose-accept (DD-065 preserved). Non-promoted developers
+    // see no change.
+    try {
+      const result = await runAutoAcceptSweep(store, projectRoot, sessionId);
+      if (result.accepted.length > 0) {
+        console.error(
+          `[coherence] auto-landed ${result.accepted.length} proposal(s) for promoted auto-land kinds: ${result.accepted.map((a) => `${a.kind}/${a.proposalId.slice(0, 8)}`).join(', ')}`,
+        );
+      }
+    } catch {
+      /* auto-accept sweep is non-fatal */
     }
 
     // T4 fix: 90-day metrics.jsonl retention sweep (NFR-OBS-2, DD-060).

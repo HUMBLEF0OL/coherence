@@ -23,6 +23,7 @@ import { validatePlan, buildIndependentFallback } from '../validation/planValida
 import { preflight, checkUnrelatedChanges, stageFiles, createCommit } from '../git/adapter.js';
 import { buildCommitMessage } from '../git/coherenceCommit.js';
 import { appendCoherenceLog } from '../state/coherenceLog.js';
+import { getSectionScore, recordEvent } from '../state/trustLedger.js';
 
 export interface StopOrchestratorOptions {
   sessionId: string;
@@ -166,26 +167,63 @@ export async function runStopOrchestrator(
       bundles.push(bundle);
     }
 
-    // Step 13: Apply + commit in graduated mode
+    // Step 13: Apply + commit in graduated mode (v1.0 trust gate per DD-131).
+    // Destructive + frontmatter patches ALWAYS defer to confirmation. Additive
+    // patches auto-apply (v0.2 behavior). Modifying patches require trust
+    // score >= 0.85 for their sectionRef (FR-TRUST-2).
     if (mode === 'graduated' && bundle.patches.length > 0) {
-      const affectedPaths = [...new Set(bundle.patches.map((p) => p.sectionRef.split('#')[0] ?? ''))];
-      const unrelated = checkUnrelatedChanges(projectRoot, affectedPaths);
-      if (unrelated.length > 0) {
-        notices.push(`Skipping commit: unrelated changes in ${unrelated.join(', ')}`);
-      } else {
-        const commitMsg = buildCommitMessage(bundle.summary, bundle.patches);
-        const staged = stageFiles(projectRoot, affectedPaths);
-        if (staged) {
-          const commitResult = createCommit(projectRoot, commitMsg, affectedPaths);
-          if (commitResult.ok) {
-            await appendCoherenceLog(store, {
-              type: 'auto-applied',
-              gitRef: commitResult.sha,
-              summary: bundle.summary,
-              sectionRefs: bundle.patches.map((p) => p.sectionRef),
-            });
-          } else {
-            notices.push(`Commit failed: ${commitResult.error ?? 'unknown'}`);
+      const autoApplyPatches: typeof bundle.patches = [];
+      const deferredByTrust: typeof bundle.patches = [];
+      for (const patch of bundle.patches) {
+        if (patch.changeClass === 'destructive' || patch.changeClass === 'frontmatter') {
+          deferredByTrust.push(patch);
+          continue;
+        }
+        if (patch.changeClass === 'additive') {
+          autoApplyPatches.push(patch);
+          continue;
+        }
+        // 'modifying' — gate on trust score
+        const score = await getSectionScore(store, patch.sectionRef);
+        if (score >= 0.85) autoApplyPatches.push(patch);
+        else deferredByTrust.push(patch);
+      }
+      for (const p of deferredByTrust) {
+        const reason =
+          p.changeClass === 'destructive' || p.changeClass === 'frontmatter'
+            ? 'requires explicit confirmation (DD-131)'
+            : 'trust score < 0.85 for sectionRef';
+        notices.push(`Deferred ${p.sectionRef} (${p.changeClass}): ${reason}`);
+      }
+      if (autoApplyPatches.length > 0) {
+        const affectedPaths = [...new Set(autoApplyPatches.map((p) => p.sectionRef.split('#')[0] ?? ''))];
+        const unrelated = checkUnrelatedChanges(projectRoot, affectedPaths);
+        if (unrelated.length > 0) {
+          notices.push(`Skipping commit: unrelated changes in ${unrelated.join(', ')}`);
+        } else {
+          const commitMsg = buildCommitMessage(bundle.summary, autoApplyPatches);
+          const staged = stageFiles(projectRoot, affectedPaths);
+          if (staged) {
+            const commitResult = createCommit(projectRoot, commitMsg, affectedPaths);
+            if (commitResult.ok) {
+              await appendCoherenceLog(store, {
+                type: 'auto-applied',
+                gitRef: commitResult.sha,
+                summary: bundle.summary,
+                sectionRefs: autoApplyPatches.map((p) => p.sectionRef),
+              });
+              // FR-TELEMETRY-1: auto-applied patches count as an "accept" for
+              // their sectionRef in the personal trust ledger.
+              for (const p of autoApplyPatches) {
+                try {
+                  await recordEvent(store, p.sectionRef, 'accept', sessionId);
+                } catch {
+                  /* ledger write best-effort */
+                }
+              }
+            } else {
+              notices.push(`Commit failed: ${commitResult.error ?? 'unknown'}`);
+            }
           }
         }
       }
