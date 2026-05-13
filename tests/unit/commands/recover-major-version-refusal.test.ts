@@ -27,23 +27,28 @@ afterEach(() => {
 });
 
 describe('runRecover cross-major-version refusal (DD-095 amended; v0.4 DD-124 parseMajor fix)', () => {
-  it('does NOT refuse target v0.2.0 when running v0.4.x (same SemVer major bucket 0)', async () => {
+  it('refuses target v0.2.0 when running v1.x (cross-major-digit 0 → 1)', async () => {
     const r = await runRecover(coherenceDir, { target: 'v0.2.0' });
+    expect(r.refusedCrossMajor).toBe(true);
+  });
+
+  it('refuses target v0.4.0 when running v1.x (cross-major-digit 0 → 1)', async () => {
+    const r = await runRecover(coherenceDir, { target: 'v0.4.0' });
+    expect(r.refusedCrossMajor).toBe(true);
+  });
+
+  it('accepts within-major target tag v1.0.0-pre.0', async () => {
+    const r = await runRecover(coherenceDir, { target: 'v1.0.0-pre.0' });
     expect(r.refusedCrossMajor).toBeFalsy();
   });
 
-  it('does NOT refuse target v0.1.5 when running v0.4.x (same SemVer major bucket 0)', async () => {
-    const r = await runRecover(coherenceDir, { target: 'v0.1.5' });
-    expect(r.refusedCrossMajor).toBeFalsy();
-  });
-
-  it('accepts within-major target tag v0.4.0-pre.0', async () => {
-    const r = await runRecover(coherenceDir, { target: 'v0.4.0-pre.0' });
-    expect(r.refusedCrossMajor).toBeFalsy();
-  });
-
-  it('refuses target tag v1.0.0 when running v0.x (cross-major-digit)', async () => {
+  it('accepts target tag v1.0.0 when running v1.x (same major)', async () => {
     const r = await runRecover(coherenceDir, { target: 'v1.0.0' });
+    expect(r.refusedCrossMajor).toBeFalsy();
+  });
+
+  it('refuses target tag v2.0.0 when running v1.x (cross-major-digit)', async () => {
+    const r = await runRecover(coherenceDir, { target: 'v2.0.0' });
     expect(r.refusedCrossMajor).toBe(true);
     expect(r.actions).toEqual([
       'cohrence does not roll back across major versions; re-install the target version manually',

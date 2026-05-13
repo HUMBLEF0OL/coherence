@@ -19,6 +19,14 @@ official Anthropic plugin manifest layout (`.claude-plugin/plugin.json`),
 telemetry-gated trigger contracts, `/coherence:consent` without a TTY,
 `/coherence:audit` bundling, `--out` path sandboxing, and `parseMajor`
 correctness for ≥ 1.0.0 versions.
+**v1.0** is the trust + intelligence release: per-section trust ladder
+(`/coherence:trust`) with cross-session team aggregate, `asserts:` frontmatter
+validation pipeline (7 engines, `block`/`warn` policy), 5-section quality
+metrics report (`/coherence:metrics`), `/coherence:audit --deep` LLM
+cross-section consistency pass with flag-based cost gate, and Sigstore
+`cosign` keyless OIDC release signing — see
+[docs/v1.0/CHANGELOG.md](docs/v1.0/CHANGELOG.md) and
+[RELEASE_NOTES_v1.0.0.md](RELEASE_NOTES_v1.0.0.md).
 
 ## Install
 
@@ -342,3 +350,23 @@ skips the disk re-read.
 A round-2 P7 meta-test (`tests/static-analysis/meta-gates-trip.test.ts`)
 re-runs each gate against synthetic regressions to ensure the gate logic
 itself isn't silently broken.
+
+## Verification
+
+<!-- BEGIN: coherence-verification -->
+> Release artifacts are signed with [Sigstore `cosign`](https://docs.sigstore.dev/) keyless OIDC.
+> Verify the published tarball with:
+>
+> ```bash
+> cosign verify-blob cohrence-1.0.0.tgz \
+>   --signature cohrence-1.0.0.tgz.sig \
+>   --certificate cohrence-1.0.0.tgz.pem \
+>   --certificate-identity-regexp '^https://github.com/HUMBLEF0OL/coherence/\.github/workflows/release\.yml@refs/tags/v.*
+ \
+>   --certificate-oidc-issuer https://token.actions.githubusercontent.com
+> ```
+>
+> A successful verification prints `Verified OK`. The certificate's Rekor
+> transparency-log entry is searchable at <https://search.sigstore.dev/>.
+> Gate names asserted at release time: `M-SIGN-1`, `M-SIGN-2`, `M-SIGN-3`.
+<!-- END: coherence-verification -->

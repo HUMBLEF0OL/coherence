@@ -1,6 +1,6 @@
 {
   "name": "cohrence",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "description": "Detects documentation-vs-code drift and proposes surgical patches",
   "author": "HUMBLEF0OL <123amitrana0123@gmail.com>",
   "license": "MIT",
@@ -42,6 +42,8 @@
     { "name": "coherence:plan-accept",           "description": "Accept a cross-team plan and append an audit-log entry (DD-099 amended)",                                "handler": "commands/planAccept" },
     { "name": "coherence:plan-reject",           "description": "Reject a cross-team plan with a reason (stale | superseded | rejected_explicit)",                        "handler": "commands/planReject" },
     { "name": "coherence:consent",               "description": "View or update telemetry consent. Flags: --local on|off, --upload on|off, --reset.",                     "handler": "commands/consent" },
-    { "name": "coherence:audit",                 "description": "Bundling-only audit report: runs doctor + scope-debug + status + metrics export.",                       "handler": "commands/audit" }
+    { "name": "coherence:audit",                 "description": "Bundling-only audit report (free tier) or LLM cross-section consistency pass (--deep, v1.0).",          "handler": "commands/audit" },
+    { "name": "coherence:trust",                 "description": "View or manage personal + team trust state. Subcommands: --status (default), sync, --promote --auto-land <kinds>, --prune-stale --yes.", "handler": "commands/trust" },
+    { "name": "coherence:metrics",               "description": "Quality metrics report: summary, top drifting sections, trust scores, cost trend, revert hotspots.",    "handler": "commands/metrics" }
   ]
 }
