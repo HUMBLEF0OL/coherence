@@ -1,9 +1,10 @@
 /**
- * v0.4 M3 — /coherence:audit (DD-125, FR-AUDIT-1).
+ * /coherence:audit — free-tier bundling report (v0.4) and `--deep` LLM
+ * cross-section consistency pass (v1.0 M3, DD-125, FR-AUDIT-*).
  *
- * Bundling-only audit report: runs doctor + scope-debug + status + metrics
- * export, captures each result, and renders a single Markdown report. Deep
- * audit ships in v1.0.
+ * Free tier: doctor + scope-debug + status + metrics export + v1.0 token
+ * budget. Deep tier: requires flag-based confirmation (`--confirm-deep <sig>`
+ * or `--no-confirm` in CI) and consumes 1 LLM call per pair.
  */
 import path from 'path';
 import { runDoctor, formatDoctor } from './doctor.js';
@@ -11,8 +12,27 @@ import { runScopeDebug, formatScopeDebug } from './scopeDebug.js';
 import { runStatus, formatStatus } from './status.js';
 import { runExportMetrics, formatExportMetrics } from './exportMetrics.js';
 import { makeStateStore, getCoherenceDir, initCoherenceDir } from '../state/init.js';
+import type { StateStore } from '../state/stateStore.js';
+import { tokenBudgetReport } from '../audit/tokenBudget.js';
+import { handleDeepAudit } from '../audit/deepConsistency.js';
 
-export async function runAudit(projectRoot: string): Promise<string> {
+export interface RunAuditArgs {
+  argv?: string[];
+  store?: StateStore;
+  sessionId?: string;
+}
+
+export async function runAudit(projectRoot: string, args: RunAuditArgs = {}): Promise<string> {
+  const argv = args.argv ?? [];
+  if (argv.includes('--deep')) {
+    const store = args.store ?? makeStateStore(projectRoot);
+    return handleDeepAudit({
+      store,
+      projectRoot,
+      argv,
+      sessionId: args.sessionId ?? `audit-${Date.now()}`,
+    });
+  }
   // Make sure the coherence skeleton exists so the bundling sub-commands have
   // something to read. initCoherenceDir is idempotent.
   try {
@@ -27,7 +47,7 @@ export async function runAudit(projectRoot: string): Promise<string> {
 
   const header = [
     '# /coherence:audit',
-    '> v0.4 audit is a bundling-only summary; deep audit ships in v1.0.',
+    '> Free tier: bundling-only summary + section token budget. Run with `--deep` for cross-section LLM consistency (v1.0).',
     '',
   ];
 
@@ -58,6 +78,10 @@ export async function runAudit(projectRoot: string): Promise<string> {
             out: path.join(projectRoot, '.claude', 'coherence', 'audit-metrics.jsonl'),
           }),
         ),
+    ],
+    [
+      'Section Token Budget',
+      async (): Promise<string> => tokenBudgetReport(projectRoot),
     ],
   ];
 

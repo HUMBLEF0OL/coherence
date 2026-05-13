@@ -17,14 +17,15 @@ beforeEach(() => {
 afterEach(() => rmSync(projectRoot, { recursive: true, force: true }));
 
 describe('/coherence:audit (M-AUDIT-1)', () => {
-  it('returns a markdown report containing all four section headers', async () => {
+  it('returns a markdown report containing all section headers (free tier)', async () => {
     const { runAudit } = await import('../../src/commands/audit.js');
     const out = await runAudit(projectRoot);
-    expect(out).toContain('v0.4 audit is a bundling-only summary');
+    expect(out).toContain('Free tier: bundling-only summary');
     expect(out).toContain('## Doctor');
     expect(out).toContain('## Scope Debug');
     expect(out).toContain('## Status');
     expect(out).toContain('## Metrics Export');
+    expect(out).toContain('## Section Token Budget');
   });
 
   it('does not throw if individual handlers fail — wraps in [error: ...]', async () => {

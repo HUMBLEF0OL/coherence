@@ -17,7 +17,7 @@
           "timestamp": { "type": "string", "format": "date-time" },
           "stage": {
             "type": "string",
-            "enum": ["stage1", "stage2", "author", "annotate", "author_planner"]
+            "enum": ["stage1", "stage2", "author", "annotate", "author_planner", "audit_deep"]
           },
           "input_tokens": { "type": "integer", "minimum": 0 },
           "output_tokens": { "type": "integer", "minimum": 0 },

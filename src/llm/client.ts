@@ -41,7 +41,7 @@ export interface PromptManifestV2 {
   prompts: Record<string, { version: string; purpose?: string }>;
 }
 
-export type LlmStage = 'stage1' | 'stage2' | 'author' | 'annotate';
+export type LlmStage = 'stage1' | 'stage2' | 'author' | 'annotate' | 'audit_deep';
 
 export interface LlmRequest {
   stage: LlmStage;

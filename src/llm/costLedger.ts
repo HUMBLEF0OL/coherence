@@ -27,7 +27,7 @@ export const V02_PARTITION = {
   trickle: 0.1, // bookkeeping only — trickle does no LLM work in v0.2.
 } as const;
 
-type StageKey = 'stage1' | 'stage2' | 'author' | 'annotate' | 'author_planner';
+type StageKey = 'stage1' | 'stage2' | 'author' | 'annotate' | 'author_planner' | 'audit_deep';
 
 export class CostLedger {
   private entries: CostEntry[] = [];
@@ -73,6 +73,9 @@ export class CostLedger {
       author: V01_BASELINE_USD_P95 * (1 + headroom * V02_PARTITION.author),
       author_planner: V01_BASELINE_USD_P95 * (1 + headroom * V02_PARTITION.author),
       annotate: V01_BASELINE_USD_P95 * (1 + headroom * V02_PARTITION.annotate),
+      // v1.0 — /coherence:audit --deep budget; user-gated, ~10 calls cap per
+      // invocation so it shares baseline.
+      audit_deep: V01_BASELINE_USD_P95,
     };
 
     let breachedPartition: StageKey | undefined;
