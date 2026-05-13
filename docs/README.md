@@ -45,6 +45,9 @@ or `/coherence:graduate --revert` to return to Observe.
 
 ## What's in this directory
 
+- [`user-guide.md`](user-guide.md) — practical narrative walk-through:
+  what Coherence does, quick start, core concepts, common scenarios,
+  troubleshooting. **Start here if you're new.**
 - [`commands.md`](commands.md) — every slash command, grouped by
   surface (lifecycle / trust + intelligence / proposals / team
   workflows / statusline).

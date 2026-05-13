@@ -265,6 +265,9 @@ bin/                          Statusline shell scripts (OSC 8 / OSC 52 / plain)
 .github/workflows/release.yml v*.*.* tag → cosign sign + GH release upload
 ```
 
+**New users:** start with [`docs/user-guide.md`](docs/user-guide.md) —
+a practical walk-through from install to confident daily use.
+
 The detailed state-file inventory lives in
 [`docs/state-files.md`](docs/state-files.md). The full command reference
 lives in [`docs/commands.md`](docs/commands.md).
