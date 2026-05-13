@@ -1,6 +1,6 @@
 {
   "name": "cohrence",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Detects documentation-vs-code drift and proposes surgical patches",
   "author": "HUMBLEF0OL <123amitrana0123@gmail.com>",
   "license": "MIT",

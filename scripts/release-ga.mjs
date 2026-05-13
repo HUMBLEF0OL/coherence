@@ -27,8 +27,8 @@ const doTag = args.has('--tag');
 const doPush = args.has('--push');
 const dryRun = args.has('--dry-run');
 const unsigned = args.has('--unsigned');
-const TAG = 'v1.0.0';
-const MSG = 'v1.0.0 GA';
+const TAG = 'v1.0.1';
+const MSG = 'v1.0.1 — post-tag hardening (10 fixes + Path C)';
 
 void createHash;
 

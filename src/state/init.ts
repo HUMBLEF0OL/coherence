@@ -9,7 +9,7 @@ import type { VersionInfo, CoherenceConfig } from '../types/index.js';
 import { nowIsoUtc } from '../util/time.js';
 
 const CURRENT_SCHEMA_VERSION = 3;
-export const PLUGIN_VERSION = '1.0.0';
+export const PLUGIN_VERSION = '1.0.1';
 
 export function getCoherenceDir(projectRoot: string): string {
   return path.join(projectRoot, '.claude', 'coherence');

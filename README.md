@@ -363,9 +363,9 @@ npm run gates             # ship-time gates
 > Verify the published tarball with:
 >
 > ```bash
-> cosign verify-blob cohrence-1.0.0.tgz \
->   --signature cohrence-1.0.0.tgz.sig \
->   --certificate cohrence-1.0.0.tgz.pem \
+> cosign verify-blob cohrence-1.0.1.tgz \
+>   --signature cohrence-1.0.1.tgz.sig \
+>   --certificate cohrence-1.0.1.tgz.pem \
 >   --certificate-identity-regexp '^https://github.com/HUMBLEF0OL/coherence/\.github/workflows/release\.yml@refs/tags/v.*$' \
 >   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 > ```
