@@ -134,10 +134,11 @@ export interface SubagentClassificationEvent extends BaseMetricEvent {
 }
 
 /**
- * Generic v0.2 telemetry event. Used for DD-068 signature events and the
- * full v0.2 metrics catalogue. Payload shapes are documented per event in
- * `docs/v0.2/CHANGELOG.md`; we keep the type permissive at the writer so
- * the schema is enforced where the event is constructed.
+ * Generic v0.2+ telemetry event. Used for DD-068 signature events and the
+ * full metrics catalogue. Payload shapes are documented per event in
+ * `docs/state-files.md` (`metrics.jsonl` section); we keep the type
+ * permissive at the writer so the schema is enforced where the event is
+ * constructed.
  */
 export interface GenericV02Event extends BaseMetricEvent {
   event: MetricEventType;

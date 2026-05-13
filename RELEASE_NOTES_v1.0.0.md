@@ -58,7 +58,8 @@ without backward-incompatible state changes.
   cross-major migration; no v0.4 → v1.0 migration path is needed).
 - Downgrade from v1.0 → v0.4: stop using new commands; `trust-ledger.json`
   and `coherence/trust/` files are ignored by older versions (see
-  `docs/v1.0/rollback.md`).
+  [`docs/rollback.md`](docs/rollback.md) → "Cross-major: re-install,
+  don't migrate").
 
 ## Architectural commitments
 
@@ -77,7 +78,9 @@ certificate's transparency-log entry is searchable at
 
 ## Acknowledgements
 
-Plan: [docs/superpowers/plans/2026-05-13-coherence-v1.0.md](docs/superpowers/plans/2026-05-13-coherence-v1.0.md)
+Plan: archived to Notion ([Coherence — Implementation Plans (archive)](https://www.notion.so/35f0e95fc22381d68135fdcd4ac353c8));
+full markdown preserved at git permalink
+[`master/cb52271:docs/superpowers/plans/2026-05-13-coherence-v1.0.md`](https://github.com/HUMBLEF0OL/coherence/blob/cb52271eb9aa792bcbc36bd97af13ab65511d216/docs/superpowers/plans/2026-05-13-coherence-v1.0.md).
 Specs: BRD v1.0 · TS-1..TS-8 v1.0 · DD-131..DD-147
 
 ## What's next (post-1.0)
