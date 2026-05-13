@@ -1,0 +1,32 @@
+{
+  "$schema-comment": "Source of truth for the autogen stub generator. Lifted out of .claude-plugin/plugin.json#slashCommands in v1.0.2 because the modern plugin manifest schema does not accept a `slashCommands` key. Each entry produces commands/<safe-name>.md with YAML frontmatter `description` and the `<!-- coherence-command: <name> -->` sentinel UserPromptSubmit dispatches on.",
+  "commands": [
+    { "name": "coherence:status",                "description": "Show current coherence state: buffer, recent activity, subagent stats, velocity, cost" },
+    { "name": "coherence:review",                "description": "Run the coherence pipeline mid-session against the current buffer" },
+    { "name": "coherence:repair",                "description": "Fix anchor collisions, schema drift, buffer corruption, pending.md mismatches" },
+    { "name": "coherence:recover",               "description": "Clear quarantine, reset locks, drop progress files, remove auto-disable sentinel" },
+    { "name": "coherence:doctor",                "description": "Probe host capabilities and write host-capabilities.json" },
+    { "name": "coherence:graduate",              "description": "Toggle between Observe and Graduated mode" },
+    { "name": "coherence:enable-sidecars",       "description": "Provision sidecar YAML files for skills/agents when host strips unknown frontmatter" },
+    { "name": "coherence:share-metrics",         "description": "Write anonymized metrics to a user-chosen file path" },
+    { "name": "coherence:propose-list",          "description": "List queued and surfaced v0.2 proposals (DD-081)" },
+    { "name": "coherence:propose-show",          "description": "Show a single proposal by id (DD-081)" },
+    { "name": "coherence:propose-accept",        "description": "Accept a proposal and materialise it under .claude/ (DD-082)" },
+    { "name": "coherence:propose-reject",        "description": "Reject a surfaced proposal (DD-088)" },
+    { "name": "coherence:propose-revert-acceptance", "description": "Revert an accepted proposal (DD-083)" },
+    { "name": "coherence:install-statusline",    "description": "Install the coherence statusline into ~/.claude/settings.json (FR-STATUSLINE-2)" },
+    { "name": "coherence:uninstall-statusline",  "description": "Restore the statusline backup created by install-statusline (FR-STATUSLINE-3)" },
+    { "name": "coherence:annotate",              "description": "Generate an annotation proposal for an anchor-less doc (DD-069)" },
+    { "name": "coherence:scope-debug",           "description": "Print walked CLAUDE.md/coherence/scope.json ancestors and resolved scope for a path (DD-097)" },
+    { "name": "coherence:ignore-split",          "description": "Set up the two-file additive ignore model: coherence/ignore (committed) + coherence/ignore.local (gitignored) (DD-096)" },
+    { "name": "coherence:export-metrics",        "description": "Write redacted metrics.jsonl to a user-supplied path; prints copy-paste curl only with upload consent (DD-115)" },
+    { "name": "coherence:de-annotate",           "description": "Strip auto-annotations or graduate them to user-owned anchors (DD-102/DD-110)" },
+    { "name": "coherence:plan-create",           "description": "Create a cross-team plan file under coherence/plans/<branch-sha>/<plan-id>.json (DD-099 amended)" },
+    { "name": "coherence:plan-accept",           "description": "Accept a cross-team plan and append an audit-log entry (DD-099 amended)" },
+    { "name": "coherence:plan-reject",           "description": "Reject a cross-team plan with a reason (stale | superseded | rejected_explicit)" },
+    { "name": "coherence:consent",               "description": "View or update telemetry consent. Flags: --local on|off, --upload on|off, --reset." },
+    { "name": "coherence:audit",                 "description": "Bundling-only audit report (free tier) or LLM cross-section consistency pass (--deep, v1.0)." },
+    { "name": "coherence:trust",                 "description": "View or manage personal + team trust state. Subcommands: --status (default), sync, --promote --auto-land <kinds>, --prune-stale --yes." },
+    { "name": "coherence:metrics",               "description": "Quality metrics report: summary, top drifting sections, trust scores, cost trend, revert hotspots." }
+  ]
+}

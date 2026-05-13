@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-marketplace.json",
+  "name": "cohrence",
+  "description": "Coherence — documentation-drift detection for Claude Code (single-plugin marketplace pinned to the upstream repo).",
+  "owner": {
+    "name": "HUMBLEF0OL",
+    "email": "123amitrana0123@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "cohrence",
+      "source": {
+        "source": "github",
+        "repo": "HUMBLEF0OL/coherence",
+        "ref": "v1.0.2"
+      },
+      "description": "Detects documentation-vs-code drift and proposes surgical patches via a two-stage LLM pipeline with per-section trust ladder and asserts: validation.",
+      "version": "1.0.2",
+      "homepage": "https://github.com/HUMBLEF0OL/coherence",
+      "repository": "https://github.com/HUMBLEF0OL/coherence",
+      "license": "MIT",
+      "keywords": ["claude-code", "plugin", "documentation", "drift-detection", "coherence"],
+      "category": "documentation",
+      "tags": ["docs", "drift", "lint", "trust-ladder", "asserts", "audit"]
+    }
+  ]
+}

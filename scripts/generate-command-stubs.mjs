@@ -1,11 +1,18 @@
 #!/usr/bin/env node
 /**
- * v0.4 M4 — autogen slash-command stubs from `.claude-plugin/plugin.json`.
+ * v1.0.2 — autogen slash-command stubs from `scripts/commands.config.json`.
  *
- * Writes one `commands/<safe-name>.md` per slash command, embedding a
- * `<!-- coherence-command: <name> -->` sentinel that UserPromptSubmit uses
- * to dispatch to the JS handler. Idempotent: short-circuits when the
- * manifest's slashCommands array hasn't changed.
+ * Writes one `commands/<safe-name>.md` per slash command with YAML
+ * frontmatter (description) plus a `<!-- coherence-command: <name> -->`
+ * sentinel that UserPromptSubmit dispatches on. Idempotent: short-circuits
+ * when the config hasn't changed.
+ *
+ * v1.0.2 migration: the source of truth moved from
+ * `.claude-plugin/plugin.json#slashCommands` (rejected by the modern
+ * `claude plugin validate` schema as an unrecognized key) to a separate
+ * config under `scripts/`. The runtime dispatch path (UserPromptSubmit ->
+ * `src/hooks/commandDispatch.ts`) keys off the sentinel inside each stub,
+ * so this generator is the only place that reads the list.
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { createHash } from 'crypto';
@@ -15,12 +22,12 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
-const manifestPath = path.join(rootDir, '.claude-plugin', 'plugin.json');
+const configPath = path.join(rootDir, 'scripts', 'commands.config.json');
 const commandsDir = path.join(rootDir, 'commands');
 const hashFile = path.join(rootDir, '.coherence-stub-hash');
 
-const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-const commands = manifest.slashCommands ?? [];
+const config = JSON.parse(readFileSync(configPath, 'utf8'));
+const commands = config.commands ?? [];
 
 const hashInput = JSON.stringify(commands);
 const hash = createHash('sha256').update(hashInput).digest('hex').slice(0, 8);
@@ -32,13 +39,22 @@ if (existsSync(hashFile) && readFileSync(hashFile, 'utf8').trim() === hash && ex
 
 mkdirSync(commandsDir, { recursive: true });
 
+function escapeYamlScalar(value) {
+  // Always double-quote: descriptions routinely contain `: ` (e.g.,
+  // "Show current coherence state: buffer, ..."), and an unquoted YAML
+  // plain scalar interprets `: ` as a nested key/value pair. Quoting
+  // removes that ambiguity entirely.
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
 for (const cmd of commands) {
   const safeName = cmd.name.replace(/:/g, '-');
   const stubPath = path.join(commandsDir, `${safeName}.md`);
+  const desc = cmd.description ?? '';
   const content = [
-    `# /${cmd.name}`,
-    '',
-    cmd.description ?? '',
+    '---',
+    `description: ${escapeYamlScalar(desc)}`,
+    '---',
     '',
     `<!-- coherence-command: ${cmd.name} -->`,
     '',

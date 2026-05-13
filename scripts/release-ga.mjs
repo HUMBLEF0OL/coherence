@@ -27,8 +27,8 @@ const doTag = args.has('--tag');
 const doPush = args.has('--push');
 const dryRun = args.has('--dry-run');
 const unsigned = args.has('--unsigned');
-const TAG = 'v1.0.1';
-const MSG = 'v1.0.1 — post-tag hardening (10 fixes + Path C)';
+const TAG = 'v1.0.2';
+const MSG = 'v1.0.2 — plugin manifest schema migration + marketplace.json';
 
 void createHash;
 
@@ -46,14 +46,19 @@ function assertVersionSync(tag) {
   const v = tag.replace(/^v/, '');
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   const manifest = JSON.parse(readFileSync('.claude-plugin/plugin.json', 'utf8'));
+  const marketplace = JSON.parse(readFileSync('.claude-plugin/marketplace.json', 'utf8'));
   const initSrc = readFileSync('src/state/init.ts', 'utf8');
   const m = /PLUGIN_VERSION\s*=\s*['"]([^'"]+)['"]/.exec(initSrc);
   const initVer = m?.[1];
+  const mkVer = marketplace.plugins?.[0]?.version;
+  const mkRef = marketplace.plugins?.[0]?.source?.ref;
 
   const mismatches = [];
   if (pkg.version !== v) mismatches.push(`package.json=${pkg.version}`);
   if (manifest.version !== v) mismatches.push(`.claude-plugin/plugin.json=${manifest.version}`);
   if (initVer !== v) mismatches.push(`PLUGIN_VERSION=${initVer ?? '(not found)'}`);
+  if (mkVer !== v) mismatches.push(`marketplace.plugins[0].version=${mkVer ?? '(not found)'}`);
+  if (mkRef !== tag) mismatches.push(`marketplace.plugins[0].source.ref=${mkRef ?? '(not found)'}`);
 
   if (mismatches.length > 0) {
     throw new Error(`Version mismatch for tag ${tag}: ${mismatches.join(', ')}`);

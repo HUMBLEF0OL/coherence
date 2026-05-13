@@ -38,12 +38,14 @@ describe('v0.2 final SG sweep', () => {
     expect(txt).toMatch(/Symbol\.for\(/);
   });
 
-  it('plugin.json registers the new v0.2 commands', () => {
-    // v0.4 DD-119: manifest moved to .claude-plugin/plugin.json
+  it('commands.config.json registers the new v0.2 commands', () => {
+    // v0.4 DD-119: manifest moved to .claude-plugin/plugin.json.
+    // v1.0.2: command list moved out of plugin.json#slashCommands (rejected by
+    // the modern manifest schema) into scripts/commands.config.json.
     const p = JSON.parse(
-      readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'),
+      readFileSync(path.join(ROOT, 'scripts', 'commands.config.json'), 'utf8'),
     );
-    const names = (p.slashCommands as Array<{ name: string }>).map((c) => c.name);
+    const names = (p.commands as Array<{ name: string }>).map((c) => c.name);
     for (const n of [
       'coherence:propose-list',
       'coherence:propose-show',

@@ -19,7 +19,8 @@ under `coherence/` (no backend, ever).
 - **Auto-applies** patches in Graduated mode with a per-section trust
   gate; never auto-applies destructive or frontmatter changes.
 - **Validates** documentation contracts via `asserts:` frontmatter
-  with 7 engines (text-pattern + codebase-linked).
+  with 8 engines (text-pattern + codebase-linked, including
+  v1.0.1 Fix 8's `symbol_exported` for LIM-1 closure).
 - **Audits** the corpus with a free-tier bundling report + flag-gated
   LLM cross-section consistency pass.
 - **Signs** releases with Sigstore `cosign` keyless OIDC via GitHub
@@ -159,13 +160,16 @@ asserts:
 ---
 ```
 
-Seven engines:
+Eight engines:
 
 - **Text-pattern** (sync): `has_example`, `no_placeholder_links`,
   `max_words:<N>`, `min_words:<N>`, `no_todo_comments`.
 - **Codebase-linked** (async, fast-glob + parallel batched reads with
   short-circuit, per-session file-list cache by language):
-  `symbol_exists[:lang]`, `file_exists`.
+  `symbol_exists[:lang]`, `file_exists`, `symbol_exported[:lang]`
+  (the third is v1.0.1 Fix 8 — stricter than `symbol_exists`,
+  requires the symbol to appear in an actual `export ...`
+  declaration; closes LIM-1).
 
 Each assertion carries `policy: 'block' | 'warn'` (default `warn`).
 Block violations escalate the patch to ESCALATE; warn violations
@@ -366,9 +370,9 @@ npm run gates             # ship-time gates
 > Verify the published tarball with:
 >
 > ```bash
-> cosign verify-blob cohrence-1.0.1.tgz \
->   --signature cohrence-1.0.1.tgz.sig \
->   --certificate cohrence-1.0.1.tgz.pem \
+> cosign verify-blob cohrence-1.0.2.tgz \
+>   --signature cohrence-1.0.2.tgz.sig \
+>   --certificate cohrence-1.0.2.tgz.pem \
 >   --certificate-identity-regexp '^https://github.com/HUMBLEF0OL/coherence/\.github/workflows/release\.yml@refs/tags/v.*$' \
 >   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 > ```

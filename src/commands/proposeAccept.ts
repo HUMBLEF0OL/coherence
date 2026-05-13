@@ -347,7 +347,8 @@ async function runProposeAcceptLocked(
       '\n[coherence] note: slash_command kind ships as DOCUMENTATION ONLY in v0.2.\n' +
       '              The markdown above describes what the command should do; the\n' +
       '              command is NOT yet runnable. To activate, write a JS handler\n' +
-      '              and add a slashCommands[] entry in plugin.json.';
+      '              and add an entry to scripts/commands.config.json (v1.0.2+; was\n' +
+      '              plugin.json#slashCommands pre-v1.0.2).';
   }
   return {
     accepted: true,
