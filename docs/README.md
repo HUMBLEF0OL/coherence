@@ -93,5 +93,5 @@ Per-version release notes live as GitHub Releases:
 signed with Sigstore `cosign` keyless OIDC; the verification command
 is in the README `## Verification` section.
 
-Implementation plans (one per major) are archived in Notion: search
-for "Coherence — Implementation Plans (archive)".
+Implementation plans (one per major) are archived in Notion under the
+**Coherence** project page: [Implementation Plans (archive)](https://www.notion.so/Implementation-Plans-archive-35f010d46a70810589c2f3736efd925a).

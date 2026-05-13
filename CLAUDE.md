@@ -125,7 +125,7 @@ prompts/v3/                   audit-consistency.md for /coherence:audit --deep
 | Add a language to hallucination detection | `src/validation/registries/` — new file following the existing pattern. |
 | Change LLM prompt | `prompts/v2/stage1-planner.md` / `stage2-patch.md`; deep-audit prompt at `prompts/v3/audit-consistency.md`. |
 | Record a new cassette | Set `COHERENCE_REFRESH_CASSETTES=1`, run the relevant test, commit `tests/cassettes/<id>.json`. |
-| Understand a design decision | DD register on the Notion workspace; per-version implementation plans archived at the Notion page "Coherence — Implementation Plans (archive)". |
+| Understand a design decision | DD register on the Notion workspace; per-version implementation plans archived under the **Coherence** project page → [Implementation Plans (archive)](https://www.notion.so/Implementation-Plans-archive-35f010d46a70810589c2f3736efd925a). |
 
 ## Testing
 

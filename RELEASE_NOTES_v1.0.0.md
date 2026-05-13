@@ -78,7 +78,7 @@ certificate's transparency-log entry is searchable at
 
 ## Acknowledgements
 
-Plan: archived to Notion ([Coherence — Implementation Plans (archive)](https://www.notion.so/35f0e95fc22381d68135fdcd4ac353c8));
+Plan: archived to Notion under the **Coherence** project page → [Implementation Plans (archive)](https://www.notion.so/Implementation-Plans-archive-35f010d46a70810589c2f3736efd925a);
 full markdown preserved at git permalink
 [`master/cb52271:docs/superpowers/plans/2026-05-13-coherence-v1.0.md`](https://github.com/HUMBLEF0OL/coherence/blob/cb52271eb9aa792bcbc36bd97af13ab65511d216/docs/superpowers/plans/2026-05-13-coherence-v1.0.md).
 Specs: BRD v1.0 · TS-1..TS-8 v1.0 · DD-131..DD-147
