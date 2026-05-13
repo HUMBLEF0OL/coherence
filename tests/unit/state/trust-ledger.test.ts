@@ -3,7 +3,7 @@
  * LRU eviction, FR-LEDGER-5 empty-init, FR-TRUST-4 promote eligibility).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, existsSync, writeFileSync, mkdirSync, readFileSync } from 'fs';
+import { mkdtempSync, rmSync, existsSync, mkdirSync } from 'fs';
 import path from 'path';
 import os from 'os';
 import { StateStore } from '../../../src/state/stateStore.js';

@@ -68,7 +68,7 @@ export async function loadOrBuildIndex(projectRoot: string): Promise<SymbolIndex
   }
 
   // Rebuild
-  const sections: Array<{ sectionRef: string; content?: string; heading?: string }> = (() => {
+  const sections: Array<{ sectionRef: string; content?: string; heading?: string }> = ((): Array<{ sectionRef: string; content?: string; heading?: string }> => {
     if (!existsSync(indexPath)) return [];
     try {
       const obj = JSON.parse(readFileSync(indexPath, 'utf8')) as {

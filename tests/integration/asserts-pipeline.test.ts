@@ -5,7 +5,7 @@
  * unknown-type ignore behaviour through the `applyAssertions()` bridge.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import path from 'path';
 import os from 'os';
 import { applyAssertions } from '../../src/validation/assertions/applyToPatch.js';

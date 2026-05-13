@@ -81,7 +81,7 @@ export async function runAudit(projectRoot: string, args: RunAuditArgs = {}): Pr
     ],
     [
       'Section Token Budget',
-      async (): Promise<string> => tokenBudgetReport(projectRoot),
+      (): Promise<string> => Promise.resolve(tokenBudgetReport(projectRoot)),
     ],
   ];
 
