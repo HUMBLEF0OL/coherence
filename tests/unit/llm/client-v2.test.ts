@@ -7,10 +7,10 @@ import { describe, it, expect } from 'vitest';
 import { loadManifestV2, loadV2Prompt, _resetManifestCache } from '../../../src/llm/client.js';
 
 describe('D6 prompts/v2 manifest', () => {
-  it('loadManifestV2 pins claude-sonnet-4-5-20251022 + temperature 0', () => {
+  it('loadManifestV2 pins claude-sonnet-4-6 + temperature 0', () => {
     _resetManifestCache();
     const m = loadManifestV2();
-    expect(m.model).toBe('claude-sonnet-4-5-20251022');
+    expect(m.model).toBe('claude-sonnet-4-6');
     expect(m.temperature).toBe(0);
     expect(m.author_version).toBe('v2.0');
     expect(m.annotate_version).toBe('v2.0');

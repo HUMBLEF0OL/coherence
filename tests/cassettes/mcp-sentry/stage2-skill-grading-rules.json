@@ -1,0 +1,7 @@
+{
+  "content": "--- a/.claude/skills/mcp-sentry-grader/SKILL.md\n+++ b/.claude/skills/mcp-sentry-grader/SKILL.md\n@@ -6,6 +6,6 @@\n   than `b` (used by the `--fail-on` flag to decide whether the process\n   should exit non-zero).\n-- `gradeBelow(actual, threshold)` is a convenience wrapper used by the\n+- `isBelowThreshold(actual, threshold)` is a convenience wrapper used by the\n   CI integration in `packages/action/`.\n \n Project configuration is loaded via `loadConfig(rootDir)` in",
+  "input_tokens": 3,
+  "output_tokens": 2735,
+  "cost_usd": 0.0606273,
+  "timestamp": "2026-05-14T02:25:48.412Z"
+}

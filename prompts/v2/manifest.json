@@ -1,5 +1,5 @@
 {
-  "model": "claude-sonnet-4-5-20251022",
+  "model": "claude-sonnet-4-6",
   "temperature": 0,
   "schema_version": 1,
   "stage1_version": "v1.0",

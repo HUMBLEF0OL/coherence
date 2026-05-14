@@ -12,7 +12,7 @@ under `coherence/` (no backend, ever).
 - **Detects** drift through PostToolUse signal capture + a SessionStart
   trickle scan; surfaces proposals on demand.
 - **Plans** repairs via a Stage 1 canonical-selection LLM call
-  (claude-sonnet-4-5).
+  (claude-sonnet-4-6).
 - **Writes** patches via a Stage 2 patch-writer LLM call with
   deterministic validation: format → apply → change-class recount →
   line-count ratio → prompt injection → hallucination grep → asserts.

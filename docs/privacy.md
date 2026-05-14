@@ -8,8 +8,8 @@ the team git repository.
 
 ## Data sent to the Anthropic API
 
-Coherence uses the Anthropic API (claude-sonnet-4-5 for stage1/stage2;
-claude-sonnet-4-5 for author / annotate / audit_deep) for five pipeline
+Coherence uses the Anthropic API (claude-sonnet-4-6 for stage1/stage2;
+claude-sonnet-4-6 for author / annotate / audit_deep) for five pipeline
 stages:
 
 ### Stage 1 — Canonical Selection Planner

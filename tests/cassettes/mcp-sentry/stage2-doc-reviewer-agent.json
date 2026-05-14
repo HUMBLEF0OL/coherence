@@ -1,0 +1,7 @@
+{
+  "content": "--- a/docs/agents-and-skills/reference.md\n+++ b/docs/agents-and-skills/reference.md\n@@ -7,6 +7,6 @@ automatically and runs the CLI against the diff.\n It depends on three grading-surface symbols staying stable:\n-`computeGrade`, `compareGrades`, and `gradeBelow`. Config loading\n+`computeGrade`, `compareGrades`, and `isBelowThreshold`. Config loading\n flows through `loadConfig(rootDir)` from `packages/cli/src/config.ts`.\n \n-The fail-on threshold defaults to `B` — i.e. `gradeBelow(actual, \"B\")`\n+The fail-on threshold defaults to `B` — i.e. `isBelowThreshold(actual, \"B\")`\n must be false for the PR to pass.",
+  "input_tokens": 3,
+  "output_tokens": 5758,
+  "cost_usd": 0.10432680000000001,
+  "timestamp": "2026-05-14T02:26:21.908Z"
+}

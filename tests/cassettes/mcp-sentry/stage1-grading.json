@@ -1,0 +1,7 @@
+{
+  "content": "{\n  \"canonical\": \".claude/skills/mcp-sentry-grader/SKILL.md#grading-rules\",\n  \"sections\": [\n    {\n      \"sectionRef\": \".claude/skills/mcp-sentry-grader/SKILL.md#grading-rules\",\n      \"role\": \"canonical\",\n      \"relation\": \"owns\"\n    },\n    {\n      \"sectionRef\": \".claude/agents/sentry-reviewer.md#grading-calls\",\n      \"role\": \"reference\",\n      \"relation\": \"mirrors\"\n    },\n    {\n      \"sectionRef\": \"docs/agents-and-skills/reference.md#reviewer-agent\",\n      \"role\": \"reference\",\n      \"relation\": \"mirrors\"\n    }\n  ]\n}",
+  "input_tokens": 3,
+  "output_tokens": 959,
+  "cost_usd": 0.07682325,
+  "timestamp": "2026-05-14T02:25:08.649Z"
+}

@@ -25,7 +25,7 @@ describe('v0.2 final SG sweep', () => {
     const m = JSON.parse(
       readFileSync(path.join(ROOT, 'prompts', 'v2', 'manifest.json'), 'utf8'),
     );
-    expect(m.model).toBe('claude-sonnet-4-5-20251022');
+    expect(m.model).toBe('claude-sonnet-4-6');
     expect(m.temperature).toBe(0);
   });
 
