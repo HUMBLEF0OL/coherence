@@ -235,7 +235,7 @@ function makeDiffForLine(projectRoot: string, rel: string, oldSubstr: string, ne
   for (let i = 0; i < ctx.length; i++) {
     if (i === idx - start) {
       body.push('-' + ctx[i]);
-      body.push('+' + ctx[i]!.replace(oldSubstr, newSubstr));
+      body.push('+' + ctx[i].replace(oldSubstr, newSubstr));
     } else body.push(' ' + ctx[i]);
   }
   return [

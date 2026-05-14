@@ -78,7 +78,7 @@ describe('render-readme-verification — regex backreference regression', () => 
       '',
     ].join('\n');
     const once = renderVerification(seeded, PKG);
-    const twice = renderVerification(once!, PKG);
+    const twice = renderVerification(once, PKG);
     expect(twice).toBe(once);
   });
 

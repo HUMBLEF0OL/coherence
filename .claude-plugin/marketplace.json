@@ -10,8 +10,8 @@
     {
       "name": "cohrence",
       "source": {
-        "source": "github",
-        "repo": "HUMBLEF0OL/coherence",
+        "source": "url",
+        "url": "https://github.com/HUMBLEF0OL/coherence.git",
         "ref": "v1.0.2"
       },
       "description": "Detects documentation-vs-code drift and proposes surgical patches via a two-stage LLM pipeline with per-section trust ladder and asserts: validation.",
