@@ -515,17 +515,30 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Phase 3 exit
+## Task 7: Release v1.1.2
 
-All five Phase 3 moves are committed on `dev`. The ADR register is seeded with infrastructure + one worked example; bulk import continues in the background. The release plan doesn't gate on a full DD-001..DD-147 import — partial is fine for v1.1.0.
+Cut v1.1.2 for **Phase 3 — documentation pass**. Follow the shared release ceremony in [release-pattern.md](release-pattern.md) with these inputs:
 
-Verify:
+- `<version>`: `1.1.2`
+- `<phase-name>`: `Phase 3 — documentation pass`
+- `<rc-policy>`: **rc-skip** — docs-only release; no behavior change
+- `<previous-version>`: `v1.1.1`
 
-Run: `git status --short`
-Expected: Clean.
+### RELEASE_NOTES_v1.1.2.md highlights
 
-Run: `ls docs/`
-Expected: At least `adr/`, `extensions/`, `architecture.md`, `failure-modes.md`, `comparison.md`, plus the pre-existing `README.md`, `user-guide.md`, `privacy.md`.
+When writing the hand-written narrative (Step R4 of the pattern), cover:
+
+  - X1 — ADR register mirror infrastructure at `docs/adr/` (one-way repo→Notion sync; bulk content import continues incrementally)
+  - X2 — three extension tutorials: asserts engine, language registry, hook event handler
+  - X3 — hand-curated mermaid architecture diagram + narrative at `docs/architecture.md`
+  - X4 — failure-modes operator catalog at `docs/failure-modes.md`
+  - X5 — competitive comparison at `docs/comparison.md` (Coherence vs vale / lychee / docs-as-tests / etc.)
+
+### After this release
+
+Next planned cut: 1.1.3 (Phase 4).
+
+The ADR bulk-import (DD-001..DD-147) is intentionally NOT gated on this release — partial is fine. Subsequent ADR additions ship as docs-only patches outside the phase cadence.
 
 ---
 

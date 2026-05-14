@@ -273,7 +273,7 @@ console.log('[install-smoke] PASS:', tag ?? '(local)');
 
 // Cleanup
 sh('claude plugin uninstall coherence@coherence --scope local --yes');
-sh(`claude plugin marketplace remove ${local ? 'coherence' : 'coherence'}`);
+sh('claude plugin marketplace remove coherence');
 ```
 
 (Marketplace name is `coherence` after Phase 1's C1 rename.)
@@ -493,6 +493,8 @@ Expected: PASS (the hash check should re-align after the regenerator output matc
 
 If it fails, the regenerator's stored hash needs updating. Read the test's expected vs actual and update the source-of-truth hash accordingly.
 
+> **Cross-phase note:** Phase 1 M4 already perturbed this hash when it renamed `coherence-*.md` stubs to flat names. If you're executing phases sequentially, the hash you committed in Phase 1's Task 5 Step 14 is now stale again after C3's consolidation. Two perturbations, one update — fine.
+
 - [ ] **Step 12: Find tests that exercise the deleted command names; update or delete**
 
 Run: `grep -rn "propose-accept\|propose-list\|propose-reject\|propose-revert-acceptance\|propose-show\|plan-accept\|plan-create\|plan-reject\|install-statusline\|uninstall-statusline" tests/`
@@ -707,17 +709,29 @@ This task is the *coordination* layer of S6, executed in human time. The feedbac
 
 ---
 
-## Phase 2 exit
+## Task 6: Release v1.1.1
 
-All four Phase 2 moves are now committed on `dev`. The rc cut + tester window happens later via the release plan. No version bump, no tag, no push to master.
+Cut v1.1.1 for **Phase 2 — feedback loop**. Follow the shared release ceremony in [release-pattern.md](release-pattern.md) with these inputs:
 
-Verify:
+- `<version>`: `1.1.1`
+- `<phase-name>`: `Phase 2 — feedback loop`
+- `<rc-policy>`: **rc-required** — command consolidation breaks scripts that called `/coherence:propose-list`, `/coherence:plan-create`, etc.
+- `<previous-version>`: `v1.1.0`
 
-Run: `git status --short`
-Expected: Clean.
+### RELEASE_NOTES_v1.1.1.md highlights
 
-Run: `git log --oneline | head -10`
-Expected: A clean sequence of Phase 1 + Phase 2 commits.
+When writing the hand-written narrative (Step R4 of the pattern), cover:
+
+  - S6 — `/coherence:feedback` command + GitHub issue template + tester onboarding docs
+  - D3 — CI install-smoke job that catches v1.0.2-class install regressions before announcement
+  - C3 — consolidate 27 slash commands into 17; `propose-*`, `plan-*`, `*-statusline` become subcommand routers
+  - C4 — `userConfig` schema for `defaultMode` + `telemetryOptIn` (replaces hand-edited config)
+
+Scripts that called `/coherence:propose-list` etc. now use `/coherence:propose list` (subcommand form). Run `/coherence:propose` bare to see the new subcommand list.
+
+### After this release
+
+Next planned cut: 1.1.2 (Phase 3).
 
 ---
 

@@ -751,21 +751,32 @@ realigned with the new hash.
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
-## Phase 1 exit — DO NOT cut v1.1.0 here
+## Task 6: Release v1.1.0
 
-All five Phase 1 moves are now committed on `dev`. Per the project decision that all S+ roadmap phases ship as a single v1.1.0 release, this plan **terminates at `dev`**. No version bump, no tag, no push to master.
+Cut v1.1.0 for **Phase 1 — foundational hygiene**. Follow the shared release ceremony in [release-pattern.md](release-pattern.md) with these inputs:
 
-The v1.1.0 release happens in a separate plan ([docs/superpowers/plans/2026-05-14-v1.1.0-release.md](2026-05-14-v1.1.0-release.md)) after Phases 2–5 also land on `dev`.
+- `<version>`: `1.1.0`
+- `<phase-name>`: `Phase 1 — foundational hygiene`
+- `<rc-policy>`: **rc-required** — slug rename is install-breaking; testers catch the migration UX
+- `<previous-version>`: `v1.0.3` (the tag the release-notes generator diffs against, once T8 ships in Phase 4)
 
-- [ ] **Final step: Verify the working tree is clean and `dev` is committable**
+### RELEASE_NOTES_v1.1.0.md highlights
 
-Run: `git status --short`
-Expected: Clean working tree (or only line-ending churn if M2 hasn't fully normalized).
+When writing the hand-written narrative (Step R4 of the pattern), cover:
 
-Run: `git log --oneline origin/dev..dev`
-Expected: A neat sequence of commits from Tasks 1–5. Each task's commit message names the move (C1/M4/M2/M3/T7).
+  - C1 — rename `cohrence` → `coherence` across npm slug, plugin name, marketplace name
+  - M4 — drop custom UserPromptSubmit slash-command dispatch, use Claude Code's native `/<plugin>:<command>` namespacing
+  - M2 — `.gitattributes` forces LF line endings (kills CRLF noise on Windows checkouts)
+  - M3 — derive `TAG` from `package.json`; `npm run bump <ver>` atomically updates all 7 version sources
+  - T7 — Dependabot weekly auto-PRs for npm + github-actions
 
-DO NOT push `dev` yet — the release plan does that after all phases land.
+Existing marketplace installers of `cohrence@cohrence` re-add under the new slug per `docs/migration/v1.1.0-rename.md`.
+
+### After this release
+
+Next planned cut: 1.1.1 (Phase 2).
+
+Re-score the rubric only after the **final** v1.1.x release lands (Step R13 of the pattern; runs after Phase 5's release, not after this one).
 
 ---
 
@@ -778,9 +789,9 @@ After writing this plan I checked against the spec's Phase 1 moves (C1, M4, M2, 
 - M2 → Task 1 (.gitattributes).
 - M3 → Task 3 (bump script + derived TAG).
 - T7 → Task 2 (Dependabot).
-- Release → deferred to a separate plan ([2026-05-14-v1.1.0-release.md](2026-05-14-v1.1.0-release.md)) that runs after Phases 2–5 also land.
+- Release → Task 6 (cuts v1.1.0 per [release-pattern.md](release-pattern.md)).
 
-Cross-check on ordering: C1 (Task 4) lands *before* M4 (Task 5) — required because M4's rename-command-files step assumes the plugin name is already `coherence`. M3 (Task 3) lands before the release plan — required because the release plan uses `npm run bump`. M2 + T7 are independent and can be either way.
+Cross-check on ordering: C1 (Task 4) lands *before* M4 (Task 5) — required because M4's rename-command-files step assumes the plugin name is already `coherence`. M3 (Task 3) lands before Task 6 — required because Task 6 uses `npm run bump`. M2 + T7 are independent and can be either way.
 
 Type consistency: the bump function signature stays `bumpAllSources(version, paths)` throughout. Path keys (`packageJsonPath`, `packageLockPath`, etc.) used consistently in test + impl.
 

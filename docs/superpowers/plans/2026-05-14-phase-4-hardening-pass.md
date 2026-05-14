@@ -151,8 +151,16 @@ Expected: All pass.
 
 - [ ] **Step 9: Smoke-test debug output**
 
-Run: `COHERENCE_DEBUG=1 npm test 2>&1 | grep "\[coherence:" | head -10`
+Run (bash / Linux / macOS): `COHERENCE_DEBUG=1 npm test 2>&1 | grep "\[coherence:" | head -10`
+Run (PowerShell): `$env:COHERENCE_DEBUG=1; npm test 2>&1 | Select-String "\[coherence:" | Select-Object -First 10`
+Run (cmd.exe): `set COHERENCE_DEBUG=1 && npm test 2>&1 | findstr /C:"[coherence:"`
+
 Expected: Several lines of debug output from instrumented sites. (If zero, the instrumentation didn't fire — investigate.)
+
+After verification, clear the env var so it doesn't pollute later steps:
+- bash: `unset COHERENCE_DEBUG`
+- PowerShell: `Remove-Item Env:COHERENCE_DEBUG`
+- cmd.exe: `set COHERENCE_DEBUG=`
 
 - [ ] **Step 10: Commit T10**
 
@@ -578,13 +586,18 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ### Step 7.1 — SBOM generator
 
+- [ ] **Step 0: Verify npm version**
+
+Run: `npm --version`
+Expected: 10.0.0 or higher. `npm sbom` was added in npm 10. If your version is older, run `npm install -g npm@latest` first (or bump the GitHub Actions runner's npm step in `release.yml`).
+
 - [ ] **Step 1: Create `scripts/gen-sbom.mjs`**
 
 ```javascript
 #!/usr/bin/env node
 /**
  * Emit a CycloneDX SBOM via `npm sbom`. Output: dist/sbom.cdx.json.
- * Runs as part of `npm run build`.
+ * Runs as part of `npm run build`. Requires npm >= 10.
  */
 import { execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -892,17 +905,35 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Phase 4 exit
+## Task 11: Release v1.1.3
 
-All ten Phase 4 moves landed on `dev` (T7 was Phase 1; T1, T2, T3, T4, T5, T6, T8, T9, T10, M5 in this plan). No version bump, no tag, no push to master.
+Cut v1.1.3 for **Phase 4 — hardening pass**. Follow the shared release ceremony in [release-pattern.md](release-pattern.md) with these inputs:
 
-Verify:
+- `<version>`: `1.1.3`
+- `<phase-name>`: `Phase 4 — hardening pass`
+- `<rc-policy>`: **rc-optional** — mostly internal hardening; SLSA + SBOM are new artifacts users may want to verify
+- `<previous-version>`: `v1.1.2`
 
-Run: `npm test && npm run gates`
-Expected: All pass (including the new properties, coverage, perf-budget, and mutation gates if they're in scope of `gates`).
+### RELEASE_NOTES_v1.1.3.md highlights
 
-Run: `git status --short`
-Expected: Clean.
+When writing the hand-written narrative (Step R4 of the pattern), cover:
+
+  - T1 — mutation testing via Stryker on `src/validation/` (highest-stakes path)
+  - T2 — property-based tests via fast-check on the validation chain
+  - T3 — coverage threshold gate (90% src/validation, 75% global floor)
+  - T4 — perf-test budget table; static-analysis gate ensures every perf test has a budget entry (automatic wall-clock regression detection deferred to a v1.1.x patch — needs vitest reporter plumbing)
+  - T5 — SLSA Level 3 build provenance via slsa-github-generator
+  - T6 — CycloneDX SBOM emitted into the tarball (requires npm ≥ 10; if your CI uses older npm, bump it before this release)
+  - T8 — auto-generated release notes from conventional-commits
+  - T9 — public STRIDE threat model at `docs/threat-model.md`
+  - T10 — centralized debug logging via `COHERENCE_DEBUG` env
+  - M5 — magic-convention audit + `docs/conventions.md`
+
+### After this release
+
+Next planned cut: 1.1.4 (Phase 5).
+
+This release introduces the SLSA + SBOM artifacts as part of the tarball — point users at `docs/threat-model.md` for what the new attestations defend against.
 
 ---
 

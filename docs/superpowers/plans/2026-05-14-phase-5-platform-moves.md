@@ -411,6 +411,12 @@ Edit root `package.json` to declare workspaces:
 
 (Skip this if Step 1 chose separate repo — that's a separate plan entirely.)
 
+**Important side effects to handle in this same task:**
+
+- `vitest.config.ts` must exclude `packages/**` from its default scope, otherwise running `npm test` from the repo root will try to execute the workspace package's own tests against the wrong context. Add `exclude: ['packages/**', 'node_modules', 'dist']` (or merge into the existing exclude array).
+- `tsconfig.json`'s `include` may need to exclude `packages/**` similarly; verify `npm run typecheck` still passes after adding the workspace.
+- `npm install` at the root now hoists workspace deps. If `packages/coherence-cli/` has its own devDependencies that conflict with root, the install will fail loudly — investigate before continuing.
+
 ### Step 3.2 — Build the CLI package
 
 - [ ] **Step 2: Scaffold `packages/coherence-cli/`**
@@ -724,20 +730,35 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Phase 5 exit
+## Task 7: Release v1.1.4
 
-All six Phase 5 moves landed on `dev` (S7 possibly deferred per Task 4 Step 1). No version bump, no tag, no push to master.
+Cut v1.1.4 for **Phase 5 — platform moves**. Follow the shared release ceremony in [release-pattern.md](release-pattern.md) with these inputs:
 
-Verify:
+- `<version>`: `1.1.4`
+- `<phase-name>`: `Phase 5 — platform moves`
+- `<rc-policy>`: **rc-required** — pluggable engines is new API surface; third-party engine authors are stakeholders
+- `<previous-version>`: `v1.1.3`
 
-Run: `npm test && npm run gates`
-Expected: All pass. The new asserts loader test, the plugin-validate gate, the autogen-stubs gate all green.
+### RELEASE_NOTES_v1.1.4.md highlights
 
-Run: `claude plugin validate .`
-Expected: `✔ Validation passed`.
+When writing the hand-written narrative (Step R4 of the pattern), cover:
 
-Run: `git status --short`
-Expected: Clean.
+  - S9 — pluggable asserts engines (auto-discover `coherence-engine-*` npm packages)
+  - C2 — use more of Claude Code's plugin surface: skill, agent, output-style, monitor
+  - S8 — `npx coherence-init` standalone bootstrapper for new projects
+  - S7 — VS Code companion (read-only) — *may be deferred to v1.1.5+ per Task 4 gate*
+  - S4 — multi-mode UX writeup draft (not announced publicly yet)
+  - S5 — Anthropic pilot proposal draft (local-only)
+
+Third parties can now publish `coherence-engine-<X>` npm packages — Coherence auto-discovers them on the next session. See [extension tutorial](../extensions/how-to-add-an-asserts-engine.md).
+
+### Final release of the S+ roadmap
+
+This is the **last** v1.1.x release in the planned trajectory. After it lands:
+
+- Run Step R13 of the release pattern: re-score against the 10-axis rubric and capture in `docs/superpowers/specs/<date>-postmortem.md`.
+- Expected composite: ~9.7 (S+ threshold ≥ 9.5).
+- Queue any deferred items (S7 if not yet shipped, ADR bulk-import gaps, perf wall-clock automation from T4) into a v1.2.x roadmap or accept as known gaps.
 
 ---
 
