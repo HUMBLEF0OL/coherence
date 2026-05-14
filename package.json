@@ -34,6 +34,7 @@
     "gates": "vitest run --project static-analysis --project ship",
     "prepare": "husky install",
     "pack:size": "npm pack --dry-run 2>&1 | tail -5",
+    "bump": "node scripts/bump.mjs",
     "validate-plugin": "node scripts/validate-plugin.mjs"
   },
   "dependencies": {

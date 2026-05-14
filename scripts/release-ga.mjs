@@ -27,8 +27,9 @@ const doTag = args.has('--tag');
 const doPush = args.has('--push');
 const dryRun = args.has('--dry-run');
 const unsigned = args.has('--unsigned');
-const TAG = 'v1.0.3';
-const MSG = 'v1.0.3 — marketplace source-shape fix + docs/lint cleanup';
+const PKG_VERSION = JSON.parse(readFileSync('package.json', 'utf8')).version;
+const TAG = `v${PKG_VERSION}`;
+const MSG = process.env.RELEASE_MSG ?? `${TAG} — see RELEASE_NOTES_${TAG}.md`;
 
 void createHash;
 
