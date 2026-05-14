@@ -86,12 +86,12 @@ The user must approve before crossing each boundary marked **CHECKPOINT** below.
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** Create a fresh scratch page `Verification probe (delete me)` under the Coherence landing page via `mcp_notion_notion-create-pages`. Attempt `mcp_notion_notion-update-page` with `command: "update_verification"`, `verification_status: "verified"`, `verification_expiry_days: 7` to confirm whether the workspace tier exposes verification.
+- [ ] **Step 1:** Create a fresh scratch page `Verification probe (delete me)` under the Coherence landing page via `mcp_notion_notion-create-pages`. Attempt `mcp_notion_notion-update-page` with `command: "update_verification"`, `verification_status: "verified"`, `verification_expiry_days: 7` to confirm whether the workspace tier exposes verification. **If the scratch-page probe fails:** retry once on a real evergreen page (e.g., the existing Read Me First / Overview page) before concluding unavailable — some Notion tiers expose verification only on wiki-converted pages.
 - [ ] **Step 2:** Record the result in `notion-backup/2026-05-14/_capabilities.md`:
   - Workspace tier observed.
   - `update_verification` available: yes/no.
-  - Effect on Phase 5 step 9 (skip the call, fall back to Docs `Stale` view alone).
-- [ ] **Step 3:** Trash the scratch page (mirror Task 0.3 step 7).
+  - Effect on Task 5.9 (skip the call, fall back to Docs `Stale` view alone).
+- [ ] **Step 3:** Trash the scratch page (mirror Task 0.3 step 7). If a real page was probed in step 1, immediately undo with `update_verification` `verification_status: "not_verified"` (or the equivalent revoke) so the probe doesn't leave a stale verification banner.
 
 > **CHECKPOINT A** — confirm with user: backup count, restore drill outcome, verification capability. Block until approved.
 
@@ -186,9 +186,9 @@ All four databases live as inline children of the `[Template] New Project` row (
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** Locate the existing Docs database inside `[Template] New Project` (the inventory from Task 0.1 has it). Capture its data source ID into `_ids.md`.
+- [ ] **Step 1:** Locate the existing Docs database inside `[Template] New Project` (the inventory from Task 0.1 has it). Capture its data source ID **and full schema** (every property name + type + select options) into `_ids.md` under `Docs db (template)`. The schema dump is consumed by Task 3.0 to replicate the Docs db inside Coherence (per spec §5.4 "Schema unchanged").
 - [ ] **Step 2:** `mcp_notion_notion-create-view` with `database_id` of the Docs db, `name: "Stale (>90d, Current)"`, `type: table`, `configure: FILTER "Last Updated" < TODAY - 90 DAYS AND "Status" = "Current"; SORT BY "Last Updated" ASC`. (If the DSL rejects the relative date filter, fall back to a simple `Status = "Current"` filter and document the limitation in `_capabilities.md`.)
-- [ ] **Verify:** open the view; confirm it loads (may be empty until Phase 3/5 seed it).
+- [ ] **Verify:** open the view; confirm it loads (may be empty until Phase 3/5 seed it). Confirm the captured schema in `_ids.md` includes the `Status` SELECT options (must include at least `Current`) — if `Current` is not present, halt and surface to the user.
 
 ---
 
@@ -283,8 +283,8 @@ The Coherence project has **its own** Releases / DD / Bugs databases. Phase 3 cr
 
 **Resolves agent question 3:** the Coherence project gets its own database instances, not linked views of the template's databases. This isolates per-project trust ledgers and lets each project carry its own DD numbering.
 
-- [ ] **Step 1:** Repeat Tasks 1.1, 1.2, 1.3, 1.4 with `parent: { page_id: "93d010d4-6a70-8280-ba6c-013d97211fd6" }` (the Coherence landing page) instead of the template ID.
-- [ ] **Step 2:** Repeat Task 2.5 against the **Coherence Releases db** so the same ship-time-checklist and sequencing-gates toggles are present (resolves audit P11). If path B was taken in Task 2.5, the toggles must be applied to each row body in Phase 3.1 — record this requirement in `_capabilities.md`.
+- [ ] **Step 1:** Repeat Tasks 1.1, 1.2, 1.3 with `parent: { page_id: "93d010d4-6a70-8280-ba6c-013d97211fd6" }` (the Coherence landing page) instead of the template ID. **For the Docs db:** the template's Docs db is not duplicated automatically — use `mcp_notion_notion-create-database` with the schema captured in Task 1.4 step 1 (per spec §5.4 "same schema") and add the `Stale (>90d, Current)` view from Task 1.4 step 2.
+- [ ] **Step 2:** Repeat Task 2.5 against the **Coherence Releases db** so the same ship-time-checklist and sequencing-gates toggles are present (resolves audit P11). **Use the same path (A or B) determined in Task 2.5; do not re-probe MCP capability.** If path B was taken in Task 2.5, the toggles must be applied to each row body in Phase 3.1 — record this requirement in `_capabilities.md`.
 - [ ] **Step 3:** Record the Coherence Releases / DD / Bugs / Docs data source IDs in `_ids.md` under a `Coherence project` heading. **From here on, "Releases db" / "DD db" / "Bugs db" / "Docs db" refer to the Coherence-scoped instances unless prefixed with `template-`.**
 - [ ] **Verify:** fetch each db; confirm schemas and views match Phase 1.
 
@@ -337,7 +337,7 @@ Total expected DDs: 147.
 
 - [ ] **Step 1:** For each of the 6 source pages: parse the body (from Phase 0 backup files, NOT live Notion — avoids re-fetch traffic). Extract `(DD-NNN, title, version)` triples. Each DD heading typically looks like `### DD-131: Trust gate gates auto-apply`.
 - [ ] **Step 2:** Compile a flat list of 147 triples; sanity-check zero-padding and uniqueness of DD numbers. If a DD appears in multiple releases (re-statement), keep only the earliest version and note the duplicate in `_ids.md` for human review.
-- [ ] **Step 3:** Batch-create rows via `mcp_notion_notion-create-pages` with `parent: { data_source_id: "<Coherence DD db ds id>" }`. The MCP allows up to 100 pages per call — split into 2 batches (~74 + ~73). For each: properties `DD #` (title), `Title`, `Version introduced` (relation to the matching Releases-db row), `Status: "Active"`, no Tags, no body.
+- [ ] **Step 3:** Batch-create rows via `mcp_notion_notion-create-pages` with `parent: { data_source_id: "<Coherence DD db ds id>" }`. The MCP create-pages call supports batching; start with batches of ~74 rows. **If the MCP rejects the batch for size:** halve and retry. For each: properties `DD #` (title), `Title`, `Version introduced` (relation to the matching Releases-db row), `Status: "Active"`, no Tags, no body.
 - [ ] **Step 4:** Verify count: open `Table` view sorted by DD #; confirm 147 rows, no gaps in numbering, every row has a Version-introduced relation.
 
 ### Task 3.4 (Sub-phase 3b — DD tag pass)
@@ -345,7 +345,7 @@ Total expected DDs: 147.
 **Reversible:** yes.
 
 - [ ] **Step 1:** For each of the 147 DDs, classify into the §5.2 Tags multi-select using the title alone (heuristic). Build the mapping locally first (CSV in `notion-backup/2026-05-14/_dd-tags.csv`).
-- [ ] **Step 2:** For each row: `mcp_notion_notion-update-page` with `command: "update_properties"`, `properties: { "Tags": "Architecture,Pipeline" }` (multi-select via comma-list per MCP convention). Issue in batches of ~10 in parallel; pause between batches to respect rate limits.
+- [ ] **Step 2:** For each row: `mcp_notion_notion-update-page` with `command: "update_properties"`, `properties: { "Tags": ["Architecture", "Pipeline"] }` (multi-select as JSON array). **Verify on the first call:** if the MCP rejects the array form, retry with the comma-separated string form `"Architecture,Pipeline"`. Record the working shape in `_capabilities.md` and use it for the rest of the batch. Issue in batches of ~10 in parallel; pause between batches to respect rate limits.
 - [ ] **Verify:** open `By Status` view filtered to no-tag rows; confirm zero results.
 
 > **CHECKPOINT C** — confirm with user before starting Phase 3.5. Offer the spec §10 fallback: skip Phase 3.5 **and Phase 3.6** entirely, leave DD bodies on per-release pages, treat the DD db as a title-only index. If accepted, jump directly to Phase 4 — do NOT run 3.6 (the per-release sub-page conversion only makes sense when the DD db has full bodies).
@@ -375,13 +375,15 @@ Total expected DDs: 147.
 
 For each per-release `Design Decisions` sub-page (v0.1 Planning Archive's DD section is a special case — handle separately because it is mixed with other content; **resolves agent question 2:** surgical extraction via `update_content`, NOT a full-page rewrite):
 
+**Pre-step (applies to all releases v0.2..v1.0.1):** for each per-release Design Decisions sub-page, inspect the Phase 0 backup. If the body contains anything other than `### DD-NNN` headings and their bodies (e.g., a preamble paragraph, inter-DD prose, a closing section), DOWNGRADE that page from `replace_content` to surgical `update_content` of only the DD section — same treatment as v0.1 Planning Archive. Record the verdict per page in `_ids.md` under `DD sub-page conversion mode`.
+
 - [ ] **v0.2 Design Decisions**: replace body with single inline-linked view of the Coherence DD db filtered to `Version introduced = v0.2`. Use `mcp_notion_notion-create-view` with `parent_page_id = <this page>`, `data_source_id = <Coherence DD db ds id>`, `type: table`, `name: "v0.2 DDs"`, `configure: FILTER "Version introduced" = "v0.2"; SORT BY "DD #" ASC`. THEN `mcp_notion_notion-update-page` with `command: "replace_content"` and a body that contains only a one-line pointer + the new linked-view block reference. Pre-write: confirm the Phase 0 backup exists.
 - [ ] **v0.3 Design Decisions**: same pattern.
 - [ ] **v0.4 Design Decisions**: same pattern.
 - [ ] **v1.0 Design Decisions**: same pattern.
 - [ ] **v1.0.1 Design Decisions**: same pattern.
-- [ ] **v0.1 Planning Archive**: this page contains DDs mixed with other planning content. Use `command: "update_content"` to replace ONLY the DD section with a linked-view block; leave non-DD content intact. Pre-write: identify the exact `old_str` that matches the DD section.
-- [ ] **Verify:** open each per-release page; confirm only one block (the linked view) for v0.2..v1.0.1, and that v0.1 Planning Archive retains its non-DD content.
+- [ ] **v0.1 Planning Archive**: this page contains DDs mixed with other planning content. Use `command: "update_content"` to replace ONLY the DD section with a linked-view block; leave non-DD content intact. Boundary detection: from the Phase 0 backup, the DD section starts at the first `### DD-NNN` heading and ends at the next H2 heading (`## `) or end of page. Capture that range verbatim as `old_str`.
+- [ ] **Verify:** open each per-release page; confirm only one block (the linked view) for v0.2..v1.0.1 (where pure-DD), and that v0.1 Planning Archive (and any v0.2..v1.0.1 pages downgraded by the pre-step) retain their non-DD content.
 
 ---
 
@@ -409,7 +411,7 @@ Source material (extract verbatim from v1.0.1 release page body — backup at `n
 - Path to 9/10 follow-ups
 - Cassette-recording runbook
 - Path C migration update
-- Final fix tally prose (Bugs db now supersedes the structured tally — leave a one-line pointer "Structured fix list lives in the Bugs database; this prose is the original narrative.")
+- Final fix tally prose (Bugs db now supersedes the structured tally — in the Working Log copy of this section, append a one-line pointer at the END of the prose: "Structured fix list lives in the Bugs database; this prose is the original narrative.")
 
 Steps:
 
@@ -486,6 +488,8 @@ Each step uses `update_content` (search-and-replace) wherever possible. `replace
 
 **Reversible:** via backup only.
 
+> Note: this is the **Coherence project's** `Reference / Design Decisions` page (under the Coherence landing page), NOT the template's `📑 Reference` page created in Task 2.4. Different pages, different parents.
+
 - [ ] **Step 1:** Locate the `Reference / Design Decisions` page in the Coherence project. Confirm Phase 0 backup is fresh.
 - [ ] **Step 2:** `mcp_notion_notion-update-page` with `command: "replace_content"`, `new_str` containing only a one-line pointer + the linked-view block reference (created via `mcp_notion_notion-create-view` with `parent_page_id = <this page>`, `data_source_id = <Coherence DD db ds id>`, `type: table`, `name: "All DDs"`, `configure: SORT BY "DD #" ASC`).
 - [ ] **Verify:** open the page; confirm the linked view shows 147 DDs.
@@ -496,7 +500,7 @@ Each step uses `update_content` (search-and-replace) wherever possible. `replace
 
 > **CHECKPOINT E** — confirm with user before starting. Each rename is independent. **12 actions total, two per release.**
 
-For each release, rename both pages (BRD + TSD) using `update_properties` with `properties: { "title": "<new title>" }`. Tasks may be issued in parallel batches of ~6 to respect rate limits.
+For each release, rename both pages (BRD + TSD) using `update_properties` with `properties: { "title": "<new title>" }`. Tasks may be issued in parallel batches of ~6 to respect rate limits. **Order constraint:** do v1.0.1 LAST — its BRD/TSD must not be renamed until Phase 4 (working-log extraction + v1.0.1 page trim) is fully verified.
 
 - [ ] **v0.1**: rename `BRD` (or `📘 BRD`) → `BRD-delta`.
 - [ ] **v0.1**: rename `Technical Specification` (or `🛠️ Technical Specification`) → `TSD-delta`.
@@ -517,7 +521,7 @@ For each release, rename both pages (BRD + TSD) using `update_properties` with `
 **Reversible:** yes for db creation; row creation reversible per-row.
 
 - [ ] **Step 1:** The Coherence Docs db was already created in Task 3.0; confirm its ID is in `_ids.md`.
-- [ ] **Step 2:** For each of the 6 evergreen pages (Read Me First, Architecture, BRD, Technical Spec, Roadmap, Glossary), `mcp_notion_notion-create-pages` with `parent: { data_source_id: "<Coherence Docs db ds id>" }`, properties: title (the page title), Status `Current`, Last Updated today (date type — `date:Last Updated:start`).
+- [ ] **Step 2:** For each of the 6 evergreen pages (Read Me First, Architecture, BRD, Technical Spec, Roadmap, Glossary), `mcp_notion_notion-create-pages` with `parent: { data_source_id: "<Coherence Docs db ds id>" }`, properties: `Name` / title (the page title), `Status: "Current"`, `Last Updated: "2026-05-14"` (today's date in ISO yyyy-mm-dd; pass as a string under the date property name).
 - [ ] **Verify:** open the `Stale (>90d, Current)` view; confirm all 6 rows are not in it (since Last Updated = today).
 
 ### Task 5.9: Apply `update_verification` to 6 evergreen pages (best-effort)
@@ -599,6 +603,8 @@ For each release, rename both pages (BRD + TSD) using `update_properties` with `
 ## Resumption notes
 
 If the plan is interrupted (crash, context loss, multi-session work) the following recovery procedure rebuilds state without re-running completed work.
+
+**Backup-state commit checkpoints.** Beyond Task 0.2's initial commit of `notion-backup/2026-05-14/`, run `git add notion-backup/2026-05-14 && git commit -m "chore(backup): refresh state after Phase <N>"` after Phase 1 (captures `_ids.md`, `_capabilities.md`), after Phase 3 (captures `_tags.csv`, `_dd-bodies/`, `_dd-progress.csv`, `_dd-tags.csv`), and after Phase 5 (final state). This guarantees the resumption ledgers below are recoverable from git history.
 
 1. **Determine current phase from artifacts.**
    - Phase 0 done? `notion-backup/2026-05-14/_inventory.json` and `_capabilities.md` exist, and the directory is committed.
