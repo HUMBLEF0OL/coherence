@@ -48,4 +48,15 @@ describe('bumpAllSources', () => {
       initTsPath: path.join(tmp, 'init.ts'),
     })).toThrow(/semver/i);
   });
+
+  it('rejects marketplace.json with empty plugins[]', () => {
+    writeFileSync(path.join(tmp, 'marketplace.json'), JSON.stringify({ plugins: [] }, null, 2));
+    expect(() => bumpAllSources('1.1.0', {
+      packageJsonPath: path.join(tmp, 'package.json'),
+      packageLockPath: path.join(tmp, 'package-lock.json'),
+      pluginJsonPath: path.join(tmp, 'plugin.json'),
+      marketplaceJsonPath: path.join(tmp, 'marketplace.json'),
+      initTsPath: path.join(tmp, 'init.ts'),
+    })).toThrow(/plugins\[\] is empty/);
+  });
 });

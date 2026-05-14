@@ -35,33 +35,42 @@ export function bumpAllSources(version, paths = DEFAULT_PATHS) {
     throw new Error(`Not a valid semver string: ${version}`);
   }
 
+  // Read + transform in memory (no writes yet)
   const pkg = JSON.parse(readFileSync(paths.packageJsonPath, 'utf8'));
   pkg.version = version;
-  writeFileSync(paths.packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
 
   const lock = JSON.parse(readFileSync(paths.packageLockPath, 'utf8'));
   lock.version = version;
   if (lock.packages?.['']) lock.packages[''].version = version;
-  writeFileSync(paths.packageLockPath, JSON.stringify(lock, null, 2) + '\n');
 
   const plugin = JSON.parse(readFileSync(paths.pluginJsonPath, 'utf8'));
   plugin.version = version;
-  writeFileSync(paths.pluginJsonPath, JSON.stringify(plugin, null, 2) + '\n');
 
   const market = JSON.parse(readFileSync(paths.marketplaceJsonPath, 'utf8'));
+  if (!Array.isArray(market.plugins) || market.plugins.length === 0) {
+    throw new Error(`${paths.marketplaceJsonPath}: plugins[] is empty or missing`);
+  }
+  if (!market.plugins[0].source) {
+    throw new Error(`${paths.marketplaceJsonPath}: plugins[0].source is missing`);
+  }
   market.plugins[0].version = version;
   market.plugins[0].source.ref = `v${version}`;
-  writeFileSync(paths.marketplaceJsonPath, JSON.stringify(market, null, 2) + '\n');
 
   const initTs = readFileSync(paths.initTsPath, 'utf8');
-  const updated = initTs.replace(
+  const updatedInit = initTs.replace(
     /(export const PLUGIN_VERSION\s*=\s*)['"][^'"]+['"]/,
     `$1'${version}'`,
   );
-  if (updated === initTs) {
+  if (updatedInit === initTs) {
     throw new Error(`Failed to find PLUGIN_VERSION literal in ${paths.initTsPath}`);
   }
-  writeFileSync(paths.initTsPath, updated);
+
+  // Writes (last; all validations have passed)
+  writeFileSync(paths.packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+  writeFileSync(paths.packageLockPath, JSON.stringify(lock, null, 2) + '\n');
+  writeFileSync(paths.pluginJsonPath, JSON.stringify(plugin, null, 2) + '\n');
+  writeFileSync(paths.marketplaceJsonPath, JSON.stringify(market, null, 2) + '\n');
+  writeFileSync(paths.initTsPath, updatedInit);
 }
 
 if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '')) {
