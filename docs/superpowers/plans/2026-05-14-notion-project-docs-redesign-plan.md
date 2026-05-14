@@ -140,7 +140,7 @@ All four databases live as inline children of the `[Template] New Project` row (
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** Call `mcp_notion_notion-create-database` with `parent: { page_id: "f2a010d4-6a70-83ee-903e-01b55b968b74" }`, `title: "Releases"`, and the schema from spec §5.1:
+- [x] **Step 1:** Call `mcp_notion_notion-create-database` with `parent: { page_id: "f2a010d4-6a70-83ee-903e-01b55b968b74" }`, `title: "Releases"`, and the schema from spec §5.1:
   - `Version` TITLE
   - `Status` SELECT (`Planning`, `Authoring`, `Implementing`, `Shipped`, `Superseded`)
   - `Ship date` DATE
@@ -153,18 +153,18 @@ All four databases live as inline children of the `[Template] New Project` row (
   - `Rolled to next` RICH_TEXT
   - `Notes link` URL
   - `Theme` RICH_TEXT
-- [ ] **Step 2:** Record the returned data source ID and database ID in `notion-backup/2026-05-14/_ids.md` under a `Releases db (template)` heading.
-- [ ] **Step 3:** Create the three views via `mcp_notion_notion-create-view`:
+- [x] **Step 2:** Record the returned data source ID and database ID in `notion-backup/2026-05-14/_ids.md` under a `Releases db (template)` heading.
+- [x] **Step 3:** Create the three views via `mcp_notion_notion-create-view`:
   - `Table` — `type: table`, `configure: SORT BY "Ship date" DESC`.
   - `Board by Status` — `type: board`, `configure: GROUP BY "Status"`.
   - `Timeline` — `type: timeline`, `configure: TIMELINE BY "Ship date" TO "Ship date"`.
-- [ ] **Verify:** fetch the database; confirm 12 properties + 3 views.
+- [x] **Verify:** fetch the database; confirm 12 properties + 3 views. *Verified via create-database + update-data-source responses: 12 user-defined properties present, plus auto back-relations `Extended by` (from `Substrate`), `Design Decisions` (from DD's `Version introduced`), `Bugs` (from Bugs' `Release`). 3 views created.*
 
 ### Task 1.2: Create the Design Decisions database (template scope)
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** Call `mcp_notion_notion-create-database` with `parent: { page_id: "f2a010d4-6a70-83ee-903e-01b55b968b74" }`, `title: "Design Decisions"`, schema from §5.2:
+- [x] **Step 1:** Call `mcp_notion_notion-create-database` with `parent: { page_id: "f2a010d4-6a70-83ee-903e-01b55b968b74" }`, `title: "Design Decisions"`, schema from §5.2:
   - `DD #` TITLE
   - `Title` RICH_TEXT
   - `Version introduced` RELATION → Releases db (data source ID from Task 1.1), DUAL `Design Decisions`.
@@ -172,19 +172,19 @@ All four databases live as inline children of the `[Template] New Project` row (
   - `Supersedes` RELATION self DUAL `Superseded by`. Notion auto-shows the back-relation under the chosen DUAL name; **do NOT add a separate Rollup property** (resolves agent question 1 — the auto back-relation is the implementation choice). Spec §5.2's `Superseded by` Rollup is satisfied by the DUAL back-relation.
   - `Tags` MULTI_SELECT (`Architecture`, `Pipeline`, `Trust`, `Validation`, `State`, `Build/Release`, `Privacy`, `Security`, `UX/Commands`, `LLM`, `Telemetry`, `Distribution`)
   - Body lives in row body (no extra property).
-- [ ] **Step 2:** Record IDs in `_ids.md` under `Design Decisions db (template)`.
-- [ ] **Step 3:** Create the four views per §5.2:
+- [x] **Step 2:** Record IDs in `_ids.md` under `Design Decisions db (template)`.
+- [x] **Step 3:** Create the four views per §5.2:
   - `Table` — `SORT BY "DD #" ASC`.
   - `By Version` — `type: board`, `GROUP BY "Version introduced"`.
   - `By Status` — `type: table`, `GROUP BY "Status"` (or filtered table; use whichever surfaces best in Notion).
   - `Active only` — `type: table`, `FILTER "Status" = "Active"; SORT BY "DD #" ASC`.
-- [ ] **Verify:** fetch; confirm relation to Releases is wired both ways and that `Superseded by` appears as the auto back-relation of `Supersedes`.
+- [x] **Verify:** fetch; confirm relation to Releases is wired both ways and that `Superseded by` appears as the auto back-relation of `Supersedes`. *Verified via update-data-source response: `Supersedes` and `Superseded by` both present on DD ds; `Version introduced` relation links to Releases ds (`collection://247ab3e1...`) and Releases ds shows the auto back-relation `Design Decisions`.*
 
 ### Task 1.3: Create the Bugs database (template scope)
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** Call `mcp_notion_notion-create-database` with `parent: { page_id: "f2a010d4-6a70-83ee-903e-01b55b968b74" }`, `title: "Bugs"`, schema from §5.3:
+- [x] **Step 1:** Call `mcp_notion_notion-create-database` with `parent: { page_id: "f2a010d4-6a70-83ee-903e-01b55b968b74" }`, `title: "Bugs"`, schema from §5.3:
   - `Fix #` TITLE
   - `Title` RICH_TEXT
   - `Bug class` SELECT (`Validation gate`, `Release pipeline`, `LLM transport`, `Privacy / .gitignore`, `Concurrency`, `Documentation`, `Render bug`, `Other`)
@@ -195,20 +195,20 @@ All four databases live as inline children of the `[Template] New Project` row (
   - `Release` RELATION → Releases db, DUAL `Bugs`.
   - `Status` SELECT (`Open`, `In progress`, `Fixed`, `Won't fix`)
   - Notes lives in row body.
-- [ ] **Step 2:** Record IDs in `_ids.md`.
-- [ ] **Step 3:** Create three views per §5.3:
+- [x] **Step 2:** Record IDs in `_ids.md`.
+- [x] **Step 3:** Create three views per §5.3:
   - `Table by Release` — `type: table`, `GROUP BY "Release"`.
   - `Open only` — `FILTER "Status" = "Open"`.
   - `By Caught by` — `type: board`, `GROUP BY "Caught by"`.
-- [ ] **Verify:** fetch; confirm 9 properties + 3 views.
+- [x] **Verify:** fetch; confirm 9 properties + 3 views. *Verified via create-database response: 9 user-defined properties present (Fix #, Title, Bug class, Severity, Commit SHA, Tests added, Caught by, Release, Status); 3 views created.*
 
 ### Task 1.4: Add `Stale (>90d, Current)` view to existing Docs db (template scope)
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** Locate the existing Docs database inside `[Template] New Project` (the inventory from Task 0.1 has it). Capture its data source ID **and full schema** (every property name + type + select options) into `_ids.md` under `Docs db (template)`. The schema dump is consumed by Task 3.0 to replicate the Docs db inside Coherence (per spec §5.4 "Schema unchanged").
-- [ ] **Step 2:** `mcp_notion_notion-create-view` with `database_id` of the Docs db, `name: "Stale (>90d, Current)"`, `type: table`, `configure: FILTER "Last Updated" < TODAY - 90 DAYS AND "Status" = "Current"; SORT BY "Last Updated" ASC`. (If the DSL rejects the relative date filter, fall back to a simple `Status = "Current"` filter and document the limitation in `_capabilities.md`.)
-- [ ] **Verify:** open the view; confirm it loads (may be empty until Phase 3/5 seed it). Confirm the captured schema in `_ids.md` includes the `Status` SELECT options (must include at least `Current`) — if `Current` is not present, halt and surface to the user.
+- [x] **Step 1:** Locate the existing Docs database inside `[Template] New Project` (the inventory from Task 0.1 has it). Capture its data source ID **and full schema** (every property name + type + select options) into `_ids.md` under `Docs db (template)`. The schema dump is consumed by Task 3.0 to replicate the Docs db inside Coherence (per spec §5.4 "Schema unchanged"). *Captured: db `a1b010d4-6a70-8370-8e1d-0140bd0631c7`, ds `e2a010d4-6a70-8246-8b49-07be53668c6e`. 5 properties: Name (TITLE), Category (SELECT × 14 options), Status (SELECT: Current, Draft, Needs Update, Outdated), Tags (MULTI_SELECT × 6 options), Last Updated (LAST_EDITED_TIME).*
+- [x] **Step 2:** `mcp_notion_notion-create-view` with `database_id` of the Docs db, `name: "Stale (>90d, Current)"`, `type: table`, `configure: FILTER "Last Updated" < TODAY - 90 DAYS AND "Status" = "Current"; SORT BY "Last Updated" ASC`. (If the DSL rejects the relative date filter, fall back to a simple `Status = "Current"` filter and document the limitation in `_capabilities.md`.) *Relative-date DSL rejected (`Unexpected character: -`); fallback `FILTER "Status" = "Current"; SORT BY "Last Updated" ASC` applied. View id `360010d4-6a70-8156-9e05-000c9a3c5772`. Limitation logged in `_capabilities.md`.*
+- [x] **Verify:** open the view; confirm it loads (may be empty until Phase 3/5 seed it). Confirm the captured schema in `_ids.md` includes the `Status` SELECT options (must include at least `Current`) — if `Current` is not present, halt and surface to the user. *Status SELECT options confirmed: Current ✅, Draft, Needs Update, Outdated.*
 
 ---
 
