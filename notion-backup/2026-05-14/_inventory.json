@@ -1,0 +1,347 @@
+{
+  "count": 57,
+  "entries": [
+    {
+      "id": "35b010d4-6a70-8119-9331-dda1062fc202",
+      "title": "✅ BRD-4 — Release Criteria & Acceptance",
+      "url": "https://www.notion.so/35b010d46a7081199331dda1062fc202",
+      "file": "brd-4-release-criteria-acceptance-2.md"
+    },
+    {
+      "id": "35b010d4-6a70-811f-886d-f73e0cea0176",
+      "title": "🎯 BRD-1 — Business Context & Objectives (v0.2)",
+      "url": "https://www.notion.so/35b010d46a70811f886df73e0cea0176",
+      "file": "brd-1-business-context-v0-2.md"
+    },
+    {
+      "id": "35b010d4-6a70-8147-911d-dfddfb5a2f80",
+      "title": "🧩 Design Decisions",
+      "url": "https://www.notion.so/35b010d46a708147911ddfddfb5a2f80",
+      "file": "design-decisions-18.md"
+    },
+    {
+      "id": "35b010d4-6a70-814f-bfbb-d7110373a2e4",
+      "title": "📐 BRD",
+      "url": "https://www.notion.so/35b010d46a70814fbfbbd7110373a2e4",
+      "file": "brd.md"
+    },
+    {
+      "id": "35b010d4-6a70-8152-85ce-f48ffce741d4",
+      "title": "Technical Specification (v0.1)",
+      "url": "https://www.notion.so/35b010d46a70815285cef48ffce741d4",
+      "file": "technical-specification-v0-1.md"
+    },
+    {
+      "id": "35b010d4-6a70-8156-b8f6-fbbb8ac00f68",
+      "title": "🚀 BRD-4 — Release Criteria & Acceptance",
+      "url": "https://www.notion.so/35b010d46a708156b8f6fbbb8ac00f68",
+      "file": "brd-4-release-criteria-acceptance-3.md"
+    },
+    {
+      "id": "35b010d4-6a70-8161-8743-d49e75a40eda",
+      "title": "🎯 BRD-1 — Business Context & Objectives",
+      "url": "https://www.notion.so/35b010d46a7081618743d49e75a40eda",
+      "file": "brd-1-business-context-objectives.md"
+    },
+    {
+      "id": "35b010d4-6a70-8168-8d3f-e27c531626b6",
+      "title": "🚀 Releases",
+      "url": "https://www.notion.so/35b010d46a7081688d3fe27c531626b6",
+      "file": "releases.md"
+    },
+    {
+      "id": "35b010d4-6a70-816d-8562-ca52c48a9b27",
+      "title": "⚠️ BRD-5 — Risks, Dependencies, Out-of-Scope",
+      "url": "https://www.notion.so/35b010d46a70816d8562ca52c48a9b27",
+      "file": "brd-5-risks-dependencies-out-of-scope-2.md"
+    },
+    {
+      "id": "35b010d4-6a70-816f-a5cb-f2da31f11bd4",
+      "title": "⚠️ BRD-5 — Risks, Dependencies, Out-of-Scope",
+      "url": "https://www.notion.so/35b010d46a70816fa5cbf2da31f11bd4",
+      "file": "brd-5-risks-dependencies-out-of-scope-3.md"
+    },
+    {
+      "id": "35b010d4-6a70-8171-8781-cd2cb908ac52",
+      "title": "📘 📘 BRD",
+      "url": "https://www.notion.so/35b010d46a7081718781cd2cb908ac52",
+      "file": "brd-6.md"
+    },
+    {
+      "id": "35b010d4-6a70-8175-a4f1-d6e4e2c3e614",
+      "title": "🛠️ 🛠️ Technical Specification (v0.2)",
+      "url": "https://www.notion.so/35b010d46a708175a4f1d6e4e2c3e614",
+      "file": "technical-specification-v0-2-5.md"
+    },
+    {
+      "id": "35b010d4-6a70-8197-ba8e-fff2ba988296",
+      "title": "🛡️ BRD-3 — Non-Functional Requirements",
+      "url": "https://www.notion.so/35b010d46a708197ba8efff2ba988296",
+      "file": "brd-3-non-functional-requirements-2.md"
+    },
+    {
+      "id": "35b010d4-6a70-819d-a60f-e8948e2b36e2",
+      "title": "⚙️ Technical Spec",
+      "url": "https://www.notion.so/35b010d46a70819da60fe8948e2b36e2",
+      "file": "technical-spec.md"
+    },
+    {
+      "id": "35b010d4-6a70-81b0-b4af-ec8eb33fcba5",
+      "title": "⚙️ BRD-2 — Functional Requirements",
+      "url": "https://www.notion.so/35b010d46a7081b0b4afec8eb33fcba5",
+      "file": "brd-2-functional-requirements-5.md"
+    },
+    {
+      "id": "35b010d4-6a70-81b2-84d5-e2c645ed6e5f",
+      "title": "📐 BRD-3 — Non-Functional Requirements",
+      "url": "https://www.notion.so/35b010d46a7081b284d5e2c645ed6e5f",
+      "file": "brd-3-non-functional-requirements-3.md"
+    },
+    {
+      "id": "35b010d4-6a70-81cf-900e-e676993165c6",
+      "title": "⚙️ BRD-2 — Functional Requirements",
+      "url": "https://www.notion.so/35b010d46a7081cf900ee676993165c6",
+      "file": "brd-2-functional-requirements-4.md"
+    },
+    {
+      "id": "35b010d4-6a70-81d9-b307-fd6a27a4deb8",
+      "title": "TS-3 — Data Model & Storage",
+      "url": "https://www.notion.so/35b010d46a7081d9b307fd6a27a4deb8",
+      "file": "ts-3-data-model-storage.md"
+    },
+    {
+      "id": "35b010d4-6a70-81da-b5f8-c31a6d59dcea",
+      "title": "📘 BRD (v0.1)",
+      "url": "https://www.notion.so/35b010d46a7081dab5f8c31a6d59dcea",
+      "file": "brd-v0-1.md"
+    },
+    {
+      "id": "35b010d4-6a70-81e0-8b50-cba68bbf55ba",
+      "title": "1️⃣ v0.1",
+      "url": "https://www.notion.so/35b010d46a7081e08b50cba68bbf55ba",
+      "file": "release-v0-1.md"
+    },
+    {
+      "id": "35b010d4-6a70-81e6-8fe1-df7d7b708c90",
+      "title": "🚧 v0.2",
+      "url": "https://www.notion.so/35b010d46a7081e68fe1df7d7b708c90",
+      "file": "release-v0-2.md"
+    },
+    {
+      "id": "35b010d4-6a70-81fa-8add-d9ab08d6b56a",
+      "title": "📚 Planning Archive (v0.1)",
+      "url": "https://www.notion.so/35b010d46a7081fa8addd9ab08d6b56a",
+      "file": "planning-archive-v0-1.md"
+    },
+    {
+      "id": "35b010d4-6a70-81fc-aff1-fce4c0dcbec0",
+      "title": "❔ Open Questions",
+      "url": "https://www.notion.so/35b010d46a7081fcaff1fce4c0dcbec0",
+      "file": "open-questions-10.md"
+    },
+    {
+      "id": "35c010d4-6a70-8102-8c7a-c3287ae9a51c",
+      "title": "👥 BRD-1 — Personas & Use Cases (v0.3)",
+      "url": "https://www.notion.so/35c010d46a7081028c7ac3287ae9a51c",
+      "file": "brd-1-personas-v0-3.md"
+    },
+    {
+      "id": "35c010d4-6a70-8133-b65d-fad745442bf0",
+      "title": "📋 BRD — Business Requirements Document",
+      "url": "https://www.notion.so/35c010d46a708133b65dfad745442bf0",
+      "file": "brd-business-requirements-document-5.md"
+    },
+    {
+      "id": "35c010d4-6a70-8153-9285-e448bcd2cf35",
+      "title": "v0.3",
+      "url": "https://www.notion.so/35c010d46a7081539285e448bcd2cf35",
+      "file": "v0-3-6.md"
+    },
+    {
+      "id": "35c010d4-6a70-815e-9648-e842493b141b",
+      "title": "🗺️ BRD-5 — Roadmap & Post-GA Commitments (v0.3)",
+      "url": "https://www.notion.so/35c010d46a70815e9648e842493b141b",
+      "file": "brd-5-roadmap-v0-3.md"
+    },
+    {
+      "id": "35c010d4-6a70-816a-98f9-f63d528dfe03",
+      "title": "Open Questions",
+      "url": "https://www.notion.so/35c010d46a70816a98f9f63d528dfe03",
+      "file": "open-questions-9.md"
+    },
+    {
+      "id": "35c010d4-6a70-8180-bd9a-e9a069601528",
+      "title": "📊 BRD-4 — Success Metrics & Acceptance (v0.3)",
+      "url": "https://www.notion.so/35c010d46a708180bd9ae9a069601528",
+      "file": "brd-4-acceptance-v0-3.md"
+    },
+    {
+      "id": "35c010d4-6a70-81a2-b4a0-da71adf2aa52",
+      "title": "🛠️ Implementation Plan — v0.3 (M0..M8)",
+      "url": "https://www.notion.so/35c010d46a7081a2b4a0da71adf2aa52",
+      "file": "implementation-plan-v0-3-m0-m8-3.md"
+    },
+    {
+      "id": "35c010d4-6a70-81c2-a010-cb13993184f4",
+      "title": "🛡️ BRD-3 — Non-Functional Requirements (v0.3)",
+      "url": "https://www.notion.so/35c010d46a7081c2a010cb13993184f4",
+      "file": "brd-3-nfrs-v0-3.md"
+    },
+    {
+      "id": "35c010d4-6a70-81d5-b3dc-e4a6cbfdce1d",
+      "title": "Design Decisions",
+      "url": "https://www.notion.so/35c010d46a7081d5b3dce4a6cbfdce1d",
+      "file": "design-decisions-17.md"
+    },
+    {
+      "id": "35c010d4-6a70-81e0-b319-d08705d179ee",
+      "title": "⚙️ BRD-2 — Functional Requirements (v0.3)",
+      "url": "https://www.notion.so/35c010d46a7081e0b319d08705d179ee",
+      "file": "brd-2-frs-v0-3.md"
+    },
+    {
+      "id": "35d010d4-6a70-8109-b3c4-d3fe3ae28142",
+      "title": "BRD-1 — Personas & Use Cases (v0.4)",
+      "url": "https://www.notion.so/35d010d46a708109b3c4d3fe3ae28142",
+      "file": "brd-1-personas-v0-4.md"
+    },
+    {
+      "id": "35d010d4-6a70-8120-a6a3-cab4f8ec984c",
+      "title": "BRD-3 — Non-Functional Requirements (v0.4)",
+      "url": "https://www.notion.so/35d010d46a708120a6a3cab4f8ec984c",
+      "file": "brd-3-nfrs-v0-4.md"
+    },
+    {
+      "id": "35d010d4-6a70-812a-a8f0-c30a0f13beac",
+      "title": "BRD-4 — Success Metrics & Acceptance (v0.4)",
+      "url": "https://www.notion.so/35d010d46a70812aa8f0c30a0f13beac",
+      "file": "brd-4-acceptance-v0-4.md"
+    },
+    {
+      "id": "35d010d4-6a70-8187-93f8-d6742c77fb5e",
+      "title": "BRD-5 — Roadmap & Post-GA Commitments (v0.4)",
+      "url": "https://www.notion.so/35d010d46a70818793f8d6742c77fb5e",
+      "file": "brd-5-roadmap-v0-4.md"
+    },
+    {
+      "id": "35d010d4-6a70-818b-badc-de0ea0113d75",
+      "title": "BRD-2 — Functional Requirements",
+      "url": "https://www.notion.so/35d010d46a70818bbadcde0ea0113d75",
+      "file": "brd-2-functional-requirements-3.md"
+    },
+    {
+      "id": "35d010d4-6a70-81c7-8b93-ff369aa93147",
+      "title": "Open Questions",
+      "url": "https://www.notion.so/35d010d46a7081c78b93ff369aa93147",
+      "file": "open-questions-12.md"
+    },
+    {
+      "id": "35d010d4-6a70-81d6-87d8-f32f4a25f500",
+      "title": "v0.4",
+      "url": "https://www.notion.so/35d010d46a7081d687d8f32f4a25f500",
+      "file": "release-v0-4.md"
+    },
+    {
+      "id": "35d010d4-6a70-81e0-a2d9-f7a928fbaa58",
+      "title": "📋 📋 BRD — Business Requirements Document",
+      "url": "https://www.notion.so/35d010d46a7081e0a2d9f7a928fbaa58",
+      "file": "brd-business-requirements-document-6.md"
+    },
+    {
+      "id": "35d010d4-6a70-81e5-8c1b-cb14fd4b8ea5",
+      "title": "Design Decisions",
+      "url": "https://www.notion.so/35d010d46a7081e58c1bcb14fd4b8ea5",
+      "file": "design-decisions-14.md"
+    },
+    {
+      "id": "35f010d4-6a70-8105-89c2-f3736efd925a",
+      "title": "📋 Implementation Plans (archive)",
+      "url": "https://www.notion.so/35f010d46a70810589c2f3736efd925a",
+      "file": "implementation-plans-archive.md"
+    },
+    {
+      "id": "35f010d4-6a70-8167-87b7-f13d292ecd20",
+      "title": "📖 Read Me First",
+      "url": "https://www.notion.so/35f010d46a70816787b7f13d292ecd20",
+      "file": "read-me-first.md"
+    },
+    {
+      "id": "35f010d4-6a70-818f-80bd-da9289fc2f77",
+      "title": "Technical Specification (v1.0)",
+      "url": "https://www.notion.so/35f010d46a70818f80bdda9289fc2f77",
+      "file": "technical-specification-v1-0-3.md"
+    },
+    {
+      "id": "35f010d4-6a70-8191-947d-fd1e188f89c3",
+      "title": "Design Decisions",
+      "url": "https://www.notion.so/35f010d46a708191947dfd1e188f89c3",
+      "file": "design-decisions-13.md"
+    },
+    {
+      "id": "35f010d4-6a70-81ac-9d02-e7cc4db48f22",
+      "title": "v1.0.1",
+      "url": "https://www.notion.so/35f010d46a7081ac9d02e7cc4db48f22",
+      "file": "v1-0-1-6.md"
+    },
+    {
+      "id": "35f010d4-6a70-81b4-a2af-c659a55c3701",
+      "title": "📑 Reference",
+      "url": "https://www.notion.so/35f010d46a7081b4a2afc659a55c3701",
+      "file": "reference.md"
+    },
+    {
+      "id": "35f010d4-6a70-81bd-963b-ff8b9837f1e2",
+      "title": "Glossary",
+      "url": "https://www.notion.so/35f010d46a7081bd963bff8b9837f1e2",
+      "file": "glossary.md"
+    },
+    {
+      "id": "35f010d4-6a70-81ce-bb44-fb2051a72df0",
+      "title": "Design Decisions",
+      "url": "https://www.notion.so/35f010d46a7081cebb44fb2051a72df0",
+      "file": "design-decisions-index.md"
+    },
+    {
+      "id": "35f010d4-6a70-81f3-9e22-c469bc63c01b",
+      "title": "v1.0",
+      "url": "https://www.notion.so/35f010d46a7081f39e22c469bc63c01b",
+      "file": "v1-0-6.md"
+    },
+    {
+      "id": "35f010d4-6a70-81fc-b465-e052d62d6a3f",
+      "title": "BRD — Business Requirements Document (v1.0)",
+      "url": "https://www.notion.so/35f010d46a7081fcb465e052d62d6a3f",
+      "file": "brd-business-requirements-document-v1-0.md"
+    },
+    {
+      "id": "35f010d4-6a70-81fe-b7e7-e2ab737e96d5",
+      "title": "🏛 Architecture",
+      "url": "https://www.notion.so/35f010d46a7081feb7e7e2ab737e96d5",
+      "file": "architecture.md"
+    },
+    {
+      "id": "5fd010d4-6a70-821c-bc69-01ee992bbd5b",
+      "title": "🗺️ Roadmap",
+      "url": "https://www.notion.so/5fd010d46a70821cbc6901ee992bbd5b",
+      "file": "roadmap.md"
+    },
+    {
+      "id": "93d010d4-6a70-8280-ba6c-013d97211fd6",
+      "title": "🧭 Coherence",
+      "url": "https://www.notion.so/93d010d46a708280ba6c013d97211fd6",
+      "file": "coherence-landing.md"
+    },
+    {
+      "id": "a1b010d4-6a70-8370-8e1d-0140bd0631c7",
+      "title": "Docs",
+      "url": "https://www.notion.so/a1b010d46a7083708e1d0140bd0631c7",
+      "file": "docs-6.md"
+    },
+    {
+      "id": "f2a010d4-6a70-83ee-903e-01b55b968b74",
+      "title": "📋 [Template] New Project",
+      "url": "https://www.notion.so/f2a010d46a7083ee903e01b55b968b74",
+      "file": "template-new-project.md"
+    }
+  ]
+}

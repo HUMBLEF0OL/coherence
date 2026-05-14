@@ -1,0 +1,87 @@
+<!-- url: https://www.notion.so/35d010d46a7081e0a2d9f7a928fbaa58 -->
+<!-- id: 35d010d4-6a70-81e0-a2d9-f7a928fbaa58 -->
+<!-- title: 📋 📋 BRD — Business Requirements Document -->
+**Parent:** [v0.4](https://www.notion.so/35d010d46a7081d687d8f32f4a25f500) · **Status:** Draft 2026-05-11 · **Reads:** v0.4 Overview + DD-119..DD-130 + all 13 OQs closed. *Theme: v0.1 reacts → v0.2 proposes → v0.3 distributes → v0.4 polishes for first impressions.*
+> All 5 sequencing gates closed. v0.4 BRD authoring is fully unblocked across G-1 marketplace structural, G-2 first-impressions ergonomics, G-3 telemetry trigger contracts, G-4 `parseMajor` correctness.
+**Canonical slices (authoritative):**
+- [BRD-1 — Personas & Use Cases](https://www.notion.so/35d010d46a708109b3c4d3fe3ae28142)
+- [BRD-2 — Functional Requirements](https://www.notion.so/35d010d46a70818bbadcde0ea0113d75)
+- [BRD-3 — Non-Functional Requirements](https://www.notion.so/35d010d46a708120a6a3cab4f8ec984c)
+- [BRD-4 — Success Metrics & Acceptance](https://www.notion.so/35d010d46a70812aa8f0c30a0f13beac)
+- [BRD-5 — Roadmap & Post-GA Commitments](https://www.notion.so/35d010d46a70818793f8d6742c77fb5e)
+---
+<span color="blue">**BRD-1 · Personas & Use Cases**</span>
+- **P1 · Solo developer (continued from v0.3).** One repo, one machine. Uses coherence to detect drift. v0.4 changes: (a) official marketplace install path replaces git-clone; (b) `/coherence:consent` surfaces telemetry settings explicitly; (c) `/coherence:audit` bundles doctor + scope-debug + status into one self-diagnosis report; (d) `--out` sandboxed to project root by default.
+- **P2 · Team developer (continued from v0.3).** Multi-developer shared repo. v0.4 adds: `triggerContracts.ts` emits one-time CLI hints when field telemetry thresholds are met — no code release required to promote author-planner or re-tune calibration.
+- **P3 · Tech lead / reviewer (continued from v0.3).** Benefits from `parseMajor` correctness: the refuse-future-version gate works correctly once any v1.0.x cut exists.
+- **P4 · First installer / marketplace browser (elevated in v0.4).** Discovers coherence on the Anthropic plugin registry. This is the primary new persona v0.4 optimises for: explicit consent screen, `/coherence:audit` self-diagnosis, 25 discoverable slash-command stubs (autogen), `parseMajor` correctness prevents premature version-fence on minor bumps.
+- **P5 · Plugin marketplace curator (new in v0.4).** Anthropic reviewer evaluating the submission. Cares about: `claude plugin validate` clean (DD-123); manifest at `.claude-plugin/plugin.json` (DD-119); slash commands discoverable (DD-130); required manifest fields populated (OQ-v4-09 closure). Trust signals (`SECURITY.md`, signed tarball) deferred to v0.4.1 (DD-126).
+---
+<span color="blue">**BRD-2 · Functional Requirements**</span>
+**Marketplace listing structural (G-1)**
+- **FR-MANIFEST-1** — Manifest moves from `plugin.json` (plugin root) to `.claude-plugin/plugin.json`. Component directories (`skills/`, `agents/`, `commands/`, `hooks/hooks.json`, `.mcp.json`) stay at plugin root. `bin/` field omitted from manifest — statusline scripts are invoked via `~/.claude/settings.json` path, not PATH. (DD-119; OQ-v4-05 layout invariant)
+- **FR-MANIFEST-2** — State-storage tri-partition: `${CLAUDE_PLUGIN_DATA}` = per-installation (plugin-version cache, per-installation flags); `.claude/coherence/` (gitignored) = per-project per-developer (all existing v0.3 state paths unchanged); `coherence/` (committed) = per-team (plans, ignore, scope.json). Cassettes remain dev-only `tests/` artifacts. (DD-120)
+- **FR-MANIFEST-3** — Explicit semver: `plugin.json#version = "0.4.0"`, bumped manually on each release. `release-ga.mjs` preflight asserts `plugin.json#version`, `package.json#version`, and `src/state/init.ts#PLUGIN_VERSION` all match the pending git tag. (DD-121)
+- **FR-MANIFEST-4** — Manifest fields populated verbatim from `package.json`: `author`, `license`, `repository`, `keywords`, `description`. No separate `homepage` field (Anthropic plugin schema treats `repository` as the canonical link). (OQ-v4-09; folded into DD-119)
+- **FR-LAYOUT-1** — v0.4 detects old-layout `plugin.json` at plugin root (v0.3-style) and emits a one-line CLI refusal via `refuseLegacy.ts` (`status: 'refuse_layout'` discriminant added to `RefuseLegacyOutcome` union). No migrator. Users re-install. (DD-122)
+- **FR-VALIDATE-1** — `claude plugin validate` runs as `npm run validate-plugin` in `scripts/release-ga.mjs` preflight. Schema/required-field errors halt release; warnings log to CI artifact (do not halt). Result cached by sha256(manifest + component tree); re-run skipped on unchanged tree. (DD-123)
+- **FR-AUTOGEN-1** — `scripts/generate-command-stubs.mjs` runs at `npm run build`. Reads `plugin.json#slashCommands` (canonical command registry), emits one `commands/<name>.md` stub per entry (5-line sentinel-pattern markdown). `UserPromptSubmit` hook intercepts sentinel patterns and dispatches to existing JS handlers. Build is idempotent (regenerates only when manifest hash differs). (DD-130)
+**First-impressions ergonomics (G-2)**
+- **FR-CONSENT-1** — `/coherence:consent` slash command replaces v0.3 `promptInteractive` placeholder (which never fired — no TTY in hooks). No args → prints current consent state. `--local on|off` / `--upload on|off` / `--reset` → writes to `.claude/coherence/config.json#telemetry` with ISO timestamp. `/coherence:status` continues to display current consent state (read path unchanged). (DD-127)
+- **FR-SANDBOX-1** — `/coherence:export-metrics --out <path>`: `path.resolve(outPath)` must start with `projectRoot` unless `--allow-out-of-tree` flag is passed. If flag present, security warning printed to stderr before write. (DD-128)
+- **FR-AUDIT-1** — `/coherence:audit` (new command) calls `doctor`, `scope-debug`, `status`, and `exportMetrics` handlers in sequence and renders a single combined report. Output includes: "v0.4 audit is a bundling-only summary; deep audit ships in v1.0." (DD-125)
+**Telemetry-gated trigger contracts (G-3)**
+- **FR-TRIGGER-1** — `src/state/triggerContracts.ts` (new module) consulted at SessionStart via v0.3 P8 bounded-read of `metrics.jsonl`. When threshold met, emits a one-time CLI hint suggesting the user flip the corresponding env flag. No silent auto-flip. Applications: (a) DD-104 author-planner promotion — hint when ≥25% cross-kind co-occurrence over 30-day rolling window; (b) DD-116 calibration re-tune — hint when ≥50 sessions × ≥30 days. `metrics.jsonl`-absent is a no-op. (DD-129)
+**`parseMajor`**** correctness (G-4)**
+- **FR-PARSEMAJOR-1** — `src/state/refuseLegacy.ts#parseMajor` formula replaced: `major*1000 + minor` → `parseInt(version.split('.')[0])`. Correct for all major buckets (0.x, 1.x, 2.x, ...). Ships in v0.4 before any v1.0.x cut exists. (DD-124)
+---
+<span color="blue">**BRD-3 · Non-Functional Requirements**</span>
+- **NFR-ARCH-1 (carry, permanent)** — No backend, database, or hosted service — ever. DD-117. v0.4 marketplace listing introduces no hosted services.
+- **NFR-ARCH-2 (carry, permanent)** — No legacy version support. No migrator from v0.3 plugin.json layout → v0.4 `.claude-plugin/plugin.json` layout. DD-118, extended by DD-122 to manifest-layout migration.
+- **NFR-SECURITY-N1 (new)** — `--out` path sandboxing for `/coherence:export-metrics`. In-tree by default; `--allow-out-of-tree` + stderr warning for explicit out-of-tree writes. Integration test covers 3 cases: in-tree (accepted), out-of-tree without flag (refused + message), out-of-tree with flag (accepted + warning). (DD-128)
+- **NFR-PRIVACY-N5 (carry + extended)** — Telemetry consent explicitly surfaced via `/coherence:consent`. Default unchanged (local ON, upload OFF). Consent change logged with ISO timestamp. (DD-127)
+- **NFR-COMPAT-N4 (extended)** — Manifest layout migration = strict re-install. `refuseLegacy.ts` extended with `refuse_layout` discriminant. (DD-122)
+- **NFR-COMPAT-N5 (new)** — `parseMajor` correctness for ≥1.0.0. Ships before any v1.0.x exists. Unit test: `parseMajor('1.0.0') === parseMajor('1.0.99')` and `parseMajor('1.0.0') !== parseMajor('2.0.0')`. (DD-124)
+- **NFR-PERF-1 (carry)** — PostToolUse 50ms p95. `triggerContracts.ts` at SessionStart uses bounded-read only; must complete \< 20ms p95 with `metrics.jsonl` present.
+- **NFR-PERF-N5 (new)** — Build/ship-time only: `claude plugin validate` \< 2s local; autogen \< 100ms for 25 stubs. Zero runtime performance impact.
+- **NFR-COST-1 (carry)** — Per-session cost ceiling: 0 sessions over v0.1 × 1.30 (DD-112 carry). G-3 trigger-contract work is non-LLM. G-2 ergonomics are user-initiated commands, not on hot path. Autogen stubs ≈ 1.3k tokens static markdown (immaterial vs context budget).
+- **NFR-OBS-1 (carry)** — Audit log captures consent changes with ISO timestamp. Trigger contract CLI hints are one-time (no log spam on subsequent sessions).
+---
+<span color="blue">**BRD-4 · Success Metrics & Acceptance**</span>
+- **M-VALIDATE-1** — `claude plugin validate` exits 0 on 100% of master commits. Meta-test asserts gate trips on intentionally broken `.claude-plugin/plugin.json`. (DD-123; G-1)
+- **M-AUTOGEN-1** — Static-analysis test asserts 1:1 mapping between `plugin.json#slashCommands[].name` and `commands/<name>.md`; build idempotent. (DD-130; G-1)
+- **M-LISTING-1** — Official marketplace submission form submitted before v0.4 GA tag. Non-blocking per sequencing gate decision (operational task, not a spec-freeze gate). (G-1 closure)
+- **M-PARSEMAJOR-1** — Unit test: `parseMajor('1.0.0') === parseMajor('1.0.99')` passes; `parseMajor('1.0.0') !== parseMajor('2.0.0')` passes. (DD-124; G-4)
+- **M-TRIGGER-1** — Synthetic harness: threshold-met fires hint; threshold-not-met is silent; `metrics.jsonl`-absent is no-op. 100% pass. (DD-129; G-3)
+- **M-FIRSTIMPRESSION-1** — p50 time from marketplace install to first proposal accept \< 24h. Measured at +30 days post-GA. (Carry from v0.3; tightened by G-2 ergonomics work)
+- **M-ABANDONMENT-1** — First-installer abandonment within 7 days \< 30%. Measured at +30 days post-GA. (G-2 first-impressions signal)
+- **M-COST-1 (carry)** — Per-session cost ≤ v0.1-baseline × 1.30 (CG-1 + CG-2 partition tests pass). (NFR-COST-1)
+**Acceptance summary.** v0.4 GA when: (1) all FR-\* land with passing tests; (2) M-VALIDATE-1 + M-AUTOGEN-1 + M-PARSEMAJOR-1 + M-TRIGGER-1 + M-COST-1 verified at GA tag; (3) M-LISTING-1 submitted; (4) M-FIRSTIMPRESSION-1 + M-ABANDONMENT-1 verified at +30 days post-GA. Tech Spec (TS-1..TS-8) is the next deliverable.
+---
+<span color="blue">**BRD-5 · Roadmap & Post-GA Commitments**</span>
+**Sequencing gates (all closed — v0.4 BRD fully unblocked)**
+- ✅ Gate #1 — `v0.3.0` GA tagged; marketplace submission proceeds as independent operational task.
+- ✅ Gate #2 — `claude plugin validate` gating policy decided (tiered; DD-123 ratified).
+- ✅ Gate #3 — State-storage tri-partition decided (DD-120 ratified).
+- ✅ Gate #4 — Manifest layout migration = strict re-install (DD-122 ratified).
+- ✅ Gate #5 — v1.0 Notion scope = placeholder + Roadmap-bullet inlining (OQ-v4-07 closed).
+**v0.4.1 fast-follow (tentative — trigger-based)**
+Trust signals: signed tarball, reproducible build, `SECURITY.md`, M6 static-analysis gates reframed as README claims. Fires on any of: (1) ≥3 distinct installers request signed tarball / SBOM within 30 days of v0.4 GA; (2) public CVE in any direct dep requiring fast-patch; (3) marketplace listing rejected or flagged for missing `SECURITY.md`; (4) supply-chain audit issue opened with severity ≥ medium. If none fire by v0.4 GA + 30 days, trust-signal scope rolls to v0.5. (DD-126)
+**Post-GA commitments (automatic via trigger contracts)**
+- **Author-pipeline planner promotion.** `triggerContracts.ts` (FR-TRIGGER-1) emits CLI hint when ≥25% cross-kind co-occurrence over 30-day rolling window. User flips `COHERENCE_AUTHOR_PLANNER=1`. No code release required. (DD-104, DD-129)
+- **Field calibration re-tune.** `triggerContracts.ts` emits CLI hint when ≥50 sessions × ≥30 days. User triggers DD-076/077/078 threshold re-tune. (DD-116, DD-129)
+**npm squat claim (operational, one-time)**
+Claim npm name `cohrence` as squat-prevention placeholder. No publish, no maintenance burden. DD-093 (Anthropic plugin registry = canonical install path) governs all installs. (OQ-v4-13)
+**Deferred to v1.0 — see **[**Roadmap**](https://www.notion.so/5fd010d46a70821cbc6901ee992bbd5b)
+- Auto-apply / graduated trust ladder (DD-065 trust contract preserved across v0.4)
+- Assertion checking (`asserts:` frontmatter)
+- Quality-metrics dashboard (acceptance rate, revert rate per section)
+- Cross-session pattern learning beyond 7-day rolling window
+- Deep `/coherence:audit` (token budget analysis, bloat warnings, cross-section consistency check)
+**Architectural commitments DD-117 / DD-118** carry forward permanently. v0.4 introduces no new architectural commitments — all v0.4 work fits inside the v0.3 architectural envelope.
+**Acceptance summary.** v0.4 GA when: (1) all FR-\* pass; (2) M-VALIDATE-1 + M-AUTOGEN-1 + M-PARSEMAJOR-1 + M-TRIGGER-1 + M-COST-1 green at tag; (3) M-LISTING-1 submitted; (4) M-FIRSTIMPRESSION-1 + M-ABANDONMENT-1 verified at +30 days post-GA.
+<page url="https://www.notion.so/35d010d46a708109b3c4d3fe3ae28142">BRD-1 — Personas & Use Cases</page>
+<page url="https://www.notion.so/35d010d46a70818bbadcde0ea0113d75">BRD-2 — Functional Requirements</page>
+<page url="https://www.notion.so/35d010d46a708120a6a3cab4f8ec984c">BRD-3 — Non-Functional Requirements</page>
+<page url="https://www.notion.so/35d010d46a70812aa8f0c30a0f13beac">BRD-4 — Success Metrics & Acceptance</page>
+<page url="https://www.notion.so/35d010d46a70818793f8d6742c77fb5e">BRD-5 — Roadmap & Post-GA Commitments</page>

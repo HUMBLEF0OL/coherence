@@ -1,0 +1,51 @@
+<!-- url: https://www.notion.so/a1b010d46a7083708e1d0140bd0631c7 -->
+<!-- id: a1b010d4-6a70-8370-8e1d-0140bd0631c7 -->
+<!-- title: Docs -->
+<database url="{{https://www.notion.so/a1b010d46a7083708e1d0140bd0631c7}}" inline="false">
+The title of this Database is: Docs
+<ancestor-path>
+<parent-page url="https://www.notion.so/f2a010d46a7083ee903e01b55b968b74" title="[Template] New Project"/>
+<ancestor-2-data-source url="collection://c19010d4-6a70-82d2-bd12-87ccaf25544f" name="Projects"/>
+<ancestor-3-database url="https://www.notion.so/d73010d46a70820a9a2781c14c2a368b" title="Projects"/>
+<ancestor-4-page url="https://www.notion.so/088010d46a70830dbf2001b2bb84264e" title="Work"/>
+</ancestor-path>
+Here are the Database's Data Sources:
+You can use the "view" tool on the URL of any Data Source to see its full schema configuration.
+<data-sources>
+<data-source url="{{collection://e2a010d4-6a70-8246-8b49-07be53668c6e}}">
+The title of this Data Source is: Docs
+
+Here is the database's configurable state:
+Properties with `readOnly: true` are synced or system-managed. Do not try to update their values with page update tools.
+<data-source-state>
+{"name":"Docs","schema":{"Category":{"description":"","name":"Category","options":[{"color":"gray","description":"","name":"Overview","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/MzdjN2YyMDUtNmU2YS00N2QyLTg0NmYtYTZjMjkzZmMxMjRi"},{"color":"blue","description":"","name":"Architecture","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/MGI0OTQ2N2YtY2JmZC00ZWYyLWE3YzEtMDRhMjcyNDU1NDI4"},{"color":"purple","description":"","name":"Specification","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/NTkxYmNiM2QtODhmOC00YjFmLTg4YmQtNGNkOTcyN2NiYjBj"},{"color":"green","description":"","name":"API Reference","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/ODIxNzIwMDYtOWFhYy00M2E0LWE1ZWYtYjgwODM5MjAxMDBl"},{"color":"orange","description":"","name":"Configuration","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/MTJhMTBlN2YtYjg3My00YWUyLWFmMmYtMWM1ZjI2MDE5ZGE1"},{"color":"yellow","description":"","name":"Integrations","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/YmU1MDA1NTEtMTg3Mi00YzU4LTg0MmQtYjhjZjMwZTVjNjVh"},{"color":"pink","description":"","name":"Quality","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/NjFiYjU2ZDUtOWExZS00YzYxLWI1MmEtM2I2YzRmNTk0M2Ix"},{"color":"brown","description":"","name":"CI/CD","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/ZjczZWNiOWEtNDA1OC00MTNmLWI4NGMtNzEyNjljMTM1ZjY1"},{"color":"red","description":"","name":"Security","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/YzA4MjFiMjYtNjNhOS00NWQ1LWFjNGEtMjVmYjNhMzZlODY1"},{"color":"gray","description":"","name":"Operations","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/MTk5ZmZiODAtNzY2NS00MWEwLWIxMTktYzI2MDRhN2U4OGQz"},{"color":"blue","description":"","name":"Diagrams","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/ZTgyMzEyZGUtMTYxNC00YWYwLWE1N2YtYWZlZjI4YmQ1MzVi"},{"color":"purple","description":"","name":"Planning","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/Nzc2NmIwOTAtODQzMy00M2ViLTkzYTEtNzI1M2EwNjczMGUy"},{"color":"orange","description":"","name":"Decisions","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/YTdhZGRhMWYtNDI4NS00NjQzLWI1NDEtNjNhNDY4MzkyNWM1"},{"color":"gray","description":"","name":"Changelog","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/cmBjVQ/OGE2YjcxNjgtZTZlNy00MzVkLWI4OTAtMTliMTJlM2ZlMDNl"}],"type":"select"},"Last Updated":{"description":"","name":"Last Updated","type":"last_edited_time"},"Name":{"description":"","name":"Name","type":"title"},"Status":{"description":"","name":"Status","options":[{"color":"green","description":"","name":"Current","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/d3NKcA/MzhjMjQyMzMtZWQ0NC00YWM4LTljNTUtOWJlZTQzMDIwOGFh"},{"color":"gray","description":"","name":"Draft","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/d3NKcA/NjMwNjcyNjEtNzUwZC00NmZmLTgzZTgtYThhZDJiMjc1ZWYw"},{"color":"orange","description":"","name":"Needs Update","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/d3NKcA/ZDA5YzVkNzYtMDc3OC00NGM5LTgyZmYtZDg2NWViMWIxOTAz"},{"color":"red","description":"","name":"Outdated","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/d3NKcA/NTdiNTRhYzQtZmZhNi00YzYzLTkzZTAtMTdhYWMyNzFlMGEy"}],"type":"select"},"Tags":{"description":"","name":"Tags","options":[{"color":"gray","description":"","name":"Reference","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/RUldQg/YzFmZTlhNGMtZmY5Ni00YTNmLTg5ZDYtN2U1Nzc1NjlkMjgy"},{"color":"orange","description":"","name":"Runbook","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/RUldQg/ZmQyNDk1YTYtYWEyNi00NTY5LThhZTgtZjM0Nzg3M2I1ZDZi"},{"color":"purple","description":"","name":"ADR","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/RUldQg/ZDM4NjBmNDEtOWM5Yi00NWY2LWI2YzUtMzM2MmUzNzEyNDZk"},{"color":"blue","description":"","name":"Diagram","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/RUldQg/ZTIxMWU2MmYtMTBlNC00YzIyLTk1NDAtNGM1Njg0YjQ2Zjky"},{"color":"gray","description":"","name":"Auto-generated","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/RUldQg/M2VjMDY2ZGYtYzNlNC00ZjlmLTg3MzQtZDMwYTZkYTJlNDNk"},{"color":"pink","description":"","name":"Template","url":"collectionPropertyOption://e2a010d4-6a70-8246-8b49-07be53668c6e/RUldQg/MWQ0YjIyMmMtZWE5OS00NTIxLWI2NzEtZTNhNmFhZTUwZmUx"}],"type":"multi_select"}},"url":"collection://e2a010d4-6a70-8246-8b49-07be53668c6e"}
+</data-source-state>
+
+Here is the SQLite table definition for this data source.
+<sqlite-table>
+CREATE TABLE IF NOT EXISTS "collection://e2a010d4-6a70-8246-8b49-07be53668c6e" (
+	url TEXT UNIQUE,
+	createdTime TEXT, -- ISO-8601 datetime string, automatically set. This is the canonical time for when the page was created.
+	"Last Updated" TEXT NOT NULL, -- ISO-8601 datetime string, automatically set. This is the canonical time for when the page was last edited.
+	"Tags" TEXT, -- JSON array with zero or more of ["Reference", "Runbook", "ADR", "Diagram", "Auto-generated", "Template"]
+	"Category" TEXT, -- one of ["Overview", "Architecture", "Specification", "API Reference", "Configuration", "Integrations", "Quality", "CI/CD", "Security", "Operations", "Diagrams", "Planning", "Decisions", "Changelog"]
+	"Status" TEXT, -- one of ["Current", "Draft", "Needs Update", "Outdated"]
+	"Name" TEXT
+)
+</sqlite-table>
+</data-source>
+</data-sources>
+Here are the Database's Views:
+You can use the "view" tool on the URL of any View to see its full configuration.
+<views>
+<view url="{{view://69a010d4-6a70-8264-8630-88d07e8a4f9a}}">
+{"dataSourceUrl":"{{collection://e2a010d4-6a70-8246-8b49-07be53668c6e}}","displayProperties":["Name","Category","Last Updated","Status","Tags"],"name":"Default view","type":"table"}
+</view>
+<view url="{{view://da3010d4-6a70-830e-9c07-0840f3ff40d2}}">
+{"cardLayoutMode":"default","dataSourceUrl":"{{collection://e2a010d4-6a70-8246-8b49-07be53668c6e}}","displayProperties":["Status","Tags","Name"],"fullWidthProperties":[],"groupBy":{"property":"Category","propertyType":"select","sort":{"type":"manual"}},"name":"By Category","type":"board"}
+</view>
+<view url="{{view://711010d4-6a70-82c5-b805-0871be038b3e}}">
+{"cardLayoutMode":"default","dataSourceUrl":"{{collection://e2a010d4-6a70-8246-8b49-07be53668c6e}}","displayProperties":["Category","Status","Tags","Name"],"fullWidthProperties":[],"name":"Gallery","type":"gallery"}
+</view>
+</views>
+</database>
