@@ -27,8 +27,8 @@ const doTag = args.has('--tag');
 const doPush = args.has('--push');
 const dryRun = args.has('--dry-run');
 const unsigned = args.has('--unsigned');
-const TAG = 'v1.0.2';
-const MSG = 'v1.0.2 — plugin manifest schema migration + marketplace.json';
+const TAG = 'v1.0.3';
+const MSG = 'v1.0.3 — marketplace source-shape fix + docs/lint cleanup';
 
 void createHash;
 
