@@ -1,0 +1,8 @@
+<!-- url: https://www.notion.so/35c010d46a70817bb124ea53b113a26c -->
+<!-- id: 35c010d4-6a70-817b-b124-ea53b113a26c -->
+<!-- title: v0.3 TS-5 — Stop Orchestrator & Author Planner -->
+Stop orchestrator unchanged. Author Planner stays env-gated, default OFF, in v0.3 per DD-104 (ratified).
+Stop orchestrator (v0.2 contract): runStopOrchestrator() central coordinator across all 7 v0.2 communities (anchor scan, section index, file discovery, canonical selection, Stage1, Stage2, validation, bundle, commit). v0.3 reuses without modification. assembleBundle() and requiresConfirmation() unchanged.
+Author Planner (env-gated): trigger contract DD-067 staged-adoption — candidate set spans ≥2 distinct signal kinds within 30-min window AND env COHERENCE_AUTHOR_PLANNER=1 set. Default OFF in v0.3. When fired, emits single consolidated proposal covering union of signals; per-signal authoring suppressed for covered hashes (v0.2 M9 contract).
+Promotion path (DD-104 ratified): flip to default ON only after future-version's real telemetry confirms ≥1-month rolling ≥25% cross-kind co-occurrence per DD-067. v0.3 ships with env flag as contract.
+Cassette evidence: tests/cassettes/author/planner/*.json (v0.2) carries forward; cost partition test tests/cost/cg-author-share.test.ts stays in suite.

@@ -1,0 +1,11 @@
+<!-- url: https://www.notion.so/35c010d46a7081e1a003d99bb2a5a85c -->
+<!-- id: 35c010d4-6a70-81e1-a003-d99bb2a5a85c -->
+<!-- title: v0.3 TS-7 — Commands -->
+v0.3 surface = 16 v0.2 commands (carry forward) + 4 new commands. Total 20.
+v0.2 carry (16): /coherence:status, doctor, repair, review, graduate, annotate, propose-list, propose-show, propose-accept, propose-reject, propose-revert-acceptance, install-statusline, uninstall-statusline, share-metrics, recover, enable-sidecars. /coherence:recover constrained to within-major-version rollback (DD-095 amended).
+v0.3 new (4):
+/coherence:export-metrics (DD-101, FR-EXPORT-1): /coherence:export-metrics [--out <path>] [--since <ISO>] [--anonymized]. Reads .claude/coherence/metrics.jsonl using v0.2 P8 bounded-read (tail-reads when > 5 MB). Filters by --since; redacts per DD-068. Writes JSONL to <out> (default metrics-export-<ts>.jsonl). Appends audit-log entry to coherence-log/exports.jsonl. Prints copy-paste curl command at end pointing at user-chosen endpoint. Upload is user's responsibility (DD-117). Exit 0 success; exit 1 on read error or empty.
+/coherence:ignore-split (DD-096, FR-IGNORE-1): no args, idempotent. If coherence/ignore.local absent: create empty file. If absent in .gitignore: append coherence/ignore.local under '# cohrence — personal ignore' heading. If both exist: 'already split, no-op'.
+/coherence:de-annotate (DD-102 + DD-110, FR-DEANNOTATE-1/2): /coherence:de-annotate <path> [--scope per-doc|per-directory|global] [--keep-as-user-anchor]. Default per-doc. Strips auto-annotated:true blocks within scope. With --keep-as-user-anchor retains anchor block but flips auto-annotated to false (graduates to user-owned). Persists scope decision in graduation.json under de_annotate (most-specific-wins per DD-074). Hint when surrounding content user-edited since auto-annotation: 'Run with --keep-as-user-anchor to preserve.'
+/coherence:scope-debug (DD-097 + DD-105, FR-SCOPE-2): /coherence:scope-debug <path>. Prints walked ancestor list (capped depth 8); each CLAUDE.md or coherence/scope.json hit; resolved scope chain (most-specific first); winning scope per key with extends: expansion; cache hit/miss + age. Read-only.
+Permission model: all 4 run in user-context. Write only to user-owned paths or user-chosen export targets. DD-065 quarantine boundary unaffected.

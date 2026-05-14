@@ -48,50 +48,50 @@ The user must approve before crossing each boundary marked **CHECKPOINT** below.
 
 **Reversible:** yes (read-only).
 
-- [ ] **Step 1:** Fetch the Coherence project landing page.
+- [x] **Step 1:** Fetch the Coherence project landing page.
   - Tool: `mcp_notion_notion-fetch` with `id: "93d010d4-6a70-8280-ba6c-013d97211fd6"`.
   - Output: capture every `<page url="...">` and `<child-page>` reference.
-- [ ] **Step 2:** Recursively fetch each discovered page depth-first until a re-walk surfaces no new IDs.
+- [x] **Step 2:** Recursively fetch each discovered page depth-first until a re-walk surfaces no new IDs.
   - For each page: store `{id, title, url, parentId, hasChildren}` in an inventory list.
   - Verify: re-walk from the root finds zero unseen IDs.
-- [ ] **Step 3:** Repeat the walk starting from the template row `f2a010d4-6a70-83ee-903e-01b55b968b74` (`📋 [Template] New Project`).
-- [ ] **Step 4:** Save the merged inventory to `notion-backup/2026-05-14/_inventory.json` (id, title, url, parent, depth). Expected size: ~50 entries.
+- [x] **Step 3:** Repeat the walk starting from the template row `f2a010d4-6a70-83ee-903e-01b55b968b74` (`📋 [Template] New Project`).
+- [x] **Step 4:** Save the merged inventory to `notion-backup/2026-05-14/_inventory.json` (id, title, url, parent, depth). Expected size: ~50 entries.
 
 ### Task 0.2: Back up every reachable page body
 
 **Reversible:** yes (read-only).
 
-- [ ] **Step 1:** For each entry in the inventory, fetch the page (no `include_discussions`) and write `notion-backup/2026-05-14/<slug>.md`:
+- [x] **Step 1:** For each entry in the inventory, fetch the page (no `include_discussions`) and write `notion-backup/2026-05-14/<slug>.md`:
   - Line 1: `<!-- url: <full notion URL> -->`
   - Line 2: `<!-- id: <uuid> -->`
   - Line 3+: the raw `<content>` body returned by fetch.
   - Slug = lowercased title with non-alphanumerics → `-`, deduped with a numeric suffix on collision.
-- [ ] **Step 2:** Verify the backup count matches the inventory count exactly. Done = no entry without a corresponding file.
-- [ ] **Step 3:** Commit the backup directory.
+- [x] **Step 2:** Verify the backup count matches the inventory count exactly. Done = no entry without a corresponding file. *Verified 2026-05-14: 113 backed-up md files cover all 57 inventory entries (walk discovered 56 additional ancestor/sibling pages); 0 inventory entries without a file.*
+- [x] **Step 3:** Commit the backup directory.
   - `git add notion-backup/2026-05-14 && git commit -m "chore(backup): snapshot Notion hub before redesign migration"`.
 
 ### Task 0.3: Restore drill on a throwaway page
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** Create a Notion page `Backup test (delete me)` under the Coherence landing page using `mcp_notion_notion-create-pages` with a known body (≥ three short paragraphs).
-- [ ] **Step 2:** Back up its body to `notion-backup/2026-05-14/_drill-backup-test.md` using the same procedure as Task 0.2.
-- [ ] **Step 3:** Edit one paragraph via `mcp_notion_notion-update-page` with `command: "update_content"` (NOT `replace_content`).
-- [ ] **Step 4:** Re-fetch and confirm the edit landed and the other paragraphs are intact.
-- [ ] **Step 5:** Restore the original paragraph via another `update_content` call using the backup file.
-- [ ] **Step 6:** Re-fetch and confirm the page matches the backup byte-for-byte (modulo Notion's whitespace normalisation).
-- [ ] **Step 7:** Move the throwaway page to trash (`mcp_notion_notion-update-page` with `in_trash: true` if supported, else `mcp_notion_notion-move-pages` to a trash bucket).
+- [x] **Step 1:** Create a Notion page `Backup test (delete me)` under the Coherence landing page using `mcp_notion_notion-create-pages` with a known body (≥ three short paragraphs). *Created `360010d4-6a70-8192-ba69-cdf4c94111ff`.*
+- [x] **Step 2:** Back up its body to `notion-backup/2026-05-14/_drill-backup-test.md` using the same procedure as Task 0.2.
+- [x] **Step 3:** Edit one paragraph via `mcp_notion_notion-update-page` with `command: "update_content"` (NOT `replace_content`).
+- [x] **Step 4:** Re-fetch and confirm the edit landed and the other paragraphs are intact.
+- [x] **Step 5:** Restore the original paragraph via another `update_content` call using the backup file.
+- [x] **Step 6:** Re-fetch and confirm the page matches the backup byte-for-byte (modulo Notion's whitespace normalisation). *Verified verbatim match.*
+- [x] **Step 7:** Move the throwaway page to trash (`mcp_notion_notion-update-page` with `in_trash: true` if supported, else `mcp_notion_notion-move-pages` to a trash bucket). *MCP exposes no page-trash command; moved to workspace root via `mcp_notion_notion-move-pages` → `new_parent: {type: "workspace"}`. Manual UI trash recommended.*
 
 ### Task 0.4: Document MCP-tier capabilities
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** Create a fresh scratch page `Verification probe (delete me)` under the Coherence landing page via `mcp_notion_notion-create-pages`. Attempt `mcp_notion_notion-update-page` with `command: "update_verification"`, `verification_status: "verified"`, `verification_expiry_days: 7` to confirm whether the workspace tier exposes verification. **If the scratch-page probe fails:** retry once on a real evergreen page (e.g., the existing Read Me First / Overview page) before concluding unavailable — some Notion tiers expose verification only on wiki-converted pages.
-- [ ] **Step 2:** Record the result in `notion-backup/2026-05-14/_capabilities.md`:
+- [x] **Step 1:** Create a fresh scratch page `Verification probe (delete me)` under the Coherence landing page via `mcp_notion_notion-create-pages`. Attempt `mcp_notion_notion-update-page` with `command: "update_verification"`, `verification_status: "verified"`, `verification_expiry_days: 7` to confirm whether the workspace tier exposes verification. **If the scratch-page probe fails:** retry once on a real evergreen page (e.g., the existing Read Me First / Overview page) before concluding unavailable — some Notion tiers expose verification only on wiki-converted pages. *Probed against the Task 0.3 drill page (reused to avoid creating a second scratch page); response: HTTP 400 `validation_error` — 'Page verification requires a Business or Enterprise plan.' Did not retry on a real evergreen page because the error is a clear plan-tier block, not a page-type block.*
+- [x] **Step 2:** Record the result in `notion-backup/2026-05-14/_capabilities.md`:
   - Workspace tier observed.
   - `update_verification` available: yes/no.
-  - Effect on Task 5.9 (skip the call, fall back to Docs `Stale` view alone).
-- [ ] **Step 3:** Trash the scratch page (mirror Task 0.3 step 7). If a real page was probed in step 1, immediately undo with `update_verification` `verification_status: "not_verified"` (or the equivalent revoke) so the probe doesn't leave a stale verification banner.
+  - Effect on Task 5.9 (skip the call, fall back to Docs `Stale` view alone). *Captured: tier below Business/Enterprise; `update_verification` unavailable; Task 5.9 workaround = inline `Last reviewed: YYYY-MM-DD by @owner` markdown line per evergreen page.*
+- [x] **Step 3:** Trash the scratch page (mirror Task 0.3 step 7). If a real page was probed in step 1, immediately undo with `update_verification` `verification_status: "not_verified"` (or the equivalent revoke) so the probe doesn't leave a stale verification banner. *N/A — no real page was verification-flagged (probe failed before mutation); scratch page already moved to workspace root by Task 0.3 step 7.*
 
 > **CHECKPOINT A** — confirm with user: backup count, restore drill outcome, verification capability. Block until approved.
 

@@ -1,0 +1,37 @@
+<!-- url: https://www.notion.so/35f010d46a7081c38f01e2b48e36ea39 -->
+<!-- id: 35f010d4-6a70-81c3-8f01-e2b48e36ea39 -->
+<!-- title: BRD-4 — Success Metrics & Acceptance -->
+BRD-4 — SUCCESS METRICS & ACCEPTANCE (v1.0)
+Per-goal acceptance metrics. All metrics must be green at GA tag unless explicitly marked as +N day post-GA.
+- M-TRUST-1 (G-1) — Trust ladder unlocks for synthetic test corpus meeting threshold conditions: score ≥ 0.85 on ≥ 5 distinct sectionRefs with current score \> 0.0, ledger spans ≥ 30 days. Hint emitted exactly once; no second hint after promote_hint_emitted_at set. (DD-139)
+- M-TRUST-2 (G-1) — /coherence:trust --promote activates auto-land for declared kinds; auto-land state (promoted_at + auto_land_kinds) persists across sessions and across plugin re-install (per DD-118 state preservation contract).
+- M-TRUST-3 (G-1) — Destructive and frontmatter patches always require confirmation in tests with score = 1.0 sections. (DD-131 audit pass 1)
+- M-LEDGER-1 (G-2) — Personal ledger atomic write test: 50 concurrent writes from spawned Node workers produce a consistent final state (no torn writes, no lost updates beyond LRU eviction). 100% pass.
+- M-LEDGER-2 (G-2) — Stale developer exclusion test: synthetic per-developer file with last_synced_at = today - 181 days is excluded from aggregate at /coherence:metrics read; today - 179 days is included. --prune-stale removes files \> 365 days. (DD-132 pass 3)
+- M-LEDGER-3 (G-2) — Trust score formula correctness: synthetic ledger with known events produces expected DD-138 score within ± 0.01 tolerance. Division-by-zero guard returns 0.0 for all-decayed sections.
+- M-ASSERTS-1 (G-3) — Per-assertion policy enforcement: block policy rejects patches with clear violation message; warn (default) policy proceeds with \[assertion warning\] notice. Mixed-policy section with one block + one warn assertion correctly enforces both. (DD-143)
+- M-ASSERTS-2 (G-3) — symbol_exists / file_exists correctly identify present and absent symbols/files across all 5 supported languages (typescript, javascript, python, go, rust). Explicit param language suffix overrides detectProjectLanguage(). (DD-141 pass 3)
+- M-ASSERTS-3 (G-3) — Max 10 assertions per section enforced: 11th and beyond are logged and ignored; section still validates. (DD-143 pass 2)
+- M-METRICS-1 (G-4) — All 5 /coherence:metrics sections render correctly with synthetic data. Empty/sparse data shows graceful 'No data yet' messages. --since, --out, --revert-threshold flags work. (DD-147)
+- M-METRICS-2 (G-4) — /coherence:metrics renders \< 200 ms p95 with 90-day metrics.jsonl + 1000-section ledger + 20 team developer files. (NFR-PERF-N6)
+- M-AUDIT-1 (G-5) — /coherence:audit free tier reports token budget tiers (Normal/Large/Bloated) correctly. Bundling preserved from v0.4. \< 100 ms p95. (DD-135)
+- M-AUDIT-2 (G-5) — --deep cost gate fires before any LLM call. Hard cap of 10 pairs enforced. --sections \<glob\> narrows scope. (DD-142)
+- M-AUDIT-3 (G-5) — section-symbol-index.json built lazily on first --deep; cache hit O(1) on subsequent calls; invalidated by section-index.json hash change. (DD-142 pass 2)
+- M-SIGN-1 (G-6) — Tarball signature verifies via cosign verify against Rekor transparency log. CI signing produces signature artifact attached to GitHub Release. (DD-145)
+- M-SIGN-2 (G-6) — Local release without GITHUB_ACTIONS exits non-zero at sign step. --unsigned flag produces -UNSIGNED.tgz filename. release-artifacts/ absent from npm pack --dry-run via M-LEGACY-1 extension. (DD-145 pass 2)
+- M-REPAIR-1 (cross-cutting) — /coherence:repair correctly detects orphaned trust-ledger keys; --reassociate and --expire-orphans flags work. (DD-144)
+- M-COST-1 (carry from v0.4) — Per-session cost ≤ v0.1-baseline × 1.30 across CG-1 + CG-2 partition tests.
+Acceptance summary
+v1.0 GA when: (1) all FR-\* land with passing tests; (2) M-TRUST-1/2/3, M-LEDGER-1/2/3, M-ASSERTS-1/2/3, M-METRICS-1/2, M-AUDIT-1/2/3, M-SIGN-1/2, M-REPAIR-1, M-COST-1 all green at GA tag; (3) M6 README claims published; (4) cosign-signed tarball available via GitHub Releases with Rekor entry.
+——— BRD-4 AUDIT AMENDMENTS 2026-05-13 ———
+Additional acceptance metrics to close coverage gaps for DD-133, DD-140, DD-146 and FR-SIGN-4/5.
+- M-TRUST-4 (G-1) — Auto-land scope test (DD-146). Synthetic promoted developer with --auto-land annotate cannot auto-land skill/agent/slash_command kinds (require explicit accept). Developer with --auto-land annotate,skill can auto-land both. Default scope when --auto-land omitted = annotate only. State persists across sessions and re-install.
+- M-LEDGER-4 (G-2) — Team aggregate conflict resolution (DD-140) + per-developer file format (FR-LEDGER-2/4). Synthetic: 3 developers, same section. Dev A score +0.9, Dev B score +0.8, Dev C score -0.85. Aggregate (recency-weighted per-author mean) ≈ 0.28. Contested section flag fires when \|aggregate\| \< 0.2. Per-developer files use hashed author identity only; no clear-text email.
+- M-ASSERTS-4 (G-3) — Text-pattern assertions enforce correctly (DD-133). Synthetic sections with: (a) has_example pass when code block present, fail when absent; (b) no_placeholder_links fail with \[text\](TODO); (c) max_words:50 fail at 51 words; (d) min_words:10 fail at 9 words; (e) no_todo_comments fail with \<!-- TODO marker. Each respects per-assertion block/warn policy.
+- M-SIGN-3 (G-6) — Trust signal artifacts present (FR-SIGN-4, FR-SIGN-5). SECURITY.md exists at project root with responsible disclosure path. README contains a Verification section with cosign verify command line, Rekor lookup link, and M6 static-analysis gate descriptions. Static-analysis test asserts both files exist and contain required headings.
+- M-LISTING-1 (carry from v0.4) — Anthropic plugin registry listing submission carries from v0.4 M-LISTING-1. Status at v1.0 GA: awaiting Anthropic review. v1.0 acceptance is NOT gated on listing approval (external review process). v1.0 GA proceeds independently.
+- M-LEGACY-1 (carry, extended) — v0.4 M-LEGACY-1 (npm pack --dry-run excludes prompts/v1/, migrators, etc.) extended in v1.0 to also assert release-artifacts/ is absent from the published tarball. .npmignore + dry-run assertion. (FR-SIGN-3 cross-check.)
+Updated acceptance summary: v1.0 GA when (1) all FR-\* land with passing tests including FR-TRUST-5, FR-LEDGER-5, FR-ASSERTS-5, FR-MANIFEST-5, FR-TELEMETRY-1; (2) all M-\* gates green at tag including M-TRUST-1/2/3/4, M-LEDGER-1/2/3/4, M-ASSERTS-1/2/3/4, M-METRICS-1/2, M-AUDIT-1/2/3, M-SIGN-1/2/3, M-REPAIR-1, M-COST-1, M-LEGACY-1; (3) M6 README claims published; (4) cosign-signed tarball with Rekor entry; (5) M-LISTING-1 status noted (awaiting review, not blocking).
+——— BRD-4 AUDIT PASS 3 AMENDMENTS 2026-05-13 ———
+- M-SIGN-3 amendment (pass 3) — Required headings specified. SECURITY.md must contain headings (in order, exact text): ## Reporting a Vulnerability, ## Disclosure Policy, ## Supported Versions. README Verification section must contain: ## Verification, ### Signature Verification (with cosign verify command line example), ### Static-Analysis Gates (M-ARCH-1, M-PRIVACY-1, M-LEGACY-1, M-TRIPLEX-1 listed as verifiable claims). Static-analysis test greps for each heading literal.
+- M-PERF-N6-EXT (pass 3 carry from BRD-3) — /coherence:trust --status renders \< 200 ms p95 under the same workload as /coherence:metrics. Synthetic harness reuses M-METRICS-2 test fixtures.
