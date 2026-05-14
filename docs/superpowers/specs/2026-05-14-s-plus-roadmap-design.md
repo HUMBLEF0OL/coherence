@@ -4,7 +4,7 @@
 **Author**: HUMBLEFOOL (with Claude Opus 4.7 brainstorming)
 **Target version**: v1.1.0 (next minor — slug rename + post-v1.0.3 moves land here; phases ship as v1.1.x patches as they complete)
 **Scope**: composite-score lift from ~8.0 / 10 to ~9.5+ / 10 (S+)
-**Companion**: Notion mirror under *Coherence project → v1.1.0*
+**Companion**: [Notion mirror](https://www.notion.so/S-Roadmap-v1-0-3-v1-1-0-360010d46a7081ce8ee7e7ffff4981e3) under *Coherence project → Releases → v1.1*
 
 ---
 
