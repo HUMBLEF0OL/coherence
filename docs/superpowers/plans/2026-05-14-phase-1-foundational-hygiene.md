@@ -182,7 +182,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 Create `tests/unit/scripts/bump.test.ts` with:
 
 ```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -235,8 +235,6 @@ describe('bumpAllSources', () => {
 });
 ```
 
-Note: `afterEach` needs to be imported. Update the import line to `import { describe, it, expect, beforeEach, afterEach } from 'vitest';`.
-
 - [ ] **Step 2: Run the test and verify it fails**
 
 Run: `npx vitest run tests/unit/scripts/bump.test.ts`
@@ -268,6 +266,8 @@ Create `scripts/bump.mjs` with:
  *      via scripts/render-readme-verification.mjs
  */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 const SEMVER_RE = /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/;
 
@@ -313,7 +313,7 @@ export function bumpAllSources(version, paths = DEFAULT_PATHS) {
   writeFileSync(paths.initTsPath, updated);
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '')) {
   const target = process.argv[2];
   if (!target) {
     console.error('Usage: node scripts/bump.mjs <new-version>');
@@ -396,10 +396,10 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 This is the breaking move. Touches manifests, internal references, docs, and tests. Bumps to v1.1.0 at the end.
 
 **Files:**
-- Modify: `package.json` (name only — version bump happens in Task 6)
+- Modify: `package.json` (name only — version bump happens in the release plan)
 - Modify: `package-lock.json` (name only — regenerated)
 - Modify: `.claude-plugin/plugin.json` (name only)
-- Modify: `.claude-plugin/marketplace.json` (name + plugins[0].name only — version + ref bump happens in Task 6)
+- Modify: `.claude-plugin/marketplace.json` (name + plugins[0].name only — version + ref bump happens in the release plan)
 - Modify: `src/state/firstRun.ts:35,59`
 - Modify: `src/state/refuseLegacy.ts:39`
 - Modify: `src/commands/recover.ts:49`
@@ -426,6 +426,11 @@ Expected: package-lock.json's top-level `name` is now `coherence`.
 Verify: `node -e "console.log(JSON.parse(require('fs').readFileSync('package-lock.json','utf8')).name)"`
 Expected: `coherence`.
 
+Now check the diff is *only* the name change (no surprise dep updates):
+
+Run: `git diff --stat package-lock.json` then `git diff package-lock.json | head -40`
+Expected: Small diff touching only `name` fields. If you see version bumps to packages other than the project itself, stash them and report — they're unrelated to this task.
+
 - [ ] **Step 3: Rename in plugin.json**
 
 Edit `.claude-plugin/plugin.json`. Change `"name": "cohrence"` to `"name": "coherence"`.
@@ -436,7 +441,7 @@ Edit `.claude-plugin/marketplace.json`. Two name fields change:
 - Top-level `"name": "cohrence"` → `"name": "coherence"`
 - `"plugins": [{ "name": "cohrence", ...}]` → `"name": "coherence"`
 
-Leave `"plugins[0].version"` and `"plugins[0].source.ref"` alone — those get bumped in Task 6.
+Leave `"plugins[0].version"` and `"plugins[0].source.ref"` alone — those get bumped in the release plan.
 
 - [ ] **Step 5: Validate**
 
@@ -500,7 +505,7 @@ Edit `docs/user-guide.md`. Replace all `cohrence` references (lines 49, 65, 252,
 - [ ] **Step 17: Rebuild to regenerate README's cosign verify block**
 
 Run: `npm run build`
-Expected: `[render-readme-verification] wrote ... (repo=HUMBLEF0OL/coherence, version=1.0.3).` — the version is still 1.0.3 here (we bump in Task 6).
+Expected: `[render-readme-verification] wrote ... (repo=HUMBLEF0OL/coherence, version=1.0.3).` — the version is still 1.0.3 here (version bumps in the release plan).
 
 Inspect the modified README cosign block:
 
@@ -554,11 +559,11 @@ Eliminates the three-name confusion (npm slug 'cohrence' vs brand
 'Coherence' vs slash prefix '/coherence:'). Single name everywhere now.
 
 Functionally an alias change: same code, same behavior, new install
-slug. Cut as v1.1.0 in Task 6 of this plan. Existing marketplace
+slug. v1.1.0 is cut in the separate release plan once all phases land. Existing marketplace
 installers re-add per docs/migration/v1.1.0-rename.md.
 
 Touched: package.json + lock, plugin.json, marketplace.json (name fields
-only — version bumped in Task 6), src/state/firstRun.ts (dev-fallback
+only — version bumped in the release plan), src/state/firstRun.ts (dev-fallback
 data dir + comment), src/state/refuseLegacy.ts, src/commands/recover.ts +
 ignoreSplit.ts (error message text), README + docs/* (install commands),
 3 test files (fixture strings).
@@ -593,6 +598,17 @@ Take note of:
 - What `dispatchCoherenceCommand` returns + how userPromptSubmit.ts uses it
 - Whether userPromptSubmit.ts has *any* other responsibility (long-turn boundary detection, signal capture). If yes, the file stays — just the dispatch call is removed.
 - The sentinel format (`<!-- coherence-command: <name> -->`) and whether tests rely on it.
+
+- [ ] **Step 1b: Confirm the dispatcher is the *only* router**
+
+Run: `grep -rn "dispatchCoherenceCommand\|coherence-command:" --include='*.ts' --include='*.mjs' --include='*.md' src/ tests/ scripts/ commands/`
+
+For each match, classify it:
+- Inside `src/hooks/commandDispatch.ts` or `userPromptSubmit.ts` → expected, will be cleaned up below.
+- Inside `commands/*.md` → the sentinel comment in each stub; will be removed by Step 9-10 when stubs are regenerated.
+- Inside `scripts/generate-command-stubs.mjs` → expected, will be updated in Step 9.
+- Inside `tests/static-analysis/autogen-stubs.test.ts` → expected, the hash gate; will be updated by re-running the generator.
+- **Anywhere else** → stop and investigate before deleting `commandDispatch.ts`. There's another consumer of the sentinel or the dispatcher that the plan didn't account for.
 
 ### Step 5.2 — Find and update all tests that depend on the custom dispatch
 
@@ -649,6 +665,16 @@ Becomes:
 ```
 
 If the config also encodes filenames or paths, update those to match.
+
+- [ ] **Step 8b: Sanity-check no other source of stub names**
+
+Run: `grep -rn "coherence-\(status\|review\|repair\|recover\|doctor\|graduate\|trust\|metrics\|audit\|consent\|annotate\|de-annotate\|export-metrics\|share-metrics\|enable-sidecars\|ignore-split\|install-statusline\|uninstall-statusline\|propose-\|plan-\|scope-debug\)" --include='*.ts' --include='*.mjs' --include='*.json' --include='*.md' src/ tests/ scripts/`
+
+For each match outside `scripts/commands.config.json` and `commands/*.md` itself, decide:
+- A docs example referencing the old slash command name (`/coherence:status` form survives — only the *file* prefix changes; if the match shows the slash form `/coherence:status` it's a doc and is correct).
+- A test or source file expecting the prefixed filename → update it.
+
+The slash command surface (`/coherence:status`) is **unchanged** by this task. Only the *on-disk filename* and *config-file name* change.
 
 - [ ] **Step 9: Update scripts/generate-command-stubs.mjs**
 
@@ -725,134 +751,21 @@ realigned with the new hash.
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
----
+## Phase 1 exit — DO NOT cut v1.1.0 here
 
-## Task 6: Cut the v1.1.0 release
+All five Phase 1 moves are now committed on `dev`. Per the project decision that all S+ roadmap phases ship as a single v1.1.0 release, this plan **terminates at `dev`**. No version bump, no tag, no push to master.
 
-All five Phase 1 moves landed on `dev`. Now bump version, write release notes, run gates, tag, push.
+The v1.1.0 release happens in a separate plan ([docs/superpowers/plans/2026-05-14-v1.1.0-release.md](2026-05-14-v1.1.0-release.md)) after Phases 2–5 also land on `dev`.
 
-### Step 6.1 — Bump version
+- [ ] **Final step: Verify the working tree is clean and `dev` is committable**
 
-- [ ] **Step 1: Run the new bump script**
+Run: `git status --short`
+Expected: Clean working tree (or only line-ending churn if M2 hasn't fully normalized).
 
-Run: `npm run bump 1.1.0`
-Expected: Output line `[bump] all 7 sources now at 1.1.0. Run \`npm run build\` to regenerate README cosign block.`
+Run: `git log --oneline origin/dev..dev`
+Expected: A neat sequence of commits from Tasks 1–5. Each task's commit message names the move (C1/M4/M2/M3/T7).
 
-- [ ] **Step 2: Verify all 7 sources aligned**
-
-Run:
-
-```bash
-node -e "const fs=require('fs');console.log('pkg:',JSON.parse(fs.readFileSync('package.json')).version);console.log('lock:',JSON.parse(fs.readFileSync('package-lock.json')).version);console.log('plugin:',JSON.parse(fs.readFileSync('.claude-plugin/plugin.json')).version);const m=JSON.parse(fs.readFileSync('.claude-plugin/marketplace.json'));console.log('mk-v:',m.plugins[0].version);console.log('mk-ref:',m.plugins[0].source.ref);console.log('init:',/PLUGIN_VERSION\s*=\s*'([^']+)'/.exec(fs.readFileSync('src/state/init.ts','utf8'))[1])"
-```
-
-Expected: all 7 print `1.1.0` (with `v1.1.0` for the ref).
-
-- [ ] **Step 3: Rebuild to regenerate the README cosign block**
-
-Run: `npm run build`
-Expected: Build clean. README's cosign-verify block now references `coherence-1.1.0.tgz`.
-
-### Step 6.2 — Write release notes
-
-- [ ] **Step 4: Create RELEASE_NOTES_v1.1.0.md**
-
-Create `RELEASE_NOTES_v1.1.0.md` with sections covering:
-- Why the rename (eliminate three-name confusion)
-- Dispatch simplification (M4)
-- Hygiene additions (gitattributes M2, derived TAG M3, Dependabot T7)
-- Install migration (link to docs/migration/v1.1.0-rename.md)
-- Cosign verify block for v1.1.0
-- Test-gate evidence
-
-Follow the v1.0.3 release notes shape from `RELEASE_NOTES_v1.0.3.md`.
-
-### Step 6.3 — Run all release gates
-
-- [ ] **Step 5: Typecheck**
-
-Run: `npm run typecheck`
-Expected: Clean.
-
-- [ ] **Step 6: Lint**
-
-Run: `npm run lint`
-Expected: 0 errors / 0 warnings.
-
-- [ ] **Step 7: Full test suite**
-
-Run: `npm test`
-Expected: All tests pass (1110+ depending on what got added/removed during M4).
-
-- [ ] **Step 8: Ship-time gates**
-
-Run: `npm run gates`
-Expected: All pass.
-
-- [ ] **Step 9: Plugin validate**
-
-Run: `claude plugin validate .`
-Expected: `✔ Validation passed`.
-
-### Step 6.4 — Commit + tag + sync branches
-
-- [ ] **Step 10: Stage and commit the version bump + release notes**
-
-```bash
-git add package.json package-lock.json .claude-plugin/plugin.json .claude-plugin/marketplace.json src/state/init.ts README.md RELEASE_NOTES_v1.1.0.md
-git commit -m "chore(release): v1.1.0 — Phase 1 foundational hygiene
-
-Phase 1 of the S+ roadmap shipped:
-  C1 — rename cohrence -> coherence (single name across npm slug, brand,
-       slash command prefix; install migration in docs/migration/v1.1.0-rename.md)
-  M4 — drop custom slash command dispatch, use Claude Code's native
-       /<plugin>:<command> namespacing; removes src/hooks/commandDispatch.ts
-  M2 — .gitattributes forces LF line endings (kills CRLF noise on Windows)
-  M3 — TAG derived from package.json; npm run bump <ver> atomically
-       updates all 7 version sources
-  T7 — Dependabot weekly auto-PRs for npm + github-actions
-
-Release-gate pass:
-  typecheck            clean
-  lint                 0 errors / 0 warnings
-  build                clean
-  claude plugin validate  clean
-  vitest               all green
-  gates                all green
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-```
-
-- [ ] **Step 11: Fast-forward staging from dev, master from staging**
-
-```bash
-git checkout staging
-git merge --ff-only dev
-git checkout master
-git merge --ff-only staging
-git checkout dev
-```
-
-If any of these aren't fast-forward-safe, stop and investigate before proceeding.
-
-- [ ] **Step 12: Create the v1.1.0 tag**
-
-```bash
-git tag -a v1.1.0 -m "v1.1.0 — Phase 1 foundational hygiene (rename + dispatch simplification + release-engineering hygiene)"
-```
-
-- [ ] **Step 13: Push everything**
-
-```bash
-git push origin master staging dev v1.1.0
-```
-
-Expected: all branches updated, new tag pushed.
-
-- [ ] **Step 14: Verify on origin**
-
-Run: `git ls-remote origin master staging dev refs/tags/v1.1.0`
-Expected: All four show the same commit SHA (except the tag which is the annotated tag object).
+DO NOT push `dev` yet — the release plan does that after all phases land.
 
 ---
 
@@ -865,9 +778,9 @@ After writing this plan I checked against the spec's Phase 1 moves (C1, M4, M2, 
 - M2 → Task 1 (.gitattributes).
 - M3 → Task 3 (bump script + derived TAG).
 - T7 → Task 2 (Dependabot).
-- Release → Task 6 (bump 1.1.0, gates, tag, push).
+- Release → deferred to a separate plan ([2026-05-14-v1.1.0-release.md](2026-05-14-v1.1.0-release.md)) that runs after Phases 2–5 also land.
 
-Cross-check on ordering: C1 (Task 4) lands *before* M4 (Task 5) — required because M4's rename-command-files step assumes the plugin name is already `coherence`. M3 (Task 3) lands before Task 6 — required because Task 6 uses `npm run bump`. M2 + T7 are independent and can be either way.
+Cross-check on ordering: C1 (Task 4) lands *before* M4 (Task 5) — required because M4's rename-command-files step assumes the plugin name is already `coherence`. M3 (Task 3) lands before the release plan — required because the release plan uses `npm run bump`. M2 + T7 are independent and can be either way.
 
 Type consistency: the bump function signature stays `bumpAllSources(version, paths)` throughout. Path keys (`packageJsonPath`, `packageLockPath`, etc.) used consistently in test + impl.
 
