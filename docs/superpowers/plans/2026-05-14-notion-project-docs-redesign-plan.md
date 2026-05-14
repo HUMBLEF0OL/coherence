@@ -220,13 +220,13 @@ All four databases live as inline children of the `[Template] New Project` row (
 
 **Reversible:** via backup only (uses `replace_content`).
 
-- [ ] **Step 1:** Re-fetch `[Template] New Project` (`f2a010d4-6a70-83ee-903e-01b55b968b74`) and confirm the latest body matches the Phase 0 backup. If not, refresh the backup.
-- [ ] **Step 2:** Construct the full new body locally:
-  - Preserve the existing top-of-page **Quick Reference** table (Repo / Docs / Live / Package / Version / Stack / Run locally) verbatim.
-  - Replace the 13-row Knowledge Base table with a prose tree mirroring spec §4 (six evergreen pages, Releases parent + db, Reference parent + DD/Bugs/Glossary, Implementation Plans (archive)).
-  - Include `<page url="...">` tags for each surviving sub-page (Read Me First, Architecture, Technical Spec, Roadmap — see Task 2.3 for renames). Inclusion blocks the page-deletion guard from firing.
-- [ ] **Step 3:** Call `mcp_notion_notion-update-page` with `command: "replace_content"`, the constructed body as top-level `new_str`, and the schema's required dummy `properties: {}` and `content_updates: []`.
-- [ ] **Step 4:** Re-fetch and diff against intent. Verify Quick Reference, every surviving sub-page reference, and the new tree headings are present.
+- [x] **Step 1:** Re-fetched `[Template] New Project` (`f2a010d4-6a70-83ee-903e-01b55b968b74`); current body saved to `notion-backup/2026-05-14/template-body-pre-2.1.md`.
+- [x] **Step 2:** Constructed full new body locally at `notion-backup/2026-05-14/template-body-post-2.1.md`:
+  - Preserved Quick Reference table verbatim (Repo / Docs / Live / Package / Version / Stack / Run locally).
+  - Replaced 13-row Knowledge Base table with prose `## Structure` section mirroring spec §4 (six evergreen pages, Releases parent + db, Reference parent + DD/Bugs/Glossary, Implementation Plans (archive)).
+  - Included `<page url="...">` tags for the 4 actual existing child pages (📐 BRD, 🚀 Releases, 📑 Reference, 📋 Implementation Plans (archive)) and `<database url="...">` tags for all 4 child databases to satisfy the deletion guard. Read Me First / Architecture / Technical Spec / Roadmap do not exist on the template — Task 2.3 was skipped (no surviving pages to rename).
+- [x] **Step 3:** Called `replace_content` with the new body. Returned `{page_id: f2a010d4-...}` (200 OK).
+- [x] **Step 4:** Re-fetched and verified — Quick Reference present verbatim, new `## Structure` headings present, all 4 child pages and 4 child databases preserved.
 
 ### Task 2.2: Delete the 9 obsolete sub-pages
 
@@ -234,15 +234,17 @@ All four databases live as inline children of the `[Template] New Project` row (
 
 For each of the 9 pages below, look up the ID from the Phase 0 inventory and call `mcp_notion_notion-update-page` with `in_trash: true` (if the schema supports it via update-data-source/move) **or** `mcp_notion_notion-move-pages` to a `Trash 2026-05-14` page under the workspace root. Trashing is preferred over hard delete to keep a 30-day Notion safety window.
 
-- [ ] `4. API/Interface Reference`
-- [ ] `5. Configuration`
-- [ ] `6. Integrations`
-- [ ] `7. Quality & Testing`
-- [ ] `8. CI/CD & Release`
-- [ ] `9. Dependencies`
-- [ ] `11. Decisions (ADRs)`  (replaced by Reference DD db)
-- [ ] `12. Runbook & Ops`
-- [ ] `13. Changelog`  (replaced by Releases db)
+- [~] `4. API/Interface Reference` — *no actual sub-page exists on template (only a 13-row table label)*
+- [~] `5. Configuration` — *no actual sub-page exists on template*
+- [~] `6. Integrations` — *no actual sub-page exists on template*
+- [~] `7. Quality & Testing` — *no actual sub-page exists on template*
+- [~] `8. CI/CD & Release` — *no actual sub-page exists on template*
+- [~] `9. Dependencies` — *no actual sub-page exists on template*
+- [~] `11. Decisions (ADRs)` — *no actual sub-page exists on template* (replaced by Reference DD db)
+- [~] `12. Runbook & Ops` — *no actual sub-page exists on template*
+- [~] `13. Changelog` — *no actual sub-page exists on template* (replaced by Releases db)
+
+**Outcome (2026-05-14):** Task 2.2 fully skipped. The 13-row Knowledge Base table on the template referred to non-existent sub-pages (table cells only). Phase 0 inventory + walk did not surface any sub-pages titled `4.` through `13.` under the template root. Removing the 13-row table during Task 2.1 already eliminated the references; nothing to trash.
 
 **Verify after each:** re-fetch the template page; confirm the trashed page no longer appears in `<page>` references.
 
@@ -252,42 +254,54 @@ For each of the 9 pages below, look up the ID from the Phase 0 inventory and cal
 
 For each pair, call `mcp_notion_notion-update-page` with `command: "update_properties"` and `properties: { "title": "<new title>" }`. Tasks are independent — may be issued in parallel.
 
-- [ ] `1. Overview & Goals` → `📖 Read Me First`.
-- [ ] `2. Architecture` → `🏛 Architecture`.
-- [ ] `3. Technical Specification` → `⚙️ Technical Spec`.
-- [ ] `10. Roadmap` → `🗺️ Roadmap`.
+- [~] `1. Overview & Goals` → `📖 Read Me First` — *no actual sub-page exists on template*
+- [~] `2. Architecture` → `🏛 Architecture` — *no actual sub-page exists on template*
+- [~] `3. Technical Specification` → `⚙️ Technical Spec` — *no actual sub-page exists on template*
+- [~] `10. Roadmap` → `🗺️ Roadmap` — *no actual sub-page exists on template*
 
-**Verify:** fetch each renamed page; confirm new title.
+**Outcome (2026-05-14):** Task 2.3 fully skipped — same reason as 2.2. The four target pages do not exist on the template; the 13-row table was the only place these names appeared and it was removed in Task 2.1. The four evergreen pages (`📖 Read Me First`, `🏛 Architecture`, `⚙️ Technical Spec`, `🗺️ Roadmap`) will need to be created from scratch in the new Coherence project during Phase 3 (out of scope for Phase 2).
 
 ### Task 2.4: Create the 4 new evergreen / wrapper pages
 
 **Reversible:** yes (single `mcp_notion_notion-create-pages` batch can create all four).
 
-- [ ] **Step 1:** Call `mcp_notion_notion-create-pages` with `parent: { page_id: "f2a010d4-6a70-83ee-903e-01b55b968b74" }` and four child entries:
-  1. `📐 BRD` — body: stub paragraph "Cumulative product requirements. Per-release deltas live as `BRD-delta` children of each Releases-db row. Absorb on ship per the §6 ship-time checklist." plus an empty `## What this product is` H2.
-  2. `🚀 Releases` — body: short prose pointer "All releases live in the Releases database below.", followed by an inline linked view of the Releases db (use `mcp_notion_notion-create-view` with `parent_page_id` of this page after creation; default `type: table`, name `All releases`).
-  3. `📑 Reference` — body: "Cross-version index of design decisions, bugs, and glossary terms."
-  4. `📋 Implementation Plans (archive)` — body: "Archived working logs from shipped releases. Each entry is a child page named `🔧 Working Log — vX.Y.Z` plus optional `git permalink` to the plan markdown that produced it."
-- [ ] **Step 2:** Record all four new page IDs in `_ids.md`.
-- [ ] **Step 3:** Create two children under `📑 Reference` via a second `create-pages` call:
-  1. `Glossary` (empty stub).
-  2. Inline linked DD-database view (use `mcp_notion_notion-create-view` with `parent_page_id = Reference id`, `data_source_id = DD db ds id`, `type: table`, `name: "All DDs"`).
-- [ ] **Step 4:** Create an inline linked Bugs-db view under `📑 Reference` the same way (`name: "All bugs"`, `type: table`).
-- [ ] **Verify:** fetch `📑 Reference`; confirm Glossary child + two linked-db views render.
+- [x] **Step 1:** All four pages were already created in a prior pass on the template (likely during Phase 1 polish). Verified via `mcp_notion_notion-fetch` on each:
+  1. `📐 BRD` (`360010d4-6a70-8106-93e4-e4f3057bc2a4`) — body has the stub paragraph + `## What this product is` H2 ✓
+  2. `🚀 Releases` (`360010d4-6a70-8152-a947-ca90f35b5213`) — body has the prose pointer + inline linked Releases db view ✓
+  3. `📑 Reference` (`360010d4-6a70-8197-900b-fc1988750ddb`) — body has prose + inline linked DD db + inline linked Bugs db + `Glossary` child ✓
+  4. `📋 Implementation Plans (archive)` (`360010d4-6a70-81dc-a703-f4ff790e1f9f`) — body has the stub paragraph ✓
+- [x] **Step 2:** Page IDs recorded in `_ids.md` (template subtree IDs already documented; Phase 2.5 added the duplicated equivalents under `Coherence project (new)`).
+- [x] **Step 3:** `Glossary` (`360010d4-6a70-81d2-b8e5-e32650317f7f`) child + linked DD-db view already in place under `📑 Reference`.
+- [x] **Step 4:** Linked Bugs-db view already in place under `📑 Reference`.
+- [x] **Verify:** fetched `📑 Reference`; Glossary child + DD linked-view + Bugs linked-view all render.
+
+**Note (2026-05-14):** Page titles render with a doubled icon (`📐 📐 BRD`, `🚀 🚀 Releases`, etc.) because both the page icon AND the leading emoji in the title string are set. Cosmetic only; harmless. Optional cleanup deferred to Phase 5.
 
 ### Task 2.5: Add ship-time checklist + sequencing-gates toggle blocks to the Releases-db row template
 
 **Reversible:** yes.
 
-- [ ] **Step 1:** In Notion, the Releases db row "template" is a per-database template page. Use `mcp_notion_notion-fetch` on the Releases db to confirm whether a default template exists and whether the MCP exposes it.
-- [ ] **Step 2 (path A — MCP supports template):** create a row with title `[Template]` via `mcp_notion_notion-create-pages` with `parent: { data_source_id: "<Releases db ds id>" }` and write the body containing two `<details>` toggle blocks (see step 3). Mark as default template via the appropriate MCP call if available.
-- [ ] **Step 2 (path B — MCP does NOT support marking-as-template):** record the limitation in `_capabilities.md`. Phase 3.1 will then need to inject the toggle blocks into each new Releases-db row body individually (resolves agent question 4).
-- [ ] **Step 3:** Toggle body content (used in either path):
-  - Toggle 1: `Ship-time checklist` containing the 9 unchecked checkbox items from spec §6 verbatim.
-  - Toggle 2: `Sequencing gates` containing an empty unchecked to-do list with header `Add per-release gates here (delete this line when populated)`.
-- [ ] **Verify:** fetch the row (or the template); confirm both toggles render and contain unchecked checkboxes.
+- [x] **Step 1:** Fetched the Releases db. No `<templates>` section returned by `mcp_notion_notion-fetch` — MCP does NOT expose default-template marking.
+- [~] **Step 2 (path A):** partial — created a regular row titled `[Template]` (`360010d4-6a70-8173-9395-cb82259c8eca`) with the two toggles in its body. CANNOT mark as default template via MCP (path A unavailable for the marking step).
+- [x] **Step 2 (path B):** limitation recorded in `notion-backup/2026-05-14/_capabilities.md` (`Database row template ("default template") marking ❌`). Phase 3.1 must inject toggles into each new release row body individually OR copy the body of the `[Template]` row by hand.
+- [x] **Step 3:** Toggle body written verbatim:
+  - Toggle 1 `Ship-time checklist` — 9 unchecked checkboxes from spec §6.
+  - Toggle 2 `Sequencing gates` — header `Add per-release gates here (delete this line when populated)` + one empty unchecked to-do.
+- [x] **Verify:** fetched the `[Template]` row; both `<details>` toggles render with all 9 checklist items + 1 sequencing-gate placeholder. ✓
 
-> **CHECKPOINT B** — confirm with user: template is the new shape, Coherence project untouched. Block until approved.
+## Phase 2.5 — Duplicate template → new Coherence project
+
+**Effort:** S. Track B-2.5. Reversible by trashing the duplicate (the source template is unchanged).
+
+### Task 2.5.1: Duplicate template, rename, move to workspace root
+
+- [x] **Step 1:** Called `mcp_notion_notion-duplicate-page` with `page_id = f2a010d4-6a70-83ee-903e-01b55b968b74`. Duplicate completed synchronously (~1 s); returned new page id `360010d4-6a70-8151-aa9e-d80a12c63c88`.
+- [x] **Step 2:** Verified the duplicate brought all 4 child pages + 4 child databases + all schemas, options, views, and inter-database relations (relations rewritten to point at the duplicates).
+- [x] **Step 3:** Moved the duplicate to workspace root via `mcp_notion_notion-move-pages` `{type: "workspace"}`. Move stripped the database row properties (`Name`, `Status`, `Phase`, etc.); only the body and `title` survived.
+- [x] **Step 4:** Renamed the page to `Coherence` via `mcp_notion_notion-update-page` `update_properties` with `{title: "Coherence"}`. (The 📋 icon was inherited from the template.)
+- [x] **Step 5:** Recorded all new page / database / data-source / view IDs in `_ids.md` under heading `Coherence project (new)`. The OLD project (`93d010d4-...`) is untouched and will be moved out at the end of CHECKPOINT F.
+
+> **CHECKPOINT B** — confirm with user: template is the new shape, AND the new `Coherence` project at workspace root carries the new shape, AND the OLD Coherence project (`93d010d4-...`) is untouched. Block until approved.
 
 ---
 

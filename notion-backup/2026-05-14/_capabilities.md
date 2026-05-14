@@ -17,6 +17,9 @@
 | `mcp_notion_notion-create-database` | ✅ | Used in Phase 1 to create Releases / DD / Bugs inside the template |
 | `mcp_notion_notion-update-data-source` (DDL) | ✅ | Used in Phase 1 to add self-relations (`Substrate` on Releases, `Supersedes` on DD); self-relations cannot be declared inline at create time |
 | `mcp_notion_notion-create-view` | ✅ (with caveat) | See "View DSL — relative dates" below |
+| `mcp_notion_notion-duplicate-page` | ✅ | Used in Phase 2.5; runs synchronously for the database row + 4 child pages + 4 child databases case (~1s). All schemas, options, views, and inter-database relations are rewritten to point at the duplicates. Linked-view blocks inside child pages are also rewritten. |
+| `mcp_notion_notion-move-pages` to `{type: "workspace"}` | ✅ | Used in Phase 2.5 to move the duplicated row out of the Projects database to workspace root. Row converts to a regular page; database properties (Name, Status, Phase, etc.) are dropped, only `title` survives. |
+| Database row template ("default template") marking | ❌ | The `mcp_notion_notion-fetch` on a database does NOT return any `<templates>` section (Releases db probed). `create-pages` with `parent: data_source_id` creates a regular row, not a template. There is no documented way to mark a row as the database's default new-row template. **Workaround:** Phase 2.5 / 3.1 inject the toggle blocks into each new release row body individually, OR copy the body of the `[Template]` row (`360010d4-6a70-8173-9395-cb82259c8eca`) by hand. |
 
 ## Effect on plan
 

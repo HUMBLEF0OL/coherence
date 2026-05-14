@@ -106,3 +106,100 @@ template into a fresh "Coherence (v2)" project — Coherence-scoped IDs (Phase
   Per plan, fell back to the `Status = "Current"` filter only; the >90-day
   predicate must be applied manually or via UI filter overlay. Limitation
   recorded in `_capabilities.md`.
+
+---
+
+## Releases db (template) — extra IDs after Task 2.5
+
+- `[Template]` row in Releases ds (carries the Ship-time checklist + Sequencing gates toggles in its body):
+  - page_id: `360010d4-6a70-8173-9395-cb82259c8eca`
+  - url: https://www.notion.so/360010d46a7081739395cb82259c8eca
+  - notes: MCP cannot mark a row as a Notion default template. Treat this row
+    as a copy-paste reference until the MCP exposes db-template ops; see
+    `_capabilities.md` for the limitation. Phase 3.1 must continue to inject
+    the toggle blocks into each new release row body individually.
+
+---
+
+## Coherence project (new) — Phase 2.5 duplicate
+
+Created 2026-05-14 by `mcp_notion_notion-duplicate-page` from
+`f2a010d4-6a70-83ee-903e-01b55b968b74`. Duplicate completed synchronously;
+all 4 child pages, 4 child databases, schemas, options, views, and
+inter-database relations were brought across. Relation properties
+(`Substrate`, `Bugs`, `Design Decisions`, `Version introduced`, `Release`,
+`Supersedes`/`Superseded by`) were rewritten by Notion to point at the new
+data sources. Then renamed to `Coherence` and moved to workspace root via
+`mcp_notion_notion-move-pages` `{type: "workspace"}`.
+
+The OLD project (`93d010d4-6a70-8280-ba6c-013d97211fd6`) is untouched and
+remains at its original location.
+
+### Root page
+- page_id: `360010d4-6a70-8151-aa9e-d80a12c63c88`
+- url: https://www.notion.so/360010d46a708151aa9ed80a12c63c88
+- title: `Coherence` (with `📋` icon)
+- parent: workspace root (no ancestor)
+
+### Child pages (parent: Coherence root)
+- `📐 BRD`: `360010d4-6a70-811a-991d-d5d764389505` — https://www.notion.so/360010d46a70811a991dd5d764389505
+- `🚀 Releases`: `360010d4-6a70-816e-8e1f-c988a857a3d7` — https://www.notion.so/360010d46a70816e8e1fc988a857a3d7
+- `📑 Reference`: `360010d4-6a70-814e-9d0d-e77eae24026c` — https://www.notion.so/360010d46a70814e9d0de77eae24026c
+- `📋 Implementation Plans (archive)`: `360010d4-6a70-81fb-9dfc-e63808370c87` — https://www.notion.so/360010d46a7081fb9dfce63808370c87
+- `Glossary` (under `📑 Reference`): `360010d4-6a70-813f-881a-dfe592d1ba19` — https://www.notion.so/360010d46a70813f881adfe592d1ba19
+
+### Releases db (new)
+- database_id: `360010d4-6a70-81c3-bb44-cf268a586118`
+- data_source_id: `360010d4-6a70-81f5-8e56-000b07460e78`
+- url: https://www.notion.so/360010d46a7081c3bb44cf268a586118
+- views (4 — duplicate has an extra `Default view` alongside the original three):
+  - Default view: `360010d4-6a70-8150-903a-000c509bb790`
+  - Table (sorted Ship date DESC): `360010d4-6a70-81a3-b716-000c31f3b44c`
+  - Board by Status: `360010d4-6a70-816a-9b76-000c7f6760ac`
+  - Timeline (by Ship date): `360010d4-6a70-8144-b814-000c09bbc701`
+- linked-view block embedded in `🚀 Releases` page: db_url `360010d4-6a70-8150-84a5-dbda32f3181d`
+  pointing at the new ds (`collection://360010d4-6a70-81f5-...`) ✓ rewritten correctly by Notion duplicate
+- expected `[Template]` row carry-over: should be present (was created on the
+  source template before the duplicate ran). Verify in Notion UI before Phase 3.1.
+
+### Design Decisions db (new)
+- database_id: `360010d4-6a70-8113-9fa0-db7a1179c4d0`
+- data_source_id: `360010d4-6a70-819c-a22f-000b707a572b`
+- url: https://www.notion.so/360010d46a7081139fa0db7a1179c4d0
+- views (5 — duplicate gained an extra `Default view`):
+  - Default view: `360010d4-6a70-8134-b4d5-000cec32e02c`
+  - Table (DD # ASC): `360010d4-6a70-8135-8d98-000c7f029456`
+  - By Version (board grouped by Version introduced): `360010d4-6a70-81f1-95d7-000c555beca7`
+  - By Status (table grouped): `360010d4-6a70-8160-b67e-000c5c8acb58`
+  - Active only (filter Status=Active, sort DD # ASC): `360010d4-6a70-8121-95d4-000ca8699660`
+- linked-view block embedded in `📑 Reference` page: db_url `360010d4-6a70-8153-a493-f60e730c73c3`
+  pointing at the new ds (`collection://360010d4-6a70-819c-...`) ✓
+- self-relation (`Supersedes` ↔ `Superseded by`) preserved.
+
+### Bugs db (new)
+- database_id: `360010d4-6a70-8145-9096-cecebad8b011`
+- data_source_id: `360010d4-6a70-8171-8439-000b8a412879`
+- url: https://www.notion.so/360010d46a7081459096cecebad8b011
+- views (4 — duplicate gained an extra `Default view`):
+  - Default view: `360010d4-6a70-81ba-a091-000cf211a6d4`
+  - Table by Release (grouped): `360010d4-6a70-8143-b86f-000cd0be6b54`
+  - Open only (filter Status=Open): `360010d4-6a70-8105-886c-000c552c8518`
+  - By Caught by (board grouped): `360010d4-6a70-81e7-8668-000c813735d0`
+- linked-view block embedded in `📑 Reference` page: db_url `360010d4-6a70-8162-9cfe-f75cf19b89af`
+  pointing at the new ds (`collection://360010d4-6a70-8171-...`) ✓
+- relation `Release` → new Releases ds: ✓ rewritten.
+
+### Docs db (new) — pre-existing on template, also carried across
+- database_id: `360010d4-6a70-8104-aba5-d6eae91353a4`
+- data_source_id: `360010d4-6a70-81c2-8e5a-000b843ab749`
+- url: https://www.notion.so/360010d46a708104aba5d6eae91353a4
+- views (4):
+  - Default view: `360010d4-6a70-81eb-98fd-000ca8bd10c5`
+  - By Category (board): `360010d4-6a70-816c-8a76-000ca5849bbd`
+  - Gallery: `360010d4-6a70-81c6-afe1-000c07bdf81b`
+  - Stale (>90d, Current) (filter Status=Current, sort Last Updated ASC): `360010d4-6a70-8168-acf5-000c0551348b`
+
+### Cross-cutting verification (post-Phase-2.5)
+- Page-body display quirk: child page titles render as `📐 📐 BRD`, `🚀 🚀 Releases`, `📑 📑 Reference`, `📋 📋 Implementation Plans (archive)` because the leaf icon is also embedded in the title string. Carried over from the template; harmless. Optional cleanup: rename titles to drop the leading emoji, leaving the page icon to display it.
+- Linked-view blocks inside `🚀 Releases` and `📑 Reference` were re-pointed by Notion at the duplicated data sources (verified above).
+- DO NOT touch the OLD project (`93d010d4-6a70-8280-ba6c-013d97211fd6`) until CHECKPOINT F sign-off.
