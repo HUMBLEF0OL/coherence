@@ -1,9 +1,10 @@
-# S+ Roadmap — v1.0.3 → S+ trajectory
+# S+ Roadmap — v1.0.3 → v1.1.0 (S+ trajectory)
 
 **Status**: approved 2026-05-14
 **Author**: HUMBLEFOOL (with Claude Opus 4.7 brainstorming)
+**Target version**: v1.1.0 (next minor — slug rename + post-v1.0.3 moves land here; phases ship as v1.1.x patches as they complete)
 **Scope**: composite-score lift from ~8.0 / 10 to ~9.5+ / 10 (S+)
-**Companion**: Notion mirror under *Coherence → Implementation Plans (archive)*
+**Companion**: Notion mirror under *Coherence project → v1.1.0*
 
 ---
 
@@ -15,6 +16,23 @@ The v1.0.3 release closed two gaps (marketplace source-shape fix, master-branch 
 2. Tightening the strong axes from 9 → 10 — test rigor, release engineering, architecture, code quality, safety/security.
 
 Pushing only one half does not get there; the bottom drags the average.
+
+## Scoring rubric (the 10 axes)
+
+Composite is the unweighted mean of the per-axis scores. Each axis is scored 1–10 against the criteria below.
+
+| # | Axis | v1.0.3 score | What pulls it up |
+|---|---|---|---|
+| 1 | Test rigor | 9.0 | Mutation tests, property-based tests, coverage threshold, end-to-end install smoke |
+| 2 | Release engineering | 9.0 | Auto-derived tag, single-command bump, auto-generated notes, perf regression gates |
+| 3 | Architecture | 8.5 | Pluggable extension surface, decoupled subsystems, fewer magic conventions |
+| 4 | Code quality | 8.5 | Zero TODOs, mutation-tested, coverage-gated |
+| 5 | Safety / security | 8.5 | SLSA L3, SBOM, public threat model, Dependabot |
+| 6 | Velocity | 8.0 | Continued release cadence; not the dragging axis |
+| 7 | Documentation | 7.5 | ADR mirror, extension tutorials, architecture diagram, failure-mode doc, comparison piece |
+| 8 | Distribution | 7.0 | Official-marketplace listing, CI install-smoke, devcontainer, awesome-list discoverability |
+| 9 | Plugin polish | 7.0 | Single-name unification, native slash dispatch, command consolidation, userConfig schema, more plugin surface used |
+| 10 | Maintainability | 6.5 | `.gitattributes`, derived TAG, magic-convention audit, debug log parity, docs that fake bus-factor |
 
 ## Constraints
 
@@ -38,7 +56,7 @@ Order matters: C1 unblocks M4.
 
 | ID | Move | Axes lifted | Effort |
 |---|---|---|---|
-| C1 | Rename `cohrence` → `coherence` across `package.json`, `plugin.json`, `marketplace.json`. Cut as **v2.0.0** (breaking install slug). Update README's three-name tagline accordingly. | Plugin polish, Maintainability, Docs | Low |
+| C1 | Rename `cohrence` → `coherence` across `package.json`, `plugin.json`, `marketplace.json`. Cut as **v1.1.0** (slug rename within minor line; npm isn't published per D2, so the only impacted users are marketplace installers who re-add once). Update README's three-name tagline accordingly. | Plugin polish, Maintainability, Docs | Low |
 | M4 | Drop the custom `UserPromptSubmit` slash-command dispatch + `<!-- coherence-command: -->` sentinel routing. Migrate to Claude Code's native `/<plugin>:<command>` namespacing. Half a subsystem disappears. | Architecture, Maintainability, Plugin polish | Medium |
 | M2 | Add `.gitattributes` with `* text=auto eol=lf`. Eliminates the perpetual `.claude/settings.json` CRLF dirty-state noise. | Maintainability | Trivial |
 | M3 | Derive `TAG` from `package.json#version` in `scripts/release-ga.mjs`. Add `npm run bump <ver>` that atomically updates all 7 version sources. Releases become one command. | Release engineering, Maintainability | Low |
@@ -133,11 +151,26 @@ All other moves are parallel-safe.
 
 ## Open risks
 
-- **C1 rename is a breaking change.** Existing installs of `cohrence` won't auto-migrate to `coherence`. Need migration docs and a deprecation period on the old slug if any users exist by then.
-- **D3 CI install-smoke requires Claude Code in CI.** May need a containerized Claude Code runner or a mock harness.
+- **C1 slug rename is install-breaking even at minor.** Existing marketplace installers of `cohrence@cohrence` won't auto-migrate to `coherence@coherence` — they have to `claude plugin marketplace remove cohrence` + `add` the new slug. Ship a v1.1.0 release-notes migration block + a `coherence` README banner. No npm impact (D2 declined). Semver-wise this is an alias change, not a behavior break, hence minor.
+- **D3 CI install-smoke requires Claude Code in CI.** May need a containerized Claude Code runner or a mock harness. Investigate before committing to the CI design.
 - **S9 pluggable engines** is the only High-effort move that doesn't yield a directly user-visible feature. Worth doing only after Phase 4 confirms the asserts engine surface is stable.
-- **Notion ADR mirror (X1)** must establish a one-way sync direction (Notion → repo, or repo → Notion). Bi-directional drifts. Recommend repo-as-source-of-truth from this point forward.
+- **Notion ↔ repo drift (X1).** ADR mirror needs one-way sync. Recommend repo-as-source-of-truth from this point forward; Notion mirrors the repo, not the reverse.
+- **Score-projection estimates are not measured.** Each phase's lift estimate is judgment, not instrumentation. Re-score after each phase using the rubric above and adjust the plan if a phase under-delivers.
+
+## Implementation cadence
+
+This is a **roadmap**, not an implementation plan. Each phase is its own future `superpowers:writing-plans` invocation when ready to execute:
+
+| Phase | Ships as | Plan trigger |
+|---|---|---|
+| 1 | v1.1.0 (first cut, includes C1 rename) | Right after this spec is approved |
+| 2 | v1.1.1 – v1.1.3 (per move) | After Phase 1 stabilizes for ~1 week |
+| 3 | v1.1.4 – v1.1.x (docs, no code impact) | Parallel-safe with Phase 2 |
+| 4 | v1.1.x (hardening, no user-visible) | After feedback-loop signals from Phase 2 |
+| 5 | v1.2.0+ (platform moves) | After Phases 1–4 land and stabilize |
+
+S+ is a destination, not a single deliverable. Each phase landing is a real release with its own gates, notes, and tag.
 
 ## Next step (after this spec is committed)
 
-This brainstorm explicitly ends at the design stage. No implementation plan is being written here. When a phase is ready to execute, invoke `superpowers:writing-plans` against the specific phase's moves.
+This brainstorm explicitly ends at the design stage. No implementation plan is being written here. When Phase 1 is ready to execute, invoke `superpowers:writing-plans` against the **Phase 1 — Foundational hygiene** moves (C1 → M4 → M2 → M3 → T7). Subsequent phases each get their own plan invocation.
