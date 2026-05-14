@@ -42,19 +42,21 @@ describe('v0.2 final SG sweep', () => {
     // v0.4 DD-119: manifest moved to .claude-plugin/plugin.json.
     // v1.0.2: command list moved out of plugin.json#slashCommands (rejected by
     // the modern manifest schema) into scripts/commands.config.json.
+    // v1.1.0 M4: command names are bare (no `coherence:` prefix) — Claude Code
+    // natively namespaces commands/<name>.md as /coherence:<name>.
     const p = JSON.parse(
       readFileSync(path.join(ROOT, 'scripts', 'commands.config.json'), 'utf8'),
     );
     const names = (p.commands as Array<{ name: string }>).map((c) => c.name);
     for (const n of [
-      'coherence:propose-list',
-      'coherence:propose-show',
-      'coherence:propose-accept',
-      'coherence:propose-reject',
-      'coherence:propose-revert-acceptance',
-      'coherence:install-statusline',
-      'coherence:uninstall-statusline',
-      'coherence:annotate',
+      'propose-list',
+      'propose-show',
+      'propose-accept',
+      'propose-reject',
+      'propose-revert-acceptance',
+      'install-statusline',
+      'uninstall-statusline',
+      'annotate',
     ]) {
       expect(names).toContain(n);
     }

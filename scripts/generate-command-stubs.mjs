@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 /**
- * v1.0.2 — autogen slash-command stubs from `scripts/commands.config.json`.
+ * v1.1.0 M4 — autogen slash-command stubs from `scripts/commands.config.json`.
  *
- * Writes one `commands/<safe-name>.md` per slash command with YAML
- * frontmatter (description) plus a `<!-- coherence-command: <name> -->`
- * sentinel that UserPromptSubmit dispatches on. Idempotent: short-circuits
- * when the config hasn't changed.
+ * Writes one `commands/<name>.md` per slash command with YAML frontmatter
+ * (description). Idempotent: short-circuits when the config hasn't changed.
  *
- * v1.0.2 migration: the source of truth moved from
+ * v1.1.0 M4 migration: the custom UserPromptSubmit sentinel dispatcher
+ * (`src/hooks/commandDispatch.ts` and the `<!-- coherence-command: ... -->`
+ * sentinel) is gone. Claude Code natively namespaces commands under
+ * `commands/<name>.md` as `/<plugin-name>:<name>` — with the plugin renamed
+ * to `coherence` (C1), the rendered slash command for `commands/status.md`
+ * is `/coherence:status` with no custom routing required.
+ *
+ * v1.0.2 backstory: the source of truth moved from
  * `.claude-plugin/plugin.json#slashCommands` (rejected by the modern
- * `claude plugin validate` schema as an unrecognized key) to a separate
- * config under `scripts/`. The runtime dispatch path (UserPromptSubmit ->
- * `src/hooks/commandDispatch.ts`) keys off the sentinel inside each stub,
- * so this generator is the only place that reads the list.
+ * `claude plugin validate` schema) to this separate config under `scripts/`.
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { createHash } from 'crypto';
@@ -55,8 +57,6 @@ for (const cmd of commands) {
     '---',
     `description: ${escapeYamlScalar(desc)}`,
     '---',
-    '',
-    `<!-- coherence-command: ${cmd.name} -->`,
     '',
   ].join('\n');
   writeFileSync(stubPath, content, 'utf8');

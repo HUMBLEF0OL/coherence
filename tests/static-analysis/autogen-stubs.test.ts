@@ -1,11 +1,16 @@
 /**
- * M-AUTOGEN-1 — autogen command stubs (v0.4 DD-130).
+ * M-AUTOGEN-1 — autogen command stubs (v1.1.0 M4).
  *
- * v1.0.2 migration: the source of truth moved from
+ * v1.1.0 M4 migration: the custom UserPromptSubmit sentinel dispatcher is
+ * gone. Claude Code natively namespaces `commands/<name>.md` as
+ * `/<plugin-name>:<name>`. With the plugin renamed to `coherence` (C1),
+ * `commands/status.md` auto-routes to `/coherence:status` with no runtime
+ * glue. Stubs are now description-only YAML frontmatter — no
+ * `<!-- coherence-command: ... -->` sentinel, no body.
+ *
+ * v1.0.2 backstory: the source of truth moved from
  * `.claude-plugin/plugin.json#slashCommands` (the modern manifest schema
- * rejects that key) to `scripts/commands.config.json`. The dispatch path
- * still keys off the `<!-- coherence-command: <name> -->` sentinel inside
- * each stub, so the runtime contract is unchanged.
+ * rejects that key) to `scripts/commands.config.json`.
  */
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'child_process';
@@ -41,12 +46,12 @@ describe('M-AUTOGEN-1 — stub autogen', () => {
     }
   });
 
-  it('each stub contains the coherence-command sentinel with the original colon name', () => {
+  it('no stub carries the legacy <!-- coherence-command: ... --> sentinel (M4)', () => {
     for (const c of readCommands()) {
       const filename = c.name.replace(/:/g, '-') + '.md';
       const content = readFileSync(path.join(COMMANDS_DIR, filename), 'utf8');
-      expect(content, `Stub ${filename} missing sentinel`).toContain(
-        `<!-- coherence-command: ${c.name} -->`,
+      expect(content, `Stub ${filename} still carries the legacy sentinel`).not.toContain(
+        '<!-- coherence-command:',
       );
     }
   });
@@ -57,6 +62,17 @@ describe('M-AUTOGEN-1 — stub autogen', () => {
       const content = readFileSync(path.join(COMMANDS_DIR, filename), 'utf8');
       expect(content.startsWith('---\n'), `Stub ${filename} missing frontmatter`).toBe(true);
       expect(content, `Stub ${filename} missing description`).toMatch(/^description:\s+/m);
+    }
+  });
+
+  it('command names in config are bare (no `coherence:` or `coherence-` prefix) — M4 native namespacing', () => {
+    for (const c of readCommands()) {
+      expect(c.name, `Command name "${c.name}" must not carry a coherence: prefix`).not.toMatch(
+        /^coherence:/,
+      );
+      expect(c.name, `Command name "${c.name}" must not carry a coherence- prefix`).not.toMatch(
+        /^coherence-/,
+      );
     }
   });
 
