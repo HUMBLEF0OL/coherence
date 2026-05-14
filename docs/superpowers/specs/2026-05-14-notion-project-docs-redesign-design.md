@@ -58,12 +58,14 @@ The first two are symptoms of the same cause: the structure has no place for the
 │   ├── Design Decisions database     ← cross-version DD register; canonical source of truth for DD bodies
 │   ├── Bugs database                 ← cross-version post-tag bug tally
 │   └── Glossary                      ← evergreen
-└── 📋 Implementation Plans (archive)  ← links to git permalinks for shipped plans
+└── 📋 Implementation Plans (archive)  ← bucket for shipped artifacts: git-permalink links to plan markdowns + archived Working Log pages from past releases
 ```
 
 Six evergreen pages (Read Me First, Architecture, BRD, Technical Spec, Roadmap, Glossary), three databases at Reference + one at Releases, one archive. The active release's working log is reached via the Releases db filtered to `Status ≠ Shipped` — no separate `Working Log (active)` pointer page.
 
 **DD source of truth (resolves audit B4):** the Reference Design Decisions database is canonical. The per-release `Design Decisions` sub-page is an embedded filtered view of that database (`Version introduced = this release`), not a duplicate copy of the text. Authoring a new DD = creating a new row in the Reference db; it appears in the per-release view automatically.
+
+**Conditional fallback:** if the Phase 3c + 3.4 fallback in §10 is taken (skip body backfill), the per-release prose `Design Decisions` pages remain canonical and the Reference db functions as a title-only index instead. The structure tolerates either outcome.
 
 Compared to today's hub: BRD/TSD become the actual source of truth instead of empty "absorb later" stubs; Working Log becomes a first-class tier; DD / Bugs / Releases become databases instead of prose.
 
@@ -80,7 +82,7 @@ Compared to today's hub: BRD/TSD become the actual source of truth instead of em
 | Substrate | Relation (self) | The prior release this one extends |
 | BRD-delta | URL | Link to the per-release BRD page |
 | TSD-delta | URL | Link to the per-release Technical Spec page |
-| Working Log | URL | Active working-log page; points to archive after ship |
+| Working Log | URL | Notion page URL of the active working-log page; rewritten on archive to point at the archived location under Implementation Plans (archive) |
 | DD range | Text | e.g. `DD-131..DD-147` |
 | Rolled to next | Text | What was deferred out of this release |
 | Notes link | URL | `RELEASE_NOTES_vX.Y.Z.md` permalink |
@@ -166,7 +168,7 @@ Three relations total.
 ## 8. Migration plan
 
 ### Phase 0 — Safety net
-1. Recursively fetch every page reachable from the Coherence project landing page (`93d010d4-…`) and from `[Template] New Project` (`f2a010d4-…`). Walk `<page>` and `<child-page>` references depth-first until no new IDs are discovered.
+1. Recursively fetch every page reachable from the Coherence project landing page (`93d010d4-6a70-8280-ba6c-013d97211fd6`, titled **🧭 Coherence**) and from the template row (`f2a010d4-6a70-83ee-903e-01b55b968b74`, titled **📋 [Template] New Project**). Walk `<page>` and `<child-page>` references depth-first until no new IDs are discovered.
 2. For each fetched page, write `notion-backup/2026-05-14/<slug>.md` with the page URL on line 1 and the raw `<content>` body below. Expected count: ~50 pages across both hubs. Done = no new IDs surface in a re-walk.
 3. Confirm restore-from-backup procedure works on one throwaway page (create `Backup test`, write content, back it up, edit, restore via MCP `update_content`, verify).
 4. Prefer `update_content` (search-and-replace) over `replace_content` (whole-page rewrite) for all subsequent writes — per the user-memory MCP gotcha.
@@ -197,7 +199,7 @@ Create `🔧 Working Log — v1.0.1` as a child of the v1.0.1 row. Move into it:
 4. Project landing page: dedupe the duplicated navigation; add Implementation Plans (archive) to the prose list.
 5. Reference → Design Decisions: convert from prose summary to embedded DD-database view.
 6. **Naming pass — 12 page renames** (per §7): for each release v0.1..v1.0.1, rename `BRD` → `BRD-delta` and `Technical Specification` (or `Technical Specification (vX.Y)`) → `TSD-delta`. Also rename the icon-prefixed variants (`📘 BRD`, `🛠️ Technical Specification`) to match.
-7. Add a Docs db to the Coherence project (same schema as `[Template] New Project`'s Docs db) and seed it with one row per evergreen page (Status = Current, Last Updated auto-set).
+7. Add a Docs db to the Coherence project (same schema as `[Template] New Project`'s Docs db, including the `Stale (>90d, Current)` view from Phase 1) and seed it with one row per evergreen page (Status = Current, Last Updated auto-set).
 8. Apply Notion `update_verification` (90-day expiry) to: Read Me First, Architecture, BRD, Technical Spec, Roadmap, Glossary. **Six pages.** Skip if the workspace tier doesn't expose verification — the Docs `Stale (>90d)` view is the fallback signal in that case (see §10).
 
 ### Phase 6 — Markdown contract committed (Track B-3)
@@ -228,7 +230,7 @@ Phases 1, 2, 3a, 3b, 6 are reversible without backups. Phases 3c, 4, 5 are rever
 - Reference → Design Decisions renders the DD database with all 147 rows present. Each per-release `Design Decisions` sub-page shows an embedded filtered view of the same database; no duplicated DD prose anywhere.
 - Reference → Bugs renders the Bugs database with v1.0.1's 10 fix entries.
 - The 12 per-release pages (6 releases × `BRD-delta` + `TSD-delta`) are renamed per §7.
-- A Docs db exists inside the Coherence project, seeded with the six evergreen-page rows.
+- A Docs db exists inside the Coherence project (with the `Stale (>90d, Current)` view), seeded with at least one row per evergreen page; additional non-evergreen pages may be added as needed.
 - The six evergreen pages have either a Notion `update_verification` (90-day expiry) **or** an entry in the Docs `Stale (>90d, Current)` view that resolves cleanly — whichever the workspace tier supports.
 - `docs/notion-project-template.md` exists, is committed, and any new project can be started by duplicating the `[Template] New Project` row and following its procedure.
 
