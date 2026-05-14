@@ -22,7 +22,7 @@ The first two are symptoms of the same cause: the structure has no place for the
 
 ## 2. Goals
 
-- **G1 — No more silent staleness.** Every evergreen page has a verification expiry; the staleness signal is visible in the hub view, not buried behind clicks.
+- **G1 — No more silent staleness.** Every evergreen page has a staleness signal visible in the hub view, not buried behind clicks. Primary mechanism: Notion `update_verification` (90-day expiry) where workspace tier permits; fallback: the Docs-db `Stale (>90d, Current)` filtered view applies to every workspace tier.
 - **G2 — Frozen release pages stay frozen.** Working-log content (bug tallies, audits, in-session notes, runbooks) has its own home, separate from the release page. Release pages can be sealed on ship.
 - **G3 — Cross-version queries work.** "All Trust-related DDs across versions", "all P1 bugs caught post-tag in 2026", "all Shipped releases sorted by date" — each is a saved view, not a grep across pages.
 - **G4 — Reusable for the next project.** A new project = duplicate one Notion row + read one markdown contract. No reinvention.
@@ -52,17 +52,20 @@ The first two are symptoms of the same cause: the structure has no place for the
 │           ├── BRD-delta             ← what this release adds/changes
 │           ├── TSD-delta
 │           ├── Open Questions        ← resolved at spec-freeze
-│           ├── Design Decisions      ← per-version full text (mirrored into Reference db)
+│           ├── Design Decisions      ← embedded filtered view of Reference DD db (Version = this release)
 │           └── Working Log           ← prose; archived on ship
-├── 🔧 Working Log (active)            ← convenience pointer to the active release's Working Log
 ├── 📑 Reference
-│   ├── Design Decisions database     ← cross-version DD register (full backfill)
+│   ├── Design Decisions database     ← cross-version DD register; canonical source of truth for DD bodies
 │   ├── Bugs database                 ← cross-version post-tag bug tally
 │   └── Glossary                      ← evergreen
 └── 📋 Implementation Plans (archive)  ← links to git permalinks for shipped plans
 ```
 
-Seven evergreen pages, three databases at Reference + one at Releases, one archive. Compared to today's hub: BRD/TSD become the actual source of truth instead of empty "absorb later" stubs; Working Log becomes a first-class tier; DD / Bugs / Releases become databases instead of prose.
+Six evergreen pages (Read Me First, Architecture, BRD, Technical Spec, Roadmap, Glossary), three databases at Reference + one at Releases, one archive. The active release's working log is reached via the Releases db filtered to `Status ≠ Shipped` — no separate `Working Log (active)` pointer page.
+
+**DD source of truth (resolves audit B4):** the Reference Design Decisions database is canonical. The per-release `Design Decisions` sub-page is an embedded filtered view of that database (`Version introduced = this release`), not a duplicate copy of the text. Authoring a new DD = creating a new row in the Reference db; it appears in the per-release view automatically.
+
+Compared to today's hub: BRD/TSD become the actual source of truth instead of empty "absorb later" stubs; Working Log becomes a first-class tier; DD / Bugs / Releases become databases instead of prose.
 
 ## 5. Database schemas
 
@@ -79,12 +82,13 @@ Seven evergreen pages, three databases at Reference + one at Releases, one archi
 | TSD-delta | URL | Link to the per-release Technical Spec page |
 | Working Log | URL | Active working-log page; points to archive after ship |
 | DD range | Text | e.g. `DD-131..DD-147` |
-| Sequencing gates | Multi-select | Per-release gate names; presence = ✓ |
 | Rolled to next | Text | What was deferred out of this release |
 | Notes link | URL | `RELEASE_NOTES_vX.Y.Z.md` permalink |
 | Theme | Text | Optional one-liner |
 
 **Views:** `Table` (sorted by Ship date desc), `Board by Status`, `Timeline` (Ship date axis).
+
+**Sequencing gates** are *not* a database property. They live as a to-do list block inside each release row's body (alongside the ship-time checklist from §6). This avoids polluting a workspace-wide multi-select with per-release gate names that never recur (e.g. `Trust formula decided`, `Path C migration audit`).
 
 ### 5.2 Design Decisions database
 
@@ -120,7 +124,9 @@ Seven evergreen pages, three databases at Reference + one at Releases, one archi
 
 ### 5.4 Docs database (kept from existing template)
 
-Schema unchanged. One added view: `Stale (>90d, Current)` filtered on `Last Updated < today − 90d AND Status = Current`. Pairs with Notion `update_verification` (90-day expiry) on the seven evergreen pages.
+Schema unchanged. One added view: `Stale (>90d, Current)` filtered on `Last Updated < today − 90d AND Status = Current`. Pairs with Notion `update_verification` (90-day expiry) on the six evergreen pages — see §10 for the workspace-tier dependency.
+
+The existing Docs db lives only inside `[Template] New Project` and was never copied into the Coherence project. Phase 5 adds a Docs db to Coherence as part of the migration (with the same schema).
 
 ### 5.5 Cross-database relations
 
@@ -141,10 +147,11 @@ Three relations total.
 ☐ Technical Spec absorbed delta → TSD page updated
 ☐ Roadmap entry status flipped to ✅ shipped
 ☐ Read Me First "Current status" line updated
-☐ Releases db row: Status, Ship date, Tag SHA, DD range, Sequencing gates filled
+☐ Releases db row: Status, Ship date, Tag SHA, DD range filled
+☐ Sequencing gates to-do list (in row body) all ticked
 ☐ Working Log archived → moved under Implementation Plans (archive)
 ☐ Bugs db rows for the release linked back via Release relation
-☐ Notion verification renewed on evergreen pages (90-day expiry)
+☐ Notion verification renewed on the six evergreen pages (90-day expiry; skip if workspace tier lacks verification — Docs `Stale` view is the fallback)
 ```
 
 ## 7. Naming conventions
@@ -154,25 +161,34 @@ Three relations total.
 - **Release pages** — titled `vX.Y[.Z]`. Optional leading number-emoji (e.g. `1️⃣ v0.1`) is allowed for visual ordering in the sidebar but is not required.
 - **Working Log pages** — titled `🔧 Working Log — vX.Y.Z`.
 - **DD identifiers** — `DD-NNN` zero-padded.
+- **`📋` icon** — used by both `[Template] New Project` (the database row) and `Implementation Plans (archive)` (the archive page). Acceptable collision because they never appear at the same level of the tree.
 
 ## 8. Migration plan
 
 ### Phase 0 — Safety net
-Backup every page in the Coherence hub and the existing template hub to `notion-backup/2026-05-14/`, one `.md` per page with the page URL on line 1. Confirm restore on a throwaway page. Prefer `update_content` over `replace_content` for all subsequent writes (per the user-memory MCP gotcha).
+1. Recursively fetch every page reachable from the Coherence project landing page (`93d010d4-…`) and from `[Template] New Project` (`f2a010d4-…`). Walk `<page>` and `<child-page>` references depth-first until no new IDs are discovered.
+2. For each fetched page, write `notion-backup/2026-05-14/<slug>.md` with the page URL on line 1 and the raw `<content>` body below. Expected count: ~50 pages across both hubs. Done = no new IDs surface in a re-walk.
+3. Confirm restore-from-backup procedure works on one throwaway page (create `Backup test`, write content, back it up, edit, restore via MCP `update_content`, verify).
+4. Prefer `update_content` (search-and-replace) over `replace_content` (whole-page rewrite) for all subsequent writes — per the user-memory MCP gotcha.
 
 ### Phase 1 — Build the four databases (Track B-1)
 Create Releases, Design Decisions, Bugs databases inside the `[Template] New Project` row, with the views from §5. Add the `Stale` view to the existing Docs db. Empty data.
 
 ### Phase 2 — Restructure the template (Track B-2)
-Edit `[Template] New Project` body: replace the 13-row Knowledge Base table with the §4 structure. Delete the 7 generic sub-pages (`API Reference`, `Configuration`, `Integrations`, `Quality & Testing`, `CI/CD & Release`, `Dependencies`, `Runbook & Ops`). Rename the rest. Add the §6 ship-time checklist as a toggle block in the Releases-db row template.
+1. Edit `[Template] New Project` body: replace the 13-row Knowledge Base table with the §4 structure. Preserve the existing top-of-page **Quick Reference** table (Repo / Docs / Live / Package / Version / Stack / Run locally) — it stays useful.
+2. **Delete 9 sub-pages** that don't fit the new structure: `4. API/Interface Reference`, `5. Configuration`, `6. Integrations`, `7. Quality & Testing`, `8. CI/CD & Release`, `9. Dependencies`, `11. Decisions (ADRs)` (replaced by Reference DD db), `12. Runbook & Ops`, `13. Changelog` (replaced by Releases db).
+3. **Rename 4 surviving sub-pages**: `1. Overview & Goals` → `📖 Read Me First`; `2. Architecture` → `🏛 Architecture`; `3. Technical Specification` → `⚙️ Technical Spec`; `10. Roadmap` → `🗺️ Roadmap`.
+4. **Create 4 new evergreen pages** (empty stub bodies that the new-project author fills): `📐 BRD`, `🚀 Releases` (wraps the Releases db), `📑 Reference` (parent page; contains DD db, Bugs db, and a Glossary child page), `📋 Implementation Plans (archive)`.
+5. Add the §6 ship-time checklist + the §5.1 Sequencing gates to-do list as toggle blocks in the Releases-db row body template.
 
 ### Phase 3 — Backfill Coherence project (Track A-1)
-1. **Releases db:** create 6 rows (v0.1, v0.2, v0.3, v0.4, v1.0, v1.0.1) from existing per-version pages.
+1. **Releases db:** create 6 rows (v0.1, v0.2, v0.3, v0.4, v1.0, v1.0.1) from existing per-version pages. Sequencing gates per release captured as the row-body to-do list (not as a property).
 2. **Bugs db:** 10 rows from v1.0.1's Final fix tally.
 3. **Design Decisions db:** 147 rows. Three sub-passes: (3a) stub creation with title + version + Active, scripted from existing per-release DD pages; (3b) tag pass; (3c) body copy from per-release pages into row bodies. The largest single cost in the migration.
+4. **Per-release DD sub-page conversion** (resolves audit B4): once 3c is done, replace the body of each per-release `Design Decisions` sub-page (v0.1..v1.0.1) with an embedded filtered view of the Reference DD db where `Version introduced = this release`. Original prose is preserved in the Phase 0 backup; the canonical text now lives only in the db row bodies.
 
 ### Phase 4 — Working Log extraction (Track A-2)
-Create `🔧 Working Log — v1.0.1` as a child of the v1.0.1 row. Move into it: End-of-day update, Path to 9/10 follow-ups, Cassette-recording runbook, Path C migration update, Final fix tally prose. The Bugs database supersedes the tally — leave a one-line pointer. v1.0.1 page becomes a frozen short release page (~150 lines down from ~250).
+Create `🔧 Working Log — v1.0.1` as a child of the v1.0.1 row. Move into it: End-of-day update, Path to 9/10 follow-ups, Cassette-recording runbook, Path C migration update, Final fix tally prose. The Bugs database supersedes the tally — leave a one-line pointer in the working log. v1.0.1 release page is left holding only: Status line, Theme, Problem statement, Goals, Milestones, Acceptance, Notes for implementers.
 
 ### Phase 5 — Drift cleanup (Track A-3)
 1. Central BRD + Central Technical Spec absorb actual cumulative state (replace the "Active: v0.1 / Last shipped: none" stub).
@@ -180,8 +196,9 @@ Create `🔧 Working Log — v1.0.1` as a child of the v1.0.1 row. Move into it:
 3. Roadmap: strip "(Status update via MCP …)" parenthetical; flip v1.0 to ✅ shipped.
 4. Project landing page: dedupe the duplicated navigation; add Implementation Plans (archive) to the prose list.
 5. Reference → Design Decisions: convert from prose summary to embedded DD-database view.
-6. Naming pass: BRD vs Technical Spec vs TSD per §7.
-7. Apply `update_verification` (90-day expiry) to: Read Me First, Architecture, BRD, Technical Spec, Roadmap, Glossary. (Six pages.)
+6. **Naming pass — 12 page renames** (per §7): for each release v0.1..v1.0.1, rename `BRD` → `BRD-delta` and `Technical Specification` (or `Technical Specification (vX.Y)`) → `TSD-delta`. Also rename the icon-prefixed variants (`📘 BRD`, `🛠️ Technical Specification`) to match.
+7. Add a Docs db to the Coherence project (same schema as `[Template] New Project`'s Docs db) and seed it with one row per evergreen page (Status = Current, Last Updated auto-set).
+8. Apply Notion `update_verification` (90-day expiry) to: Read Me First, Architecture, BRD, Technical Spec, Roadmap, Glossary. **Six pages.** Skip if the workspace tier doesn't expose verification — the Docs `Stale (>90d)` view is the fallback signal in that case (see §10).
 
 ### Phase 6 — Markdown contract committed (Track B-3)
 Write `docs/notion-project-template.md` in the coherence repo. Contents: page tree (§4), database schemas (§5), naming conventions (§7), ship-time checklist (§6), "How to start a new project" 5-step procedure, and a versioning policy for the contract document itself. Commit message: `docs(notion): add reusable project-template contract`.
@@ -208,18 +225,22 @@ Phases 1, 2, 3a, 3b, 6 are reversible without backups. Phases 3c, 4, 5 are rever
 - BRD and Technical Spec pages contain real cumulative content, not placeholder stubs.
 - Releases page renders the Releases database (not a static table); v1.0 row shows Shipped.
 - v1.0.1 release page is short and frozen; its working-log content lives in `🔧 Working Log — v1.0.1`.
-- Reference → Design Decisions renders the DD database with all 147 rows present.
+- Reference → Design Decisions renders the DD database with all 147 rows present. Each per-release `Design Decisions` sub-page shows an embedded filtered view of the same database; no duplicated DD prose anywhere.
 - Reference → Bugs renders the Bugs database with v1.0.1's 10 fix entries.
-- All seven evergreen pages have a verification status set with a 90-day expiry.
+- The 12 per-release pages (6 releases × `BRD-delta` + `TSD-delta`) are renamed per §7.
+- A Docs db exists inside the Coherence project, seeded with the six evergreen-page rows.
+- The six evergreen pages have either a Notion `update_verification` (90-day expiry) **or** an entry in the Docs `Stale (>90d, Current)` view that resolves cleanly — whichever the workspace tier supports.
 - `docs/notion-project-template.md` exists, is committed, and any new project can be started by duplicating the `[Template] New Project` row and following its procedure.
 
 ## 10. Risks
 
+- **Notion plan-tier dependency.** `update_verification` requires Business or Enterprise tier (or pages inside a wiki). On Free/Plus tiers the verification mechanism is unavailable; G1 then collapses to the Docs `Stale (>90d, Current)` filtered view alone. Phase 5 step 8 and §6 checklist treat verification as best-effort. Confirm workspace tier before starting Phase 5; if verification is unavailable, the rest of the plan still ships and G1 is met by the Docs view alone.
 - **MCP `replace_content` overwrite hazard.** Mitigated by Phase 0 backups + preferring `update_content`.
-- **DD body backfill cost.** Phase 3c is ~3-5 hours of mechanical work and is the most likely point to bail. Fallback: collapse Phase 3c to title-only backfill (DDs keep their full text on per-release pages, queryable list views still work).
+- **DD body backfill cost.** Phase 3c is ~3-5 hours of mechanical work and is the most likely point to bail. Fallback: collapse Phase 3c to title-only backfill — DDs keep their full text on per-release pages and Phase 3.4 (DD sub-page conversion) is skipped, leaving the per-release prose pages intact as the source of truth and the Reference db as a title-only index.
 - **Template divergence from contract.** The Notion template can drift from `docs/notion-project-template.md` over time. Mitigation: the contract is the source of truth; re-stamp the template from the contract when conventions change. (Same problem Coherence solves for code docs.)
 - **Verification expiry fatigue.** 90 days may be too aggressive on truly stable pages (Glossary). If it produces noise, raise to 180 days for low-churn pages.
+- **Sequencing gates as in-body to-do.** Trades queryability (can't filter Releases db by gate-completion state) for a clean schema. Acceptable because gates only matter at one moment per release (spec-freeze) and the to-do list is visible the moment you open the row.
 
 ## 11. Open questions
 
-None at design time. All Q1–Q6 in the brainstorming session resolved by the user.
+None at design time. All Q1–Q6 in the brainstorming session resolved; audit findings B1–B5, G1–G5, M1–M5 resolved inline.
