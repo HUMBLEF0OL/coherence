@@ -12,6 +12,26 @@
 
 ---
 
+## STRATEGY PIVOT (2026-05-14, post-CHECKPOINT-A)
+
+**Original plan:** mutate the existing Coherence project (`93d010d4-6a70-8280-ba6c-013d97211fd6`) in place.
+
+**Revised plan:** build the new shape in the template, duplicate the template into a brand-new "Coherence" project page, populate it from the Phase-0 backups, then leave the old project untouched until the new one is verified. The old project gets moved to workspace root for manual trash after sign-off.
+
+Implications for downstream phases:
+- **Phases 1 & 2** unchanged — operate on the template (`f2a010d4-6a70-83ee-903e-01b55b968b74`).
+- **NEW Phase 2.5** — duplicate template → new "Coherence (v2)" page under the workspace root via `mcp_notion_notion-duplicate-page`. Record the new root id in `_ids.md` under `Coherence project (new)`. From here on, Phase 3+ targets the NEW project id, NOT the old one.
+- **Phase 3** unchanged in shape, but `parent: { page_id: ... }` for Task 3.0 points at the NEW project root. Source data still comes from `notion-backup/2026-05-14/*.md`.
+- **Fidelity scope:** populate the 4 databases + 6 evergreen pages only. SKIP per-release sub-page slices (BRD-N, TS-N, OQ-N, IP-N) — the redesign was eliminating these anyway. The new project's Releases-db rows reference the original release pages by URL only; no slice tree is recreated.
+- **Phase 4 (working-log extraction)** applies to the NEW project's v1.0.1 release page after it's populated in Phase 3.
+- **Phase 5 (drift cleanup)** applies to the NEW project's evergreen pages.
+  - **Task 5.9 update:** `update_verification` is unavailable (workspace tier — see `_capabilities.md`). Workaround: append `Last reviewed: YYYY-MM-DD by @owner` markdown line to each evergreen page. No API call.
+- **Final step:** after CHECKPOINT F sign-off, move the old project (`93d010d4...`) to workspace root via `mcp_notion_notion-move-pages` `{type: "workspace"}` for manual trash by the user.
+
+The Phase 0 backups remain authoritative reference content for population.
+
+---
+
 ## Critical safety guidance — applies to every phase
 
 The user-memory note `/memories/notion-mcp.md` documents an MCP behaviour that has already destroyed page content in this workspace. Re-read before any write:
