@@ -46,7 +46,7 @@ history.
 
 ## Quick start
 
-After install (`claude plugin install cohrence`), the next time you
+After install (`claude plugin install coherence`), the next time you
 open a project under Claude Code:
 
 1. **First SessionStart initialises state.** Coherence creates
@@ -62,7 +62,7 @@ open a project under Claude Code:
    <!-- coherence:section id="install" -->
    ## Install
 
-   Run `npm install cohrence` ...
+   Run `npm install coherence` ...
 
    <!-- /coherence:section -->
    ```
@@ -249,10 +249,10 @@ Wrap a Markdown heading + its content with matched markers:
 <!-- coherence:section id="install" -->
 ## Install
 
-Run `npm install cohrence`.
+Run `npm install coherence`.
 
 ```bash
-claude plugin install cohrence
+claude plugin install coherence
 ```
 
 <!-- /coherence:section -->
@@ -637,7 +637,7 @@ score).
 You don't (DD-118). Each major version stands alone. To downgrade:
 
 ```bash
-claude plugin uninstall cohrence
+claude plugin uninstall coherence
 # Re-install the older version
 ```
 

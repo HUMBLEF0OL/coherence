@@ -9,7 +9,7 @@
  * Concretely:
  *   - if `coherence/ignore.local` is missing, create it empty
  *   - if `.gitignore` does not list `coherence/ignore.local`, append the
- *     line under a `# cohrence — personal ignore` header
+ *     line under a `# coherence — personal ignore` header
  *   - exit 0 in all cases (the command is meant to be safe to chain)
  */
 import { existsSync, mkdirSync, writeFileSync, readFileSync, appendFileSync } from 'fs';
@@ -26,7 +26,7 @@ export interface IgnoreSplitResult {
   };
 }
 
-const HEADER = '# cohrence — personal ignore';
+const HEADER = '# coherence — personal ignore';
 const GITIGNORE_LINE = 'coherence/ignore.local';
 
 export function runIgnoreSplit(projectRoot: string): IgnoreSplitResult {

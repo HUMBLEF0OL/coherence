@@ -32,7 +32,7 @@ export interface RunFreshInstallOptions {
 }
 
 const GITIGNORE_HEADER =
-  '# Coherence plugin (npm: cohrence) — per-developer state (do not commit)';
+  '# Coherence plugin — per-developer state (do not commit)';
 // NFR-PRIVACY-N5 + DD-117: ALL per-developer state under .claude/coherence/
 // is private. Earlier versions only ignored signal-cache.json + session-map.json
 // individually; that left trust-ledger.json, state-snapshot.json, cost-ledger.json,
@@ -56,7 +56,7 @@ export async function runFreshInstall(
   // No files are written here in v0.4 — directory creation only.
   const pluginDataDir =
     process.env['CLAUDE_PLUGIN_DATA'] ??
-    path.join(os.homedir(), '.claude', 'plugins', 'data', 'cohrence');
+    path.join(os.homedir(), '.claude', 'plugins', 'data', 'coherence');
   try {
     mkdirSync(pluginDataDir, { recursive: true });
   } catch {

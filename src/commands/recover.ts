@@ -30,7 +30,7 @@ export interface RecoverOptions {
 }
 
 const REFUSE_CROSS_MAJOR_MESSAGE =
-  'cohrence does not roll back across major versions; re-install the target version manually';
+  'coherence does not roll back across major versions; re-install the target version manually';
 
 interface PackageJson {
   version?: string;

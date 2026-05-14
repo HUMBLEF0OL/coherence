@@ -24,7 +24,7 @@ describe('/coherence:ignore-split (DD-096)', () => {
     expect(existsSync(path.join(dir, 'coherence', 'ignore.local'))).toBe(true);
     const gi = readFileSync(path.join(dir, '.gitignore'), 'utf8');
     expect(gi).toMatch(/coherence\/ignore\.local/);
-    expect(gi).toMatch(/# cohrence — personal ignore/);
+    expect(gi).toMatch(/# coherence — personal ignore/);
     expect(r.actions).toContain('Created empty coherence/ignore (committed)');
   });
 

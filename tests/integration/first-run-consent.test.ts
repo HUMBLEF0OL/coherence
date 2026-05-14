@@ -92,7 +92,7 @@ describe('first-run consent (DD-115)', () => {
     const bom = '﻿';
     const seeded =
       bom +
-      '# Coherence plugin (npm: cohrence) — per-developer state (do not commit)\n' +
+      '# Coherence plugin — per-developer state (do not commit)\n' +
       '.claude/coherence/\n';
     writeFileSync(path.join(dir, '.gitignore'), seeded, 'utf8');
     await runFreshInstall(dir, { silent: true });

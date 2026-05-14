@@ -51,7 +51,7 @@ describe('runRecover cross-major-version refusal (DD-095 amended; v0.4 DD-124 pa
     const r = await runRecover(coherenceDir, { target: 'v2.0.0' });
     expect(r.refusedCrossMajor).toBe(true);
     expect(r.actions).toEqual([
-      'cohrence does not roll back across major versions; re-install the target version manually',
+      'coherence does not roll back across major versions; re-install the target version manually',
     ]);
   });
 

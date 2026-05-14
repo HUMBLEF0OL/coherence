@@ -15,7 +15,7 @@ import {
 } from '../../../scripts/render-readme-verification.mjs';
 
 const PKG = {
-  name: 'cohrence',
+  name: 'coherence',
   version: '1.0.1',
   repository: { type: 'git', url: 'git+https://github.com/HUMBLEF0OL/coherence.git' },
 };
@@ -83,14 +83,14 @@ describe('render-readme-verification — regex backreference regression', () => 
   });
 
   it('returns null when repository.url is missing', () => {
-    const noRepo = { name: 'cohrence', version: '1.0.1' };
+    const noRepo = { name: 'coherence', version: '1.0.1' };
     expect(renderVerification('# X', noRepo)).toBeNull();
     expect(buildVerificationBlock(noRepo)).toBeNull();
   });
 
   it('returns null when repository.url is not a GitHub URL', () => {
     const gitlab = {
-      name: 'cohrence',
+      name: 'coherence',
       version: '1.0.1',
       repository: { url: 'git+https://gitlab.com/x/y.git' },
     };
@@ -99,7 +99,7 @@ describe('render-readme-verification — regex backreference regression', () => 
 
   it('derives owner/repo from the SSH form of repository.url', () => {
     const ssh = {
-      name: 'cohrence',
+      name: 'coherence',
       version: '1.0.1',
       repository: { url: 'git@github.com:HUMBLEF0OL/coherence.git' },
     };
@@ -111,11 +111,16 @@ describe('render-readme-verification — regex backreference regression', () => 
 
   it('embeds package name and version in the tarball filename, not the repo name', () => {
     // M-SIGN-3 consequence: the npm tarball uses `${name}-${version}.tgz`,
-    // not `${repo}-${version}.tgz`. If repo and package name diverge (here
-    // repo=coherence, package=cohrence) the verify command must use the
-    // package name.
-    const out = renderVerification('# x\n', PKG)!;
-    expect(out).toContain('cohrence-1.0.1.tgz');
+    // not `${repo}-${version}.tgz`. We assert the tarball filename derives
+    // from package.name by using a diverging repo name in a synthetic
+    // fixture (the real repo + package name align as `coherence` post-C1).
+    const diverged = {
+      name: 'my-pkg',
+      version: '1.0.1',
+      repository: { url: 'git+https://github.com/HUMBLEF0OL/coherence.git' },
+    };
+    const out = renderVerification('# x\n', diverged)!;
+    expect(out).toContain('my-pkg-1.0.1.tgz');
     expect(out).not.toContain('coherence-1.0.1.tgz');
   });
 });

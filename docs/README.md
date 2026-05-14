@@ -12,7 +12,7 @@ hosted upload service, ever) and **standalone per major version**
 ## Install
 
 ```bash
-claude plugin install cohrence    # Anthropic plugin registry (canonical)
+claude plugin install coherence    # Anthropic plugin registry (canonical)
 ```
 
 For local development:

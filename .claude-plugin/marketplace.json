@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-marketplace.json",
-  "name": "cohrence",
+  "name": "coherence",
   "description": "Coherence — documentation-drift detection for Claude Code (single-plugin marketplace pinned to the upstream repo).",
   "owner": {
     "name": "HUMBLEF0OL",
@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "cohrence",
+      "name": "coherence",
       "source": {
         "source": "url",
         "url": "https://github.com/HUMBLEF0OL/coherence.git",

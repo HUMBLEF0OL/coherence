@@ -80,7 +80,7 @@ describe('M-PRIVACY-1: cross-developer-leak prevention (NFR-PRIVACY-N5, DD-109)'
     // let several other per-developer files leak through `git add .claude/`.
     expect(text).toContain("'.claude/coherence/'");
     expect(text).toContain(
-      '# Coherence plugin (npm: cohrence) — per-developer state (do not commit)',
+      '# Coherence plugin — per-developer state (do not commit)',
     );
   });
 });

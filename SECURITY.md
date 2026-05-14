@@ -24,7 +24,7 @@ fix + CVE without leaking the issue.
 **Fallback:** Email `coherence-security@noreply.invalid` with the subject
 `coherence vulnerability: <short title>`. Please include:
 
-- The version (`cohrence --version` or the `version` field in `.claude-plugin/plugin.json`).
+- The version (`coherence --version` or the `version` field in `.claude-plugin/plugin.json`).
 - Reproduction steps or a proof-of-concept.
 - The impact you observed.
 - Any suggested mitigation.

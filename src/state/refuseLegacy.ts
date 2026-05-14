@@ -36,16 +36,16 @@ export type RefuseLegacyOutcome =
   | { status: 'refuse_layout'; message: string };  // v0.4 DD-122
 
 export const REFUSE_LEGACY_MESSAGE =
-  'cohrence v0.3 does not migrate from earlier major versions; ' +
+  'coherence v0.3 does not migrate from earlier major versions; ' +
   'remove `.claude/coherence/` or run on a fresh project';
 
 export const REFUSE_FUTURE_MESSAGE =
-  'cohrence found state from a NEWER major version on disk; ' +
+  'coherence found state from a NEWER major version on disk; ' +
   'upgrade the plugin to match — do not delete `.claude/coherence/`';
 
 export const REFUSE_LAYOUT_MESSAGE =
-  'cohrence found plugin.json at the plugin root (v0.3 layout); ' +
-  're-install via `claude plugin install cohrence` to use the v0.4 layout — ' +
+  'coherence found plugin.json at the plugin root (v0.3 layout); ' +
+  're-install via `claude plugin install coherence` to use the v0.4 layout — ' +
   'do NOT delete `.claude/coherence/` (your per-project state is intact)';
 
 /**

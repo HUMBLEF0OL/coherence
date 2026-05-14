@@ -1,7 +1,6 @@
 # Coherence
 
-> Package name: `cohrence` · Brand name: Coherence · Slash command
-> namespace: `/coherence:*` — same project, three labels.
+> Coherence — one name across npm slug, brand, and `/coherence:*` slash commands.
 
 A Claude Code plugin that detects documentation drift (when code
 changes without updating its docs) and proposes surgical patches via a
@@ -29,7 +28,7 @@ under `coherence/` (no backend, ever).
 ## Install
 
 ```bash
-claude plugin install cohrence    # Anthropic plugin registry (canonical)
+claude plugin install coherence    # Anthropic plugin registry (canonical)
 ```
 
 For local development:
@@ -370,9 +369,9 @@ npm run gates             # ship-time gates
 > Verify the published tarball with:
 >
 > ```bash
-> cosign verify-blob cohrence-1.0.3.tgz \
->   --signature cohrence-1.0.3.tgz.sig \
->   --certificate cohrence-1.0.3.tgz.pem \
+> cosign verify-blob coherence-1.0.3.tgz \
+>   --signature coherence-1.0.3.tgz.sig \
+>   --certificate coherence-1.0.3.tgz.pem \
 >   --certificate-identity-regexp '^https://github.com/HUMBLEF0OL/coherence/\.github/workflows/release\.yml@refs/tags/v.*$' \
 >   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 > ```
