@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * v1.0 M4 — populate the `## Verification` block in README.md from
  * `package.json#repository.url`. Idempotent: regenerates content between
