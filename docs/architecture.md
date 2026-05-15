@@ -1,8 +1,9 @@
 # Coherence — architecture
 
 > Hand-curated narrative + Mermaid diagrams of the Stop-pipeline data flow.
-> Complements the auto-generated graph in [graphify-out/](../graphify-out/),
-> which is a community-detection network graph, not a teaching diagram.
+> Complements the auto-generated graph in `graphify-out/` (gitignored;
+> regenerate locally with `/graphify --update`), which is a
+> community-detection network graph, not a teaching diagram.
 
 ## The 30-second model
 
