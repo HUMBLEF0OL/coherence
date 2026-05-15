@@ -17,5 +17,19 @@
     "drift-detection",
     "coherence"
   ],
-  "hooks": "./hooks/hooks.json"
+  "hooks": "./hooks/hooks.json",
+  "userConfig": {
+    "defaultMode": {
+      "type": "string",
+      "title": "Default coherence mode",
+      "description": "Starting mode for new directories. observe = read-only signal capture. graduated = auto-apply patches with trust-gate. annotate = drop coherence:section anchors. author = signal detectors fire.",
+      "default": "observe"
+    },
+    "telemetryOptIn": {
+      "type": "boolean",
+      "title": "Allow telemetry upload",
+      "description": "Local telemetry (JSONL under coherence/) is always on. This option controls whether to ALSO let the maintainer collect anonymized usage stats via a user-driven curl. Default: off.",
+      "default": false
+    }
+  }
 }

@@ -17,6 +17,7 @@ import os from 'os';
 import path from 'path';
 import { initCoherenceDir, makeStateStore } from './init.js';
 import { recordTelemetryConsent, type TelemetryConsentDecision } from './consent.js';
+import { resolveTelemetryOptIn } from './userConfig.js';
 
 export interface RunFreshInstallOptions {
   /**
@@ -65,9 +66,21 @@ export async function runFreshInstall(
 
   // M4: persist telemetry consent (defaults: local ON, upload OFF; non-interactive
   // shells take defaults and re-prompt next interactive session).
+  //
+  // C4: when the user opted in to telemetry upload via the install-time
+  // userConfig (`CLAUDE_PLUGIN_OPTION_TELEMETRYOPTIN=true`), short-circuit
+  // the default and record an explicit upload-on decision so the next
+  // session sees a fully-recorded consent and skips the re-prompt path.
+  // The short-circuit only fires when the caller didn't pass an explicit
+  // override — explicit decisions (tests, /coherence:consent) still win.
   const store = makeStateStore(projectRoot);
+  const optedIn = options.consent === undefined && resolveTelemetryOptIn();
   await recordTelemetryConsent(store, {
-    ...(options.consent !== undefined ? { decision: options.consent } : {}),
+    ...(options.consent !== undefined
+      ? { decision: options.consent }
+      : optedIn
+      ? { decision: { local_collection: true, upload_consent: true } }
+      : {}),
     silent: options.silent ?? false,
   });
 }

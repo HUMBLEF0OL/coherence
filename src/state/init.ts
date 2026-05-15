@@ -5,8 +5,10 @@
 import { mkdirSync, existsSync, writeFileSync } from 'fs';
 import path from 'path';
 import { StateStore } from './stateStore.js';
-import type { VersionInfo, CoherenceConfig } from '../types/index.js';
+import type { VersionInfo, CoherenceConfig, CoherenceMode } from '../types/index.js';
+import type { V02Mode } from './graduation.js';
 import { nowIsoUtc } from '../util/time.js';
+import { resolveDefaultMode } from './userConfig.js';
 
 const CURRENT_SCHEMA_VERSION = 3;
 export const PLUGIN_VERSION = '1.1.0';
@@ -44,7 +46,7 @@ export async function initCoherenceDir(projectRoot: string): Promise<void> {
   const config = await store.read<CoherenceConfig>('config.json');
   if (!config) {
     const defaultConfig: CoherenceConfig = {
-      mode: 'observe',
+      mode: pickV01Mode(),
     };
     await store.write('config.json', defaultConfig);
   }
@@ -80,7 +82,7 @@ export async function initCoherenceDir(projectRoot: string): Promise<void> {
   if (!graduation) {
     await store.write('graduation.json', {
       schema_version: 2,
-      global_mode: 'observe',
+      global_mode: pickV02Mode(),
       scopes: [],
     });
   }
@@ -120,4 +122,27 @@ export async function initCoherenceDir(projectRoot: string): Promise<void> {
 
 export function makeStateStore(projectRoot: string): StateStore {
   return new StateStore(getCoherenceDir(projectRoot), getQuarantineDir(projectRoot));
+}
+
+/**
+ * Project userConfig `defaultMode` onto the v0.1 `config.json#mode` enum
+ * (observe | graduated). v0.2-only modes (annotate, author) project to
+ * 'observe' here — they show up on the v0.2 `graduation.global_mode` side
+ * via `pickV02Mode`.
+ */
+function pickV01Mode(): CoherenceMode {
+  const m = resolveDefaultMode();
+  return m === 'graduated' ? 'graduated' : 'observe';
+}
+
+/**
+ * Project userConfig `defaultMode` onto the v0.2 `graduation.global_mode`
+ * enum (observe | annotate | author). 'graduated' is a v0.1-only toggle —
+ * project it to 'observe' on the v0.2 side; the legacy toggle in
+ * `config.json#mode` carries the graduated state.
+ */
+function pickV02Mode(): V02Mode {
+  const m = resolveDefaultMode();
+  if (m === 'annotate' || m === 'author') return m;
+  return 'observe';
 }
