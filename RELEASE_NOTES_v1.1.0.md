@@ -25,11 +25,11 @@ below.
   re-add per `docs/migration/v1.1.0-rename.md`.
 - **M4 — Native slash-command namespacing.** Dropped the bespoke
   `UserPromptSubmit` hook that parsed `/coherence:foo` and dispatched
-  by hand. Claude Code 2.1+ natively handles `/<plugin>:<command>`
-  routing via `.claude-plugin/plugin.json#slashCommands` entries, so
-  the custom dispatcher was deadweight. Removes ~one hook handler and
-  the associated parse/routing surface; behaviour is identical for
-  end users. All 21 slash commands continue to resolve.
+  by hand. Claude Code natively routes `/<plugin>:<command>` based on
+  each `commands/<name>.md` filename on disk, so the custom
+  dispatcher was deadweight. Removes ~one hook handler and the
+  associated parse/routing surface; behaviour is identical for end
+  users. All 27 slash commands continue to resolve.
 - **M2 — `.gitattributes` LF enforcement.** Added a `.gitattributes`
   with `* text=auto eol=lf` plus explicit `text eol=lf` for source,
   JSON, Markdown, and shell. Kills the CRLF/LF churn that plagued
@@ -61,8 +61,7 @@ the new slug per `docs/migration/v1.1.0-rename.md`.
 The short version:
 
 ```bash
-# Remove the old slug
-claude plugin uninstall cohrence@cohrence
+# Remove the old slug (uninstalls plugins from it)
 claude plugin marketplace remove cohrence
 
 # Add under the new slug
