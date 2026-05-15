@@ -278,7 +278,7 @@ Bulk-annotate an anchor-less doc with:
 ```
 
 This produces a *proposal* under quarantine — you review and accept
-it via `/coherence:propose-accept` before any markers land on disk
+it via `/coherence:propose accept` before any markers land on disk
 (DD-065).
 
 ## Picking a mode
@@ -429,12 +429,12 @@ DD-065 / SG-3 and is statically asserted by a ship gate.
 Lifecycle:
 
 ```bash
-/coherence:propose-list                          # what's queued
-/coherence:propose-show <id>                     # full diff + metadata
-/coherence:propose-accept <id>                   # materialise under .claude/
-/coherence:propose-accept <id> --rename          # add a suffix on collision
-/coherence:propose-reject <id>                   # mark rejected (DD-088)
-/coherence:propose-revert-acceptance <id>        # undo a recent accept (DD-083)
+/coherence:propose list                          # what's queued
+/coherence:propose show <id>                     # full diff + metadata
+/coherence:propose accept <id>                   # materialise under .claude/
+/coherence:propose accept <id> --rename          # add a suffix on collision
+/coherence:propose reject <id>                   # mark rejected (DD-088)
+/coherence:propose revert-acceptance <id>        # undo a recent accept (DD-083)
 ```
 
 Each accept feeds the trust ledger as an `accept` event. Reverts
@@ -469,8 +469,8 @@ You did not have to do anything beyond noticing the proposal.
 In **Author mode** for `src/`, Coherence's signal detectors notice
 the new module via file-creation patterns and seed an author
 proposal into the quarantine. Surface it with
-`/coherence:propose-list`, inspect with `/coherence:propose-show
-<id>`, and accept with `/coherence:propose-accept <id>` to
+`/coherence:propose list`, inspect with `/coherence:propose show
+<id>`, and accept with `/coherence:propose accept <id>` to
 materialise the SKILL under `.claude/skills/`.
 
 You can also create the skill by hand and add `asserts:` referencing
@@ -529,9 +529,9 @@ active contributors, with a 180-day staleness filter and a
 
 ### Cross-team plans
 
-`/coherence:plan-create <kind> <title> [--body <md>]` creates a
+`/coherence:plan create <kind> <title> [--body <md>]` creates a
 committed JSON file under `coherence/plans/<branch-sha>/<plan-id>.json`.
-Reviewers use `plan-accept` / `plan-reject`. IDs are deterministic
+Reviewers use `/coherence:plan accept` / `/coherence:plan reject`. IDs are deterministic
 (branch SHA + author hash + title + timestamp) so collisions are
 extremely unlikely.
 
@@ -540,9 +540,9 @@ extremely unlikely.
 Install a one-line plugin status badge into your shell prompt:
 
 ```bash
-/coherence:install-statusline
+/coherence:statusline install
 # Restores from a backup if you change your mind:
-/coherence:uninstall-statusline
+/coherence:statusline uninstall
 ```
 
 Three render flavours: OSC 8 (clickable hyperlink), OSC 52 (plain
@@ -625,7 +625,7 @@ takes its place.
 ### "I want to undo a recently-accepted proposal"
 
 ```bash
-/coherence:propose-revert-acceptance <id>
+/coherence:propose revert-acceptance <id>
 ```
 
 This restores the prior state and records a `revert` event in the

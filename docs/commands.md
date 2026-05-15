@@ -106,7 +106,7 @@ section with score ≥ 0.85, ≥ 5 distinct sections with score > 0, and
 ledger spanning ≥ 30 days from the earliest event. After
 `--promote --auto-land <kinds>`, SessionStart auto-accepts surfaced
 proposals whose `kind` is in `auto_land_kinds`; kinds outside that set
-still require explicit `/coherence:propose-accept` (DD-065 preserved).
+still require explicit `/coherence:propose accept` (DD-065 preserved).
 
 ### `/coherence:metrics`
 
@@ -170,14 +170,17 @@ and never auto-lands them outside `.claude/coherence/` without an
 explicit cross-the-boundary write (DD-065).
 
 ```bash
-/coherence:propose-list                    # list queued + surfaced proposals
-/coherence:propose-show <id>               # render artifact + manifest
-/coherence:propose-accept <id>             # cross-the-boundary write
-/coherence:propose-accept <id> --rename    # suffix on collision (SKILL-2.md, etc.)
-/coherence:propose-accept <id> --overwrite <retyped-path>
-/coherence:propose-reject <id>             # state → rejected
-/coherence:propose-revert-acceptance <id>  # undo an accepted proposal (DD-083)
+/coherence:propose list                       # list queued + surfaced proposals
+/coherence:propose show <id>                  # render artifact + manifest
+/coherence:propose accept <id>                # cross-the-boundary write
+/coherence:propose accept <id> --rename       # suffix on collision (SKILL-2.md, etc.)
+/coherence:propose accept <id> --overwrite <retyped-path>
+/coherence:propose reject <id>                # state → rejected
+/coherence:propose revert-acceptance <id>     # undo an accepted proposal (DD-083)
 ```
+
+(v1.1.0 C3 consolidated `propose-*` into the subcommand form above.
+Run `/coherence:propose` bare to see the subcommand list.)
 
 For `kind: 'annotate'` (DD-069), accept overwrites the source doc named
 in the manifest (the original is quarantined for safety). For
@@ -198,7 +201,7 @@ Generate an annotation proposal for an anchor-less doc (DD-069).
 ```
 
 The proposal lands in quarantine; accept with
-`/coherence:propose-accept <id>` to materialise it.
+`/coherence:propose accept <id>` to materialise it.
 
 ### `/coherence:de-annotate`
 
@@ -232,14 +235,15 @@ SessionStart runs the team-ignore FSM sweep: when a teammate's commit to
 `coherence/ignore` matches a queued annotate proposal's `target_path`,
 the FSM transitions the proposal to `ignored_by_team` (DD-088 amended).
 
-### `/coherence:plan-create` / `plan-accept` / `plan-reject`
+### `/coherence:plan` — `create` / `accept` / `reject`
 
-Cross-team plan store (DD-099 amended; DD-117 file-only).
+Cross-team plan store (DD-099 amended; DD-117 file-only). v1.1.0 C3
+consolidated `plan-*` into subcommand form.
 
 ```bash
-/coherence:plan-create <kind> <title> [--body <markdown>]
-/coherence:plan-accept <branch-sha> <plan-id>
-/coherence:plan-reject <branch-sha> <plan-id> <stale|superseded|rejected_explicit>
+/coherence:plan create <kind> <title> [--body <markdown>]
+/coherence:plan accept <branch-sha> <plan-id>
+/coherence:plan reject <branch-sha> <plan-id> <stale|superseded|rejected_explicit>
 ```
 
 Plans live as committed JSON under
@@ -286,15 +290,16 @@ workflows.
 
 ## Statusline
 
-### `/coherence:install-statusline` / `uninstall-statusline`
+### `/coherence:statusline` — `install` / `uninstall`
 
 Install / restore the click-target badge in `~/.claude/settings.json`
 (FR-STATUSLINE-2 / 3). The badge renders an OSC 8 / OSC 52 / plain
 three-tier graceful degradation showing surfaced-proposal counts.
+v1.1.0 C3 consolidated `*-statusline` into subcommand form.
 
 ```bash
-/coherence:install-statusline
-/coherence:uninstall-statusline
+/coherence:statusline install
+/coherence:statusline uninstall
 ```
 
 The render is cancellation-safe (single atomic read of

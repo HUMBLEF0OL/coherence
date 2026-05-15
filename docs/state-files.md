@@ -253,7 +253,7 @@ DD-065 quarantine directory for net-new artifacts. `kind` is one of
 `skill` / `agent` / `slash_command` / `annotate`. Each proposal has
 its own subdirectory with a manifest + artifact + state-history.
 Files in here never reach user-owned paths (`.claude/skills/`, etc.)
-without an explicit `/coherence:propose-accept <id>` invocation —
+without an explicit `/coherence:propose accept <id>` invocation —
 either user-typed or auto-issued by the SessionStart sweep for
 promoted developers (FR-TRUST-3).
 

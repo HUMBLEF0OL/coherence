@@ -88,6 +88,12 @@ happens if you explicitly run `/coherence:export-metrics` and curl
 the file yourself. The `userConfig` toggle lets you change the
 upload default at install time.
 
+The userConfig values are **install-time only** — flipping them in
+Claude Code's settings *after* the first SessionStart won't propagate
+to the on-disk consent record. To change consent later, run
+`/coherence:consent --upload on` (or `--upload off`). Same caveat for
+`defaultMode` once `graduation.json` is laid down.
+
 **Q: Auto-apply fired on a section I didn't expect.**
 
 That's exactly the kind of thing this window is for. Run

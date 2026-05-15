@@ -141,7 +141,7 @@ files (`coherence/trust/<author-hash>.json`) key on a 12-hex SHA-256 of
 lowercased `git config user.email`. The hash is deterministic across
 machines + time for the same email. Display names (from
 `git config user.name`) may surface in **interactive CLI output**
-(plan-author shown in `/coherence:plan-create` etc.) with ANSI control
+(plan-author shown in `/coherence:plan create` etc.) with ANSI control
 sequences stripped (audit-3 S7 sanitisation), but display names are
 **never persisted** to plan files or trust files.
 
@@ -150,7 +150,7 @@ sequences stripped (audit-3 S7 sanitisation), but display names are
 `/coherence:metrics --out` and `/coherence:export-metrics --out` reuse
 a single sandbox helper that refuses paths outside `projectRoot`
 unless `--allow-out-of-tree` is explicitly passed. The bypass logs a
-stderr warning. The cross-the-boundary `/coherence:propose-accept`
+stderr warning. The cross-the-boundary `/coherence:propose accept`
 write target is similarly bounded to known kind-specific paths
 under `.claude/` (DD-082).
 

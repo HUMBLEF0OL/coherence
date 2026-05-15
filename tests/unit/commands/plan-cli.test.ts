@@ -92,7 +92,7 @@ describe('runPlanCreate (audit-3 B3)', () => {
       title: 'X',
       body: 'long body',
     });
-    expect(() => parsePlanCreateArgs(['proposal'])).toThrow(/usage/);
+    expect(() => parsePlanCreateArgs(['proposal'])).toThrow(/\/coherence:plan create/);
   });
 });
 
@@ -177,12 +177,14 @@ describe('runPlanAccept / runPlanReject (audit-3 B3)', () => {
       branchSha: 'a'.repeat(12),
       planId: 'b'.repeat(32),
     });
-    expect(() => parsePlanAcceptArgs([])).toThrow(/usage/);
+    // v1.1.0 C3: usage messages must point at the new subcommand surface
+    // (`/coherence:plan accept`), not the removed flat names.
+    expect(() => parsePlanAcceptArgs([])).toThrow(/\/coherence:plan accept/);
     expect(parsePlanRejectArgs(['a'.repeat(12), 'b'.repeat(32), 'stale'])).toEqual({
       branchSha: 'a'.repeat(12),
       planId: 'b'.repeat(32),
       reason: 'stale',
     });
-    expect(() => parsePlanRejectArgs(['x', 'y'])).toThrow(/usage/);
+    expect(() => parsePlanRejectArgs(['x', 'y'])).toThrow(/\/coherence:plan reject/);
   });
 });

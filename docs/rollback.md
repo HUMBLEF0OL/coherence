@@ -72,8 +72,8 @@ Each branch writes a `coherence-log.md` entry recording the action.
 
 | Surface              | Rollback                                                                                  |
 | -------------------- | ----------------------------------------------------------------------------------------- |
-| Statusline install   | `/coherence:uninstall-statusline` — restores the previous `~/.claude/settings.json` backup |
-| Accepted proposal    | `/coherence:propose-revert-acceptance <id>` (DD-083) — restores doc + state → `reverted`  |
+| Statusline install   | `/coherence:statusline uninstall` — restores the previous `~/.claude/settings.json` backup |
+| Accepted proposal    | `/coherence:propose revert-acceptance <id>` (DD-083) — restores doc + state → `reverted`  |
 | All quarantine       | `rm -rf .claude/coherence/proposals/`                                                     |
 | Disable entirely     | `touch .claude/coherence/DISABLED` (manual kill-switch; permanent until you delete it)    |
 

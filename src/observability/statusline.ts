@@ -113,12 +113,8 @@ export function renderClickAffordance(
   // v1.1.0 C3: consolidated commands take subcommand args (e.g.
   // `/coherence:propose list`), so the URL path now legitimately contains
   // spaces. Percent-encode them so the OSC8 hyperlink is a syntactically
-  // valid URI under every terminal that parses strictly. Other reserved
-  // characters in slash command args are escaped by `encodeURI` as well.
-  const buildUri = (): string => {
-    const tail = slashCommand.replace(/^\//, '');
-    return `claude://run/${encodeURI(tail).replace(/%5C/gi, '\\')}`;
-  };
+  // valid URI under every terminal that parses strictly.
+  const buildUri = (): string => `claude://run/${encodeURI(slashCommand.replace(/^\//, ''))}`;
   if (caps.claude_url_scheme_supported) {
     return {
       tier: 'claude_url',
