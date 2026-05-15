@@ -12,16 +12,29 @@
       "source": {
         "source": "url",
         "url": "https://github.com/HUMBLEF0OL/coherence.git",
-        "ref": "v1.0.3"
+        "ref": "v1.1.0"
       },
       "description": "Detects documentation-vs-code drift and proposes surgical patches via a two-stage LLM pipeline with per-section trust ladder and asserts: validation.",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "homepage": "https://github.com/HUMBLEF0OL/coherence",
       "repository": "https://github.com/HUMBLEF0OL/coherence",
       "license": "MIT",
-      "keywords": ["claude-code", "plugin", "documentation", "drift-detection", "coherence"],
+      "keywords": [
+        "claude-code",
+        "plugin",
+        "documentation",
+        "drift-detection",
+        "coherence"
+      ],
       "category": "documentation",
-      "tags": ["docs", "drift", "lint", "trust-ladder", "asserts", "audit"]
+      "tags": [
+        "docs",
+        "drift",
+        "lint",
+        "trust-ladder",
+        "asserts",
+        "audit"
+      ]
     }
   ]
 }
