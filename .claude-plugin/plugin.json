@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "coherence",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Detects documentation-vs-code drift and proposes surgical patches",
   "author": {
     "name": "HUMBLEF0OL",

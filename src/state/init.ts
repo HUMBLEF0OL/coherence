@@ -11,7 +11,7 @@ import { nowIsoUtc } from '../util/time.js';
 import { resolveDefaultMode } from './userConfig.js';
 
 const CURRENT_SCHEMA_VERSION = 3;
-export const PLUGIN_VERSION = '1.1.0';
+export const PLUGIN_VERSION = '1.1.2';
 
 export function getCoherenceDir(projectRoot: string): string {
   return path.join(projectRoot, '.claude', 'coherence');
