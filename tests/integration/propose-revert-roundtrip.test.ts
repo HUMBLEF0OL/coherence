@@ -1,5 +1,5 @@
 /**
- * /coherence:propose-revert-acceptance round-trip (M7, DD-083).
+ * /coherence:propose revert-acceptance round-trip (M7, DD-083; v1.1.0 C3 subcommand surface).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs';

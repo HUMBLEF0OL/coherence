@@ -14,6 +14,6 @@ elseif ($j.mode -eq "graduated") { $mode = "G" }
 $surfaced = [int]($j.proposal_counts.surfaced)
 $queued   = [int]($j.proposal_counts.queued)
 $buffer   = [int]($j.buffer_count)
-if ($surfaced -gt 0)  { Write-Output ("[🧭 {0}{1} → /coherence:propose-list]" -f $surfaced, $mode); return }
+if ($surfaced -gt 0)  { Write-Output ("[🧭 {0}{1} → /coherence:propose list]" -f $surfaced, $mode); return }
 elseif ($queued -gt 0) { Write-Output ("[🧭 {0}q{1}]" -f $queued, $mode); return }
 elseif ($buffer -gt 0) { Write-Output ("[🧭 {0}{1}]" -f $buffer, $mode); return }

@@ -1,5 +1,5 @@
 /**
- * /coherence:propose-accept (M7, DD-082 collision policy).
+ * /coherence:propose accept (M7, DD-082 collision policy; v1.1.0 C3 subcommand surface).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs';

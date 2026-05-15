@@ -1,5 +1,5 @@
 /**
- * /coherence:propose-list (M7).
+ * /coherence:propose list (M7; v1.1.0 C3 subcommand surface).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'fs';

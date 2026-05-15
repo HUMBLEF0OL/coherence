@@ -41,7 +41,7 @@ describe('v0.2 perf regression gate', () => {
     const avgMs = timeIt(() => {
       renderClickAffordance(
         '[2 proposals]',
-        '/coherence:propose-list',
+        '/coherence:propose list',
         { terminal_hyperlink: 'osc8' },
         {},
       );

@@ -21,7 +21,7 @@ if command -v jq >/dev/null 2>&1; then
      else "O" end) as $m |
     if .degraded == true then "[🧭 ⚠]"
     elif (.proposal_counts.surfaced // 0) > 0 then
-      "[🧭 \(.proposal_counts.surfaced)\($m) → /coherence:propose-list]"
+      "[🧭 \(.proposal_counts.surfaced)\($m) → /coherence:propose list]"
     elif (.proposal_counts.queued // 0) > 0 then
       "[🧭 \(.proposal_counts.queued)q\($m)]"
     elif (.buffer_count // 0) > 0 then

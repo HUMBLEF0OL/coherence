@@ -106,4 +106,74 @@ describe('runCli', () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('/coherence:propose <subcommand>');
   });
+
+  // ── bin/cli.mjs shim coverage ────────────────────────────────────────
+  // The shim is what slash command bodies actually invoke (via
+  // ${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs). dist/cli.js getting reached from
+  // src/ tests does NOT exercise the shim's relative-path import or
+  // its exit-code translation.
+
+  const binCli = path.resolve(process.cwd(), 'bin', 'cli.mjs');
+  const distCli = path.resolve(process.cwd(), 'dist', 'cli.js');
+  const distBuilt = existsSync(distCli);
+
+  it('bin/cli.mjs help: bare invocation exits 0 with usage hint', () => {
+    if (!distBuilt) return;
+    const r = spawnSync(process.execPath, [binCli], {
+      encoding: 'utf8',
+      cwd: tmpdir(),
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('Usage: node dist/cli.js');
+  });
+
+  it('bin/cli.mjs propose: subcommand help routed correctly', () => {
+    if (!distBuilt) return;
+    const r = spawnSync(process.execPath, [binCli, 'propose'], {
+      encoding: 'utf8',
+      cwd: tmpdir(),
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('/coherence:propose <subcommand>');
+  });
+
+  it('bin/cli.mjs exit code: handler throw → exit 1, message on stderr', () => {
+    if (!distBuilt) return;
+    const r = spawnSync(process.execPath, [binCli, 'propose', 'frobnicate'], {
+      encoding: 'utf8',
+      cwd: tmpdir(),
+    });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/unknown subcommand: frobnicate/i);
+    expect(r.stdout).toBe('');
+  });
+
+  it('bin/cli.mjs exit code: soft refusal (handler returns refused) → exit 0 with rendered message', () => {
+    // Spawn into a fresh tmp project root so first-touch state init runs
+    // cleanly and the missing proposal path is what fails (not the init).
+    if (!distBuilt) return;
+    const fresh = mkdtempSync(path.join(tmpdir(), 'coherence-bincli-soft-'));
+    try {
+      const r = spawnSync(
+        process.execPath,
+        [binCli, 'propose', 'accept', 'p_nonexistent'],
+        { encoding: 'utf8', cwd: fresh },
+      );
+      expect(r.status).toBe(0);
+      expect(r.stdout).toContain('propose-accept: not found');
+      expect(r.stderr).toBe('');
+    } finally {
+      rmSync(fresh, { recursive: true, force: true });
+    }
+  });
+
+  it('bin/cli.mjs unknown top-level command: exits 1 with the bad name on stderr', () => {
+    if (!distBuilt) return;
+    const r = spawnSync(process.execPath, [binCli, 'definitely-not-a-command'], {
+      encoding: 'utf8',
+      cwd: tmpdir(),
+    });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('Unknown command: definitely-not-a-command');
+  });
 });
