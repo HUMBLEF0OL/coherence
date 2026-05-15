@@ -78,7 +78,7 @@ export async function computeStatusline(
 
   if (surfaced > 0) {
     return {
-      text: `[🧭 ${surfaced}${modeIndicator} → /coherence:propose-list]`,
+      text: `[🧭 ${surfaced}${modeIndicator} → /coherence:propose list]`,
       degraded: false,
     };
   }
@@ -157,7 +157,7 @@ export function readSnapshot(coherenceDir: string): string {
     if (surfaced + queued + buffer === 0) return '';
     const modeChar =
       parsed.mode === 'author' ? 'A' : parsed.mode === 'annotate' ? 'N' : 'O';
-    if (surfaced > 0) return `[🧭 ${surfaced}${modeChar} → /coherence:propose-list]`;
+    if (surfaced > 0) return `[🧭 ${surfaced}${modeChar} → /coherence:propose list]`;
     if (queued > 0) return `[🧭 ${queued}q${modeChar}]`;
     return `[🧭 ${buffer}${modeChar}]`;
   } catch {

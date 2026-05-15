@@ -44,20 +44,14 @@ describe('v0.2 final SG sweep', () => {
     // the modern manifest schema) into scripts/commands.config.json.
     // v1.1.0 M4: command names are bare (no `coherence:` prefix) — Claude Code
     // natively namespaces commands/<name>.md as /coherence:<name>.
+    // v1.1.0 C3: propose-*, plan-*, *-statusline are now subcommands of
+    // `propose`, `plan`, `statusline` respectively; only the parent commands
+    // are registered in commands.config.json.
     const p = JSON.parse(
       readFileSync(path.join(ROOT, 'scripts', 'commands.config.json'), 'utf8'),
     );
     const names = (p.commands as Array<{ name: string }>).map((c) => c.name);
-    for (const n of [
-      'propose-list',
-      'propose-show',
-      'propose-accept',
-      'propose-reject',
-      'propose-revert-acceptance',
-      'install-statusline',
-      'uninstall-statusline',
-      'annotate',
-    ]) {
+    for (const n of ['propose', 'statusline', 'annotate']) {
       expect(names).toContain(n);
     }
   });
