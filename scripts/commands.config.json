@@ -27,6 +27,7 @@
     { "name": "consent",               "description": "View or update telemetry consent. Flags: --local on|off, --upload on|off, --reset." },
     { "name": "audit",                 "description": "Bundling-only audit report (free tier) or LLM cross-section consistency pass (--deep, v1.0)." },
     { "name": "trust",                 "description": "View or manage personal + team trust state. Subcommands: --status (default), sync, --promote --auto-land <kinds>, --prune-stale --yes." },
-    { "name": "metrics",               "description": "Quality metrics report: summary, top drifting sections, trust scores, cost trend, revert hotspots." }
+    { "name": "metrics",               "description": "Quality metrics report: summary, top drifting sections, trust scores, cost trend, revert hotspots." },
+    { "name": "feedback",              "description": "Capture session state (version, mode, recent activity, redacted note) into a JSON bundle for the v1.1.0 tester-feedback issue (S6)." }
   ]
 }

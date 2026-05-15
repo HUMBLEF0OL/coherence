@@ -1,0 +1,24 @@
+name: Tester feedback
+description: Report a coherence experience from the v1.1.0 pre-release window
+title: "[feedback] "
+labels: ["feedback", "v1.1.0-pre"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing. Paste the JSON bundle from `/coherence:feedback` into the field below — it pre-fills version, mode, and recent activity. Add your free-text note above the JSON.
+  - type: textarea
+    id: bundle
+    attributes:
+      label: Feedback bundle
+      description: JSON output from /coherence:feedback, plus any extra context
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: tester
+    attributes:
+      label: Tester
+      description: Your name or handle
+    validations:
+      required: true
