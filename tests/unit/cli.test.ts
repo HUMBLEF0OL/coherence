@@ -8,9 +8,10 @@
  * (feedback, propose, plan, statusline).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { runCli } from '../../src/cli.js';
 import { runFreshInstall } from '../../src/state/firstRun.js';
 
@@ -87,5 +88,22 @@ describe('runCli', () => {
   it('no args: prints usage hint instead of crashing', async () => {
     const out = await runCli([]);
     expect(out).toContain('Usage: node dist/cli.js');
+  });
+
+  it('script entrypoint guard fires when invoked via node (Windows-path regression)', () => {
+    // Regression for an entrypoint guard that compared import.meta.url
+    // against unencoded process.argv[1]. On Windows paths with spaces,
+    // import.meta.url percent-encodes the spaces while process.argv[1]
+    // keeps them literal — the guard silently failed and the CLI
+    // exited 0 without dispatching. We spawn the compiled dist/cli.js
+    // (skipping when dist isn't built) to lock in the fix.
+    const distCli = path.resolve(process.cwd(), 'dist', 'cli.js');
+    if (!existsSync(distCli)) return; // dist not built in this CI step — skip
+    const r = spawnSync(process.execPath, [distCli, 'propose'], {
+      encoding: 'utf8',
+      cwd: tmpdir(),
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('/coherence:propose <subcommand>');
   });
 });

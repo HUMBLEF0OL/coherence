@@ -20,7 +20,7 @@
  * shim is the foundation they will also use.
  */
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { makeStateStore } from './state/init.js';
 import { captureFeedbackBundle } from './commands/feedback.js';
 import { routePropose } from './commands/proposeRouter.js';
@@ -203,10 +203,11 @@ export async function runCli(argv: string[]): Promise<string> {
 }
 
 // Entrypoint guard: only run when invoked as a script, not when imported
-// from tests.
+// from tests. Use `pathToFileURL` so Windows paths with spaces (which the
+// platform percent-encodes in `import.meta.url`) match correctly.
 const invokedAsScript =
-  import.meta.url === `file://${process.argv[1]}` ||
-  import.meta.url === `file:///${process.argv[1]?.replace(/\\/g, '/')}`;
+  process.argv[1] !== undefined &&
+  pathToFileURL(process.argv[1]).href === import.meta.url;
 if (invokedAsScript) {
   runCli(process.argv.slice(2))
     .then((out) => {
