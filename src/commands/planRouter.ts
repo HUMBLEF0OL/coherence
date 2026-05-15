@@ -21,7 +21,11 @@ export interface RouteOpts {
 
 export interface RouteResult {
   subcommand: PlanSubcommand | 'help';
+  /** First positional after the subcommand (convenience). */
   target?: string;
+  /** All trailing args, verbatim — handlers like `plan create` consume
+   *  multiple positionals (`<kind> <title>`) and `--body <text>` flags. */
+  args: string[];
   helpText?: string;
 }
 
@@ -29,12 +33,13 @@ export async function routePlan(
   args: string[],
   _opts: RouteOpts = {},
 ): Promise<RouteResult> {
-  if (args.length === 0) return { subcommand: 'help', helpText: HELP };
+  if (args.length === 0) return { subcommand: 'help', args: [], helpText: HELP };
   const sub = args[0];
   if (!(PLAN_SUBCOMMANDS as readonly string[]).includes(sub)) {
     throw new Error(`unknown subcommand: ${sub}\n\n${HELP}`);
   }
-  const result: RouteResult = { subcommand: sub as PlanSubcommand };
-  if (args[1] !== undefined) result.target = args[1];
+  const rest = args.slice(1);
+  const result: RouteResult = { subcommand: sub as PlanSubcommand, args: rest };
+  if (rest[0] !== undefined) result.target = rest[0];
   return result;
 }

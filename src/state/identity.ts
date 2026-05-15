@@ -57,7 +57,7 @@ export function getIdentity(): DeveloperIdentity {
  * Audit-3 S7: strip ANSI / CSI control sequences from the display name
  * before echoing it. A developer's `git config user.name` of
  * `\x1b[2J\x1b[H` would otherwise clear the terminal when surfaced by
- * any /coherence:plan-* CLI output. Strip both 7-bit (`\x1b[...m`) and
+ * any /coherence:plan subcommand CLI output. Strip both 7-bit (`\x1b[...m`) and
  * raw C0 control characters except TAB.
  */
 /* eslint-disable no-control-regex */

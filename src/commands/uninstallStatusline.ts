@@ -1,5 +1,5 @@
 /**
- * /coherence:uninstall-statusline (M3, FR-STATUSLINE-3).
+ * /coherence:statusline uninstall (M3, FR-STATUSLINE-3; v1.1.0 C3 subcommand surface).
  *
  * Restores the most recent `<settings>.coherence-backup-<ts>` and removes
  * the coherence statusLine entry. Also cross-the-boundary, allow-listed.

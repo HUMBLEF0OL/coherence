@@ -15,7 +15,7 @@ describe('renderClickAffordance (DD-071)', () => {
     );
     expect(r.tier).toBe('osc8');
     expect(r.rendered).toContain('\x1b]8;;');
-    expect(r.rendered).toContain('claude://run/coherence:propose list');
+    expect(r.rendered).toContain('claude://run/coherence:propose%20list');
   });
 
   it('renders OSC 52 when terminal_hyperlink === osc52', () => {
@@ -68,5 +68,19 @@ describe('renderClickAffordance (DD-071)', () => {
       {},
     );
     expect(r.tier).toBe('plain');
+  });
+
+  it('percent-encodes spaces in the URL but leaves the label readable (E2 regression)', () => {
+    const r = renderClickAffordance(
+      '[2 proposals]',
+      '/coherence:propose list',
+      { terminal_hyperlink: 'osc8' },
+      {},
+    );
+    // URL portion has %20, not a literal space.
+    expect(r.rendered).toContain('claude://run/coherence:propose%20list');
+    expect(r.rendered).not.toMatch(/claude:\/\/run\/coherence:propose list/);
+    // Label portion stays readable as a human-typeable form.
+    expect(r.rendered).toContain('[2 proposals]');
   });
 });

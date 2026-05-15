@@ -1,5 +1,5 @@
 /**
- * /coherence:propose-revert-acceptance <id> (M7, DD-083, FR-PROPOSE-9).
+ * /coherence:propose revert-acceptance <id> (M7, DD-083, FR-PROPOSE-9; v1.1.0 C3 subcommand surface).
  *
  * Transitions an `accepted` proposal to `reverted`. Removes the live file
  * (if it still resolves cleanly under the project root). Emits a

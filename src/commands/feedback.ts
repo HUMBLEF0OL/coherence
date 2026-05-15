@@ -40,10 +40,19 @@ export interface CaptureOpts {
 // dirs on Windows.
 const PATH_RE = /(?:\/|[A-Za-z]:[\\/])[^\s'"]+/g;
 
+// Slashes are normalised on both platforms (forward slashes are valid path
+// separators on Windows). Case-folding is win32-only: on POSIX `/USERS/foo`
+// and `/users/foo` are distinct paths, so over-eager lowering would treat
+// out-of-project paths as in-project and skip redaction.
+function normalisePath(p: string): string {
+  const slashed = p.replace(/\\/g, '/');
+  return process.platform === 'win32' ? slashed.toLowerCase() : slashed;
+}
+
 function redact(userMessage: string, projectRoot: string): string {
-  const normalisedRoot = projectRoot.replace(/\\/g, '/').toLowerCase();
+  const normalisedRoot = normalisePath(projectRoot);
   return userMessage.replace(PATH_RE, (match) => {
-    const normalised = match.replace(/\\/g, '/').toLowerCase();
+    const normalised = normalisePath(match);
     return normalised.startsWith(normalisedRoot) ? match : '[redacted-path]';
   });
 }
@@ -62,9 +71,16 @@ function readRecentMetrics(projectRoot: string, limit: number): FeedbackActivity
   const out: FeedbackActivity[] = [];
   for (const line of tail) {
     try {
-      const obj = JSON.parse(line) as { event?: unknown; ts?: unknown };
+      // StateStore.appendJsonl stamps every record with `_ts` (DD-068); fall
+      // back to a literal `ts` field for test fixtures that bypass the writer.
+      const obj = JSON.parse(line) as { event?: unknown; _ts?: unknown; ts?: unknown };
       const kind = typeof obj.event === 'string' ? obj.event : 'unknown';
-      const ts = typeof obj.ts === 'string' ? obj.ts : '';
+      const ts =
+        typeof obj._ts === 'string'
+          ? obj._ts
+          : typeof obj.ts === 'string'
+          ? obj.ts
+          : '';
       out.push({ ts, kind });
     } catch {
       /* skip malformed lines */
@@ -94,8 +110,4 @@ export async function captureFeedbackBundle(opts: CaptureOpts): Promise<Feedback
     userMessage: redacted,
     recentActivity,
   };
-}
-
-export function renderFeedbackBundle(bundle: FeedbackBundle): string {
-  return JSON.stringify(bundle, null, 2);
 }

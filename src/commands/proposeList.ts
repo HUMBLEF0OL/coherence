@@ -1,5 +1,5 @@
 /**
- * /coherence:propose-list (M7, FR-PROPOSE-7).
+ * /coherence:propose list (M7, FR-PROPOSE-7; v1.1.0 C3 subcommand surface).
  */
 import type { StateStore } from '../state/stateStore.js';
 import { ProposalStore } from '../proposals/store.js';

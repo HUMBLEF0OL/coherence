@@ -1,5 +1,5 @@
 /**
- * /coherence:install-statusline (M3, FR-STATUSLINE-2..3, FR-PERMISSION-N2).
+ * /coherence:statusline install (M3, FR-STATUSLINE-2..3, FR-PERMISSION-N2; v1.1.0 C3 subcommand surface).
  *
  * The second cross-the-boundary operator (alongside propose-accept). Writes
  * to `~/.claude/settings.json` only after creating a backup, and refuses to

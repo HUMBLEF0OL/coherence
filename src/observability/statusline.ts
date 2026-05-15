@@ -110,18 +110,25 @@ export function renderClickAffordance(
       ? 'osc8'
       : caps.terminal_hyperlink ?? 'plain';
 
+  // v1.1.0 C3: consolidated commands take subcommand args (e.g.
+  // `/coherence:propose list`), so the URL path now legitimately contains
+  // spaces. Percent-encode them so the OSC8 hyperlink is a syntactically
+  // valid URI under every terminal that parses strictly. Other reserved
+  // characters in slash command args are escaped by `encodeURI` as well.
+  const buildUri = (): string => {
+    const tail = slashCommand.replace(/^\//, '');
+    return `claude://run/${encodeURI(tail).replace(/%5C/gi, '\\')}`;
+  };
   if (caps.claude_url_scheme_supported) {
-    const uri = `claude://run/${slashCommand.replace(/^\//, '')}`;
     return {
       tier: 'claude_url',
-      rendered: `\x1b]8;;${uri}\x07${label}\x1b]8;;\x07`,
+      rendered: `\x1b]8;;${buildUri()}\x07${label}\x1b]8;;\x07`,
     };
   }
   if (tier === 'osc8') {
-    const uri = `claude://run/${slashCommand.replace(/^\//, '')}`;
     return {
       tier: 'osc8',
-      rendered: `\x1b]8;;${uri}\x07${label}\x1b]8;;\x07`,
+      rendered: `\x1b]8;;${buildUri()}\x07${label}\x1b]8;;\x07`,
     };
   }
   if (tier === 'osc52') {

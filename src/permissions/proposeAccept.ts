@@ -10,7 +10,7 @@
  * `PROPOSE_ACCEPT_INVOCATION_TOKEN` exported from this module. Any other
  * caller will be refused. This is structural (not cryptographic) — it
  * forces every cross-the-boundary write to flow through the typed
- * `/coherence:propose-accept <id>` command surface.
+ * `/coherence:propose accept <id>` command surface.
  */
 import { readFileSync, statSync } from 'fs';
 import path from 'path';

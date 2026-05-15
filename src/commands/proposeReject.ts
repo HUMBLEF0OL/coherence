@@ -1,5 +1,5 @@
 /**
- * /coherence:propose-reject <id> (M7, FR-PROPOSE-8).
+ * /coherence:propose reject <id> (M7, FR-PROPOSE-8; v1.1.0 C3 subcommand surface).
  */
 import type { StateStore } from '../state/stateStore.js';
 import { ProposalStore } from '../proposals/store.js';

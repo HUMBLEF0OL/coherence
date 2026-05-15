@@ -1,5 +1,5 @@
 /**
- * /coherence:propose-show <id> (M7, FR-PROPOSE-8).
+ * /coherence:propose show <id> (M7, FR-PROPOSE-8; v1.1.0 C3 subcommand surface).
  *
  * Reads the proposal artifact + manifest under quarantine; re-validates the
  * payload at read time (FR-PROPOSE-13 read-side); refuses to render on

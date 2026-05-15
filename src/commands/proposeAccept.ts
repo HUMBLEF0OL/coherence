@@ -1,7 +1,7 @@
 /**
- * /coherence:propose-accept <id> (M7, DD-082, FR-PROPOSE-10).
+ * /coherence:propose accept <id> (M7, DD-082, FR-PROPOSE-10; v1.1.0 C3 subcommand surface).
  *
- * The second cross-the-boundary operator (alongside install-statusline).
+ * The second cross-the-boundary operator (alongside `/coherence:statusline install`).
  * Steps:
  *   (a) read proposal artifact + manifest from quarantine
  *   (b) re-run proposalValidator (defence-in-depth)

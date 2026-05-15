@@ -1,8 +1,8 @@
 /**
- * /coherence:plan-reject — reject a cross-team plan (M3, DD-099 amended).
+ * /coherence:plan reject — reject a cross-team plan (M3, DD-099 amended; v1.1.0 C3 subcommand surface).
  *
  * Usage:
- *   /coherence:plan-reject <branch-sha> <plan-id> <reason>
+ *   /coherence:plan reject <branch-sha> <plan-id> <reason>
  *
  * `reason` is one of: stale | superseded | rejected_explicit.
  *
@@ -82,7 +82,7 @@ export function parsePlanRejectArgs(
 ): { branchSha: string; planId: string; reason: RejectReason } {
   if (raw.length < 3) {
     throw new Error(
-      'plan-reject: usage `/coherence:plan-reject <branch-sha> <plan-id> <stale|superseded|rejected_explicit>`',
+      'plan reject: usage `/coherence:plan reject <branch-sha> <plan-id> <stale|superseded|rejected_explicit>`',
     );
   }
   return { branchSha: raw[0], planId: raw[1], reason: raw[2] as RejectReason };

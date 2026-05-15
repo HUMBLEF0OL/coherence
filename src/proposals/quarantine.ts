@@ -5,7 +5,7 @@
  * proposals materialise *only* under `.claude/coherence/proposals/<kind>/<id>/`.
  * Net-new skill / agent / command files never reach `.claude/skills/`,
  * `.claude/agents/`, `.claude/commands/`, or `~/.claude/settings.json`
- * unless an explicit user-typed `/coherence:propose-accept <id>` runs the
+ * unless an explicit user-typed `/coherence:propose accept <id>` runs the
  * `proposeAccept.ts` cross-the-boundary operator.
  *
  * The writer here refuses any path argument that does not resolve under the

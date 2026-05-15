@@ -3,7 +3,7 @@
  *
  * For developers who have run `/coherence:trust --promote --auto-land <kinds>`,
  * proposals whose `kind` is in `auto_land_kinds` should auto-accept instead
- * of waiting for an explicit `/coherence:propose-accept <id>` invocation.
+ * of waiting for an explicit `/coherence:propose accept <id>` invocation.
  *
  * Kinds outside `auto_land_kinds` still require explicit accept (DD-065
  * preserved). Non-promoted developers see no change.

@@ -37,7 +37,12 @@ export interface RouteOpts {
 
 export interface RouteResult {
   subcommand: ProposeSubcommand | 'help';
+  /** First positional after the subcommand (convenience for handlers that
+   *  only take a section-id). */
   target?: string;
+  /** All trailing args, verbatim. Includes flags like `--rename` or
+   *  `--overwrite <path>` that the underlying handlers consume. */
+  args: string[];
   helpText?: string;
 }
 
@@ -45,12 +50,13 @@ export async function routePropose(
   args: string[],
   _opts: RouteOpts = {},
 ): Promise<RouteResult> {
-  if (args.length === 0) return { subcommand: 'help', helpText: HELP };
+  if (args.length === 0) return { subcommand: 'help', args: [], helpText: HELP };
   const sub = args[0];
   if (!(PROPOSE_SUBCOMMANDS as readonly string[]).includes(sub)) {
     throw new Error(`unknown subcommand: ${sub}\n\n${HELP}`);
   }
-  const result: RouteResult = { subcommand: sub as ProposeSubcommand };
-  if (args[1] !== undefined) result.target = args[1];
+  const rest = args.slice(1);
+  const result: RouteResult = { subcommand: sub as ProposeSubcommand, args: rest };
+  if (rest[0] !== undefined) result.target = rest[0];
   return result;
 }

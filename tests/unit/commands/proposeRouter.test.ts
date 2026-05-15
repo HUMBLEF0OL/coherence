@@ -38,5 +38,16 @@ describe('routePropose', () => {
     const result = await routePropose(['revert-acceptance', 'p_42'], { dry: true });
     expect(result.subcommand).toBe('revert-acceptance');
     expect(result.target).toBe('p_42');
+    expect(result.args).toEqual(['p_42']);
+  });
+
+  it('preserves trailing flags so downstream handlers can consume them', async () => {
+    const result = await routePropose(
+      ['accept', 'p_42', '--rename', '--overwrite', '/tmp/foo.md'],
+      { dry: true },
+    );
+    expect(result.subcommand).toBe('accept');
+    expect(result.target).toBe('p_42');
+    expect(result.args).toEqual(['p_42', '--rename', '--overwrite', '/tmp/foo.md']);
   });
 });

@@ -1,8 +1,8 @@
 /**
- * /coherence:plan-accept — accept a cross-team plan (M3, DD-099 amended).
+ * /coherence:plan accept — accept a cross-team plan (M3, DD-099 amended; v1.1.0 C3 subcommand surface).
  *
  * Usage:
- *   /coherence:plan-accept <branch-sha> <plan-id>
+ *   /coherence:plan accept <branch-sha> <plan-id>
  *
  * Audit-3 B3/B6 fix: wires `acceptPlan` and surfaces typed errors
  * (PlanNotFoundError, MalformedPlanError) as friendly CLI messages.
@@ -72,7 +72,7 @@ export async function runPlanAccept(args: PlanAcceptArgs): Promise<PlanAcceptRes
 
 export function parsePlanAcceptArgs(raw: string[]): { branchSha: string; planId: string } {
   if (raw.length < 2) {
-    throw new Error('plan-accept: usage `/coherence:plan-accept <branch-sha> <plan-id>`');
+    throw new Error('plan accept: usage `/coherence:plan accept <branch-sha> <plan-id>`');
   }
   return { branchSha: raw[0], planId: raw[1] };
 }

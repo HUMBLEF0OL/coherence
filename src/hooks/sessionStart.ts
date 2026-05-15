@@ -197,7 +197,7 @@ export async function sessionStartHook(
     // v1.0 M1 Step 7 — Net-new file gate relaxation (FR-TRUST-3).
     // For promoted developers, auto-accept surfaced proposals whose kind is
     // in `auto_land_kinds`. Kinds outside that set still require explicit
-    // /coherence:propose-accept (DD-065 preserved). Non-promoted developers
+    // /coherence:propose accept (DD-065 preserved). Non-promoted developers
     // see no change.
     try {
       const result = await runAutoAcceptSweep(store, projectRoot, sessionId);

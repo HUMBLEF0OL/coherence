@@ -1,9 +1,9 @@
 /**
- * /coherence:plan-create — author a cross-team plan file (M3, DD-099 amended).
+ * /coherence:plan create — author a cross-team plan file (M3, DD-099 amended; v1.1.0 C3 subcommand surface).
  *
  * Usage:
- *   /coherence:plan-create <kind> <title>          // body via prompt
- *   /coherence:plan-create <kind> <title> --body <markdown>
+ *   /coherence:plan create <kind> <title>          // body via prompt
+ *   /coherence:plan create <kind> <title> --body <markdown>
  *
  * `kind` is one of: proposal | decision | directive | alignment | ad_hoc.
  *
@@ -92,7 +92,7 @@ export function parsePlanCreateArgs(
   raw: string[],
 ): { kind: PlanKind; title: string; body?: string } {
   if (raw.length < 2) {
-    throw new Error('plan-create: usage `/coherence:plan-create <kind> <title> [--body <text>]`');
+    throw new Error('plan create: usage `/coherence:plan create <kind> <title> [--body <text>]`');
   }
   const kind = raw[0] as PlanKind;
   let title = '';

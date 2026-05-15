@@ -21,6 +21,7 @@ export interface RouteOpts {
 export interface RouteResult {
   subcommand: StatuslineSubcommand | 'help';
   target?: string;
+  args: string[];
   helpText?: string;
 }
 
@@ -28,12 +29,13 @@ export async function routeStatusline(
   args: string[],
   _opts: RouteOpts = {},
 ): Promise<RouteResult> {
-  if (args.length === 0) return { subcommand: 'help', helpText: HELP };
+  if (args.length === 0) return { subcommand: 'help', args: [], helpText: HELP };
   const sub = args[0];
   if (!(STATUSLINE_SUBCOMMANDS as readonly string[]).includes(sub)) {
     throw new Error(`unknown subcommand: ${sub}\n\n${HELP}`);
   }
-  const result: RouteResult = { subcommand: sub as StatuslineSubcommand };
-  if (args[1] !== undefined) result.target = args[1];
+  const rest = args.slice(1);
+  const result: RouteResult = { subcommand: sub as StatuslineSubcommand, args: rest };
+  if (rest[0] !== undefined) result.target = rest[0];
   return result;
 }
