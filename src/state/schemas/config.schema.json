@@ -127,6 +127,15 @@
         "plugin_version": { "type": "string", "minLength": 1 },
         "non_interactive_default": { "type": "boolean" }
       }
+    },
+    "userConfigSync": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "v1.1.0 C4/N4 — last-seen Claude Code userConfig env-var values. Used by SessionStart change-detection sync to propagate userConfig flips while preserving CLI-side runtime overrides.",
+      "properties": {
+        "defaultMode": { "type": "string" },
+        "telemetryOptIn": { "type": "boolean" }
+      }
     }
   }
 }

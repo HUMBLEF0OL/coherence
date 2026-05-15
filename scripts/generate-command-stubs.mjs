@@ -16,7 +16,7 @@
  * `.claude-plugin/plugin.json#slashCommands` (rejected by the modern
  * `claude plugin validate` schema) to this separate config under `scripts/`.
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { createHash } from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -49,9 +49,12 @@ function escapeYamlScalar(value) {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
+const wantedFilenames = new Set();
 for (const cmd of commands) {
   const safeName = cmd.name.replace(/:/g, '-');
-  const stubPath = path.join(commandsDir, `${safeName}.md`);
+  const filename = `${safeName}.md`;
+  wantedFilenames.add(filename);
+  const stubPath = path.join(commandsDir, filename);
   const desc = cmd.description ?? '';
   const content = [
     '---',
@@ -62,5 +65,26 @@ for (const cmd of commands) {
   writeFileSync(stubPath, content, 'utf8');
 }
 
+// v1.1.0 C3: sweep stubs that no longer match the config. Phase 2's
+// command consolidation (propose-*, plan-*, *-statusline → subcommand
+// routers) left orphan files in working trees that had been built before
+// the rename. Without this sweep, those orphans would survive pulls and
+// confuse anyone running `ls commands/`.
+let sweptCount = 0;
+for (const entry of readdirSync(commandsDir)) {
+  if (!entry.endsWith('.md')) continue;
+  if (wantedFilenames.has(entry)) continue;
+  try {
+    unlinkSync(path.join(commandsDir, entry));
+    sweptCount += 1;
+  } catch {
+    /* best-effort: a stale stub we can't remove isn't fatal */
+  }
+}
+
 writeFileSync(hashFile, hash + '\n', 'utf8');
-console.log(`generate-command-stubs: wrote ${commands.length} stubs (hash=${hash}).`);
+console.log(
+  `generate-command-stubs: wrote ${commands.length} stubs (hash=${hash})` +
+    (sweptCount > 0 ? `; swept ${sweptCount} orphan stub(s)` : '') +
+    '.',
+);

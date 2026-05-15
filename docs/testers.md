@@ -88,11 +88,13 @@ happens if you explicitly run `/coherence:export-metrics` and curl
 the file yourself. The `userConfig` toggle lets you change the
 upload default at install time.
 
-The userConfig values are **install-time only** — flipping them in
-Claude Code's settings *after* the first SessionStart won't propagate
-to the on-disk consent record. To change consent later, run
-`/coherence:consent --upload on` (or `--upload off`). Same caveat for
-`defaultMode` once `graduation.json` is laid down.
+Flipping userConfig values in Claude Code's settings later propagates
+on the next SessionStart: the plugin records the last-seen env value
+and re-applies whenever it differs. So `telemetryOptIn=true` after
+install will turn upload on at the next session; flipping back to
+`false` will turn it off. CLI overrides (`/coherence:consent --upload
+off`, `/coherence:graduate ...`) are preserved as long as userConfig
+itself hasn't changed.
 
 **Q: Auto-apply fired on a section I didn't expect.**
 

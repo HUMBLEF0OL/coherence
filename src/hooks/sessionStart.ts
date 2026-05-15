@@ -35,6 +35,7 @@ import { nowIsoUtc } from '../util/time.js';
 import { normaliseHookEvent } from './eventShape.js';
 import { checkPromoteEligibility, readLedger, writeLedger } from '../state/trustLedger.js';
 import { runAutoAcceptSweep } from '../proposals/autoAcceptSweep.js';
+import { syncUserConfigToState } from '../state/userConfigSync.js';
 
 const SUCCESS: HookResult = { success: true };
 
@@ -88,6 +89,18 @@ export async function sessionStartHook(
     // v0.4: pulled up from Step 7 — needed by Step 2b trigger-contract
     // evaluation and Step 7 revert detection alike.
     const store = makeStateStore(projectRoot);
+
+    // C4/N4 (v1.1.0): change-detection sync for userConfig env vars.
+    // runFreshInstall handles the first-touch case; this picks up
+    // subsequent flips of `CLAUDE_PLUGIN_OPTION_DEFAULTMODE` /
+    // `CLAUDE_PLUGIN_OPTION_TELEMETRYOPTIN` without overwriting user
+    // runtime decisions (the recorded last-seen value is the diff
+    // anchor). Non-fatal — telemetry mismatch never blocks startup.
+    try {
+      await syncUserConfigToState(store);
+    } catch {
+      /* userConfig sync is best-effort */
+    }
 
     // Step 2b: v0.4 G-3 — telemetry-gated trigger contracts (DD-129,
     // FR-TRIGGER-1). Reads metrics.jsonl via P8 bounded-read; emits one-time
