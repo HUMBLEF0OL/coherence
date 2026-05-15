@@ -26,12 +26,25 @@ const rootDir = path.resolve(__dirname, '..');
 
 const configPath = path.join(rootDir, 'scripts', 'commands.config.json');
 const commandsDir = path.join(rootDir, 'commands');
+const bodiesDir = path.join(rootDir, 'scripts', 'command-bodies');
 const hashFile = path.join(rootDir, '.coherence-stub-hash');
 
 const config = JSON.parse(readFileSync(configPath, 'utf8'));
 const commands = config.commands ?? [];
 
-const hashInput = JSON.stringify(commands);
+// v1.1.0 Phase 2: sidecar body files in scripts/command-bodies/<name>.md
+// get concatenated after the YAML frontmatter so slash commands have a
+// prompt template for Claude Code's native dispatch (M4 left the surface
+// bodyless). Hash includes body content so edits to a body trigger a
+// stub regeneration even when commands.config.json itself is unchanged.
+function readBody(name) {
+  const bodyPath = path.join(bodiesDir, `${name}.md`);
+  if (!existsSync(bodyPath)) return '';
+  return readFileSync(bodyPath, 'utf8');
+}
+
+const bodyManifest = commands.map((c) => ({ name: c.name, body: readBody(c.name) }));
+const hashInput = JSON.stringify({ commands, bodies: bodyManifest });
 const hash = createHash('sha256').update(hashInput).digest('hex').slice(0, 8);
 
 if (existsSync(hashFile) && readFileSync(hashFile, 'utf8').trim() === hash && existsSync(commandsDir)) {
@@ -56,11 +69,13 @@ for (const cmd of commands) {
   wantedFilenames.add(filename);
   const stubPath = path.join(commandsDir, filename);
   const desc = cmd.description ?? '';
+  const body = readBody(cmd.name);
   const content = [
     '---',
     `description: ${escapeYamlScalar(desc)}`,
     '---',
     '',
+    body, // empty string for commands without a sidecar body
   ].join('\n');
   writeFileSync(stubPath, content, 'utf8');
 }
