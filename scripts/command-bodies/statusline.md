@@ -3,7 +3,7 @@ The user invoked `/coherence:statusline` with: $ARGUMENTS
 Dispatch via the coherence CLI shim:
 
 ```
-node dist/cli.js statusline $ARGUMENTS
+node "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs" statusline $ARGUMENTS
 ```
 
 The shim consults `routeStatusline` in [src/commands/statuslineRouter.ts](src/commands/statuslineRouter.ts)

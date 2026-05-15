@@ -3,7 +3,7 @@ The user invoked `/coherence:propose` with: $ARGUMENTS
 Dispatch via the coherence CLI shim:
 
 ```
-node dist/cli.js propose $ARGUMENTS
+node "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs" propose $ARGUMENTS
 ```
 
 The shim consults `routePropose` in [src/commands/proposeRouter.ts](src/commands/proposeRouter.ts)

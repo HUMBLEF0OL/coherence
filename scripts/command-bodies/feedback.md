@@ -3,7 +3,7 @@ The user invoked `/coherence:feedback` with: $ARGUMENTS
 Run the coherence CLI shim to capture a feedback bundle:
 
 ```
-node dist/cli.js feedback $ARGUMENTS
+node "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs" feedback $ARGUMENTS
 ```
 
 The shim calls `captureFeedbackBundle` from [src/commands/feedback.ts](src/commands/feedback.ts)

@@ -4,8 +4,10 @@
  * Phase 2 — closes the M4 body-pattern gap).
  *
  * Each slash command's body in `commands/<name>.md` invokes
- * `node dist/cli.js <name> [args...]`. This module dispatches to the
- * matching handler in `src/commands/` and prints its rendered output.
+ * `node "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs" <name> [args...]`. The shim
+ * at `bin/cli.mjs` imports `runCli` from the compiled `dist/cli.js` and
+ * delegates here. This file dispatches to the matching handler in
+ * `src/commands/` and prints its rendered output.
  *
  * The four wired commands cover everything Phase 2 introduced or
  * consolidated:

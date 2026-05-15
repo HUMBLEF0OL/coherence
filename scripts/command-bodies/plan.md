@@ -3,7 +3,7 @@ The user invoked `/coherence:plan` with: $ARGUMENTS
 Dispatch via the coherence CLI shim:
 
 ```
-node dist/cli.js plan $ARGUMENTS
+node "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs" plan $ARGUMENTS
 ```
 
 The shim consults `routePlan` in [src/commands/planRouter.ts](src/commands/planRouter.ts)
