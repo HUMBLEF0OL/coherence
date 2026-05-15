@@ -29,6 +29,7 @@ export interface RouteResult {
   helpText?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- async signature reserved for future execute mode (RouteOpts.dry); parse-only today
 export async function routePlan(
   args: string[],
   _opts: RouteOpts = {},

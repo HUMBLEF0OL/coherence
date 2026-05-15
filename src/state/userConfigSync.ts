@@ -73,7 +73,7 @@ export async function syncUserConfigToState(store: StateStore): Promise<SyncResu
   const envMode = readEnvMode();
   const envTel = readEnvTelemetry();
 
-  let nextRecorded: UserConfigSync = { ...recorded };
+  const nextRecorded: UserConfigSync = { ...recorded };
   let configDirty = false;
 
   // Mode sync: only apply when env is defined AND differs from recorded.
