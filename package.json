@@ -35,7 +35,8 @@
     "prepare": "husky install",
     "pack:size": "npm pack --dry-run 2>&1 | tail -5",
     "bump": "node scripts/bump.mjs",
-    "validate-plugin": "node scripts/validate-plugin.mjs"
+    "validate-plugin": "node scripts/validate-plugin.mjs",
+    "smoke": "node scripts/install-smoke.mjs --local"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.140",

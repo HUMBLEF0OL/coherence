@@ -1,0 +1,30 @@
+name: install-smoke
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  install-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20.x'
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code@latest
+
+      - name: Verify claude is on PATH
+        run: claude --version
+
+      - name: Run install-smoke against the just-pushed tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/install-smoke.mjs --tag "${{ github.ref_name }}"
