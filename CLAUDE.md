@@ -29,6 +29,13 @@ To query the graph for a specific topic:
 
 Run `/graphify --update` after changing files to keep the graph current.
 
+For a teaching-oriented diagram (Mermaid + narrative), see
+[docs/architecture.md](docs/architecture.md). The summary below is the
+orientation; the full diagram lives there. Operator-grade
+state-corruption catalog: [docs/failure-modes.md](docs/failure-modes.md).
+Extension tutorials (asserts engines, language registries, hook
+handlers): [docs/extensions/](docs/extensions/).
+
 ## Architecture
 
 ```
@@ -120,12 +127,14 @@ prompts/v3/                   audit-consistency.md for /coherence:audit --deep
 | Add a new slash command | `src/commands/` — copy an existing one; register in `.claude-plugin/plugin.json#slashCommands`; route in `src/hooks/commandDispatch.ts`; autogen stub regenerates on `npm run build`. |
 | Add a new hook event | `src/hooks/` — wrap with `withExceptionGuard()`; register in `src/hooks/index.ts`. |
 | Add a validation check | `src/validation/` — implement and call from the stage2 chain in `src/pipeline/stage2.ts`. |
-| Add an assertion engine | `src/validation/assertions/` — add to `textPatterns.ts` or `codebaseLinked.ts`, register in `index.ts` REGISTRY. |
+| Add an assertion engine | `src/validation/assertions/` — add to `textPatterns.ts` or `codebaseLinked.ts`, register in `index.ts` REGISTRY. Tutorial: [docs/extensions/how-to-add-an-asserts-engine.md](docs/extensions/how-to-add-an-asserts-engine.md). |
 | Add a new state file | `src/state/stateStore.ts` — atomic write pattern; register schema in `FILE_TO_SCHEMA` + `SCHEMA_NAMES`. |
-| Add a language to hallucination detection | `src/validation/registries/` — new file following the existing pattern. |
+| Add a language to hallucination detection | `src/validation/registries/` — new file following the existing pattern. Tutorial: [docs/extensions/how-to-add-a-language-to-hallucination-detection.md](docs/extensions/how-to-add-a-language-to-hallucination-detection.md). |
+| Add a new hook event handler | `src/hooks/` + `bin/hooks/` + `hooks/hooks.json`. Tutorial: [docs/extensions/how-to-add-a-hook-event-handler.md](docs/extensions/how-to-add-a-hook-event-handler.md). |
+| Diagnose a corrupt state file | [docs/failure-modes.md](docs/failure-modes.md) — per file: healthy / quarantined / locked / missing shapes + recovery cookbook. |
 | Change LLM prompt | `prompts/v2/stage1-planner.md` / `stage2-patch.md`; deep-audit prompt at `prompts/v3/audit-consistency.md`. |
 | Record a new cassette | Set `COHERENCE_REFRESH_CASSETTES=1`, run the relevant test, commit `tests/cassettes/<id>.json`. |
-| Understand a design decision | DD register on the Notion workspace; per-version implementation plans archived under the **Coherence** project page → [Implementation Plans (archive)](https://www.notion.so/Implementation-Plans-archive-35f010d46a70810589c2f3736efd925a). |
+| Understand a design decision | Repo mirror: [docs/adr/](docs/adr/) (incremental DD-001..DD-147). Canonical: DD register on the Notion workspace; per-version implementation plans archived under the **Coherence** project page → [Implementation Plans (archive)](https://www.notion.so/Implementation-Plans-archive-35f010d46a70810589c2f3736efd925a). |
 
 ## Testing
 

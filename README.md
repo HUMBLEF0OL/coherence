@@ -275,6 +275,20 @@ The detailed state-file inventory lives in
 [`docs/state-files.md`](docs/state-files.md). The full command reference
 lives in [`docs/commands.md`](docs/commands.md).
 
+## Documentation
+
+- [Architecture](docs/architecture.md) — Stop-pipeline diagram,
+  validation chain, file-only model, god-nodes map.
+- [Extensions](docs/extensions/) — how to add an asserts engine, a
+  language to hallucination detection, or a hook event handler.
+- [Failure modes](docs/failure-modes.md) — per state file: healthy /
+  quarantined / locked / missing shapes + recovery cookbook.
+- [Comparison](docs/comparison.md) — Coherence vs vale / lychee /
+  markdownlint / docs-as-tests / doing nothing.
+- [ADR register](docs/adr/) — accepted design decisions
+  (DD-001..DD-147; incremental mirror of the Notion register).
+- [User guide](docs/user-guide.md) — narrative walkthrough.
+
 ## Architectural commitments (permanent)
 
 Two stances govern the project in perpetuity:
